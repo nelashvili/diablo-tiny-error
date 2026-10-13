@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "start": "vite --open"
   },
   "dependencies": {
     "@preact/signals": "^2.11.3",
@@ -38,5 +39,8 @@
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
