@@ -87,7 +87,8 @@ export interface SynergyDef {
 
 export interface SkillDef {
   id: DefId; // e.g. 'litesaberStrike'
-  classId: ClassId;
+  /** Undefined for monster-only skills (m_*). */
+  classId?: ClassId;
   tree: string; // SkillTreeDef.id
   name: NameKey;
   /** D2 analog for designers, e.g. "Bash". Not shown to players. */
