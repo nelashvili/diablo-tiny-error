@@ -16,7 +16,12 @@ export function skillBonus(bonus: Bonus | undefined, skill: SkillDef, hard: numb
   if (!bonus) return 0;
   const specific = bonus.bySkill[skill.id] ?? 0;
   if (hard <= 0) return specific;
-  return bonus.all + (bonus.byClass[skill.classId] ?? 0) + (bonus.byTree[skill.tree] ?? 0) + specific;
+  return (
+    bonus.all +
+    (skill.classId ? (bonus.byClass[skill.classId] ?? 0) : 0) +
+    (bonus.byTree[skill.tree] ?? 0) +
+    specific
+  );
 }
 
 /** Effective level used for numbers (hard + bonus), 0 when unusable. */

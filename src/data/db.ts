@@ -37,22 +37,31 @@ function table<T extends { id: string }>(name: string, mods: Mod<T>): ReadonlyMa
 }
 
 export const DB = {
-  classes: table<ClassDef>('class', import.meta.glob('./classes/*.ts', { eager: true })),
-  skills: table<SkillDef>('skill', import.meta.glob('./skills/**/*.ts', { eager: true })),
-  missiles: table<MissileDef>('missile', import.meta.glob('./missiles/*.ts', { eager: true })),
-  items: table<ItemBaseDef>('item', import.meta.glob('./items/*.ts', { eager: true })),
-  affixes: table<AffixDef>('affix', import.meta.glob('./affixes/*.ts', { eager: true })),
-  uniques: table<UniqueDef>('unique', import.meta.glob('./uniques/*.ts', { eager: true })),
-  sets: table<SetDef>('set', import.meta.glob('./sets/*.ts', { eager: true })),
-  gems: table<GemDef>('gem', import.meta.glob('./gems/*.ts', { eager: true })),
-  treasure: table<TreasureClassDef>('treasure', import.meta.glob('./treasure/*.ts', { eager: true })),
-  monsters: table<MonsterDef>('monster', import.meta.glob('./monsters/*.ts', { eager: true })),
-  bosses: table<BossDef>('boss', import.meta.glob('./bosses/*.ts', { eager: true })),
-  levels: table<LevelDef>('level', import.meta.glob('./levels/*.ts', { eager: true })),
-  npcs: table<NpcDef>('npc', import.meta.glob('./npcs/*.ts', { eager: true })),
-  quests: table<QuestDef>('quest', import.meta.glob('./quests/*.ts', { eager: true })),
-  mercs: table<MercDef>('merc', import.meta.glob('./mercs/*.ts', { eager: true })),
-  vfx: table<VfxDef>('vfx', import.meta.glob('./vfx/*.ts', { eager: true })),
+  classes: table<ClassDef>('class', import.meta.glob(['./classes/*.ts', '!**/*.test.ts'], { eager: true })),
+  skills: table<SkillDef>('skill', import.meta.glob(['./skills/**/*.ts', '!**/*.test.ts'], { eager: true })),
+  missiles: table<MissileDef>(
+    'missile',
+    import.meta.glob(['./missiles/*.ts', '!**/*.test.ts'], { eager: true }),
+  ),
+  items: table<ItemBaseDef>('item', import.meta.glob(['./items/*.ts', '!**/*.test.ts'], { eager: true })),
+  affixes: table<AffixDef>('affix', import.meta.glob(['./affixes/*.ts', '!**/*.test.ts'], { eager: true })),
+  uniques: table<UniqueDef>('unique', import.meta.glob(['./uniques/*.ts', '!**/*.test.ts'], { eager: true })),
+  sets: table<SetDef>('set', import.meta.glob(['./sets/*.ts', '!**/*.test.ts'], { eager: true })),
+  gems: table<GemDef>('gem', import.meta.glob(['./gems/*.ts', '!**/*.test.ts'], { eager: true })),
+  treasure: table<TreasureClassDef>(
+    'treasure',
+    import.meta.glob(['./treasure/*.ts', '!**/*.test.ts'], { eager: true }),
+  ),
+  monsters: table<MonsterDef>(
+    'monster',
+    import.meta.glob(['./monsters/*.ts', '!**/*.test.ts'], { eager: true }),
+  ),
+  bosses: table<BossDef>('boss', import.meta.glob(['./bosses/*.ts', '!**/*.test.ts'], { eager: true })),
+  levels: table<LevelDef>('level', import.meta.glob(['./levels/*.ts', '!**/*.test.ts'], { eager: true })),
+  npcs: table<NpcDef>('npc', import.meta.glob(['./npcs/*.ts', '!**/*.test.ts'], { eager: true })),
+  quests: table<QuestDef>('quest', import.meta.glob(['./quests/*.ts', '!**/*.test.ts'], { eager: true })),
+  mercs: table<MercDef>('merc', import.meta.glob(['./mercs/*.ts', '!**/*.test.ts'], { eager: true })),
+  vfx: table<VfxDef>('vfx', import.meta.glob(['./vfx/*.ts', '!**/*.test.ts'], { eager: true })),
 };
 
 /** Name files: data/names/*.ts export default Record<string,string>; registered on import. */

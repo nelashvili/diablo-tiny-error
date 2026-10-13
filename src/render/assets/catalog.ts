@@ -165,6 +165,7 @@ const OBJECTS: ModelEntry[] = [
   stat('obj.stash', 'objects/stash', 1.4, ph('box', 0x6d7b88, 1.3, 0.45), 0x4fc3ff),
   stat('obj.portal', 'objects/portal', 2.2, ph('cylinder', 0x66aaff, 1.8, 0.8), 0x66aaff),
   stat('obj.shrine', 'objects/shrine', 1.2, ph('cone', 0xb36bff, 1.0, 0.5), 0xb36bff),
+  stat('obj.exit', null, 1, ph('cylinder', 0x66ffcc, 0.06, 0.8), 0x66ffcc),
   stat('obj.default', null, 1, ph('box', 0xb0a080, 0.8, 0.4)),
 ];
 

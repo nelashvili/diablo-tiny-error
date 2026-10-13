@@ -1,0 +1,16 @@
+export default {
+  'game.toast.alreadyInTown': 'You are already safe in town.',
+  'game.toast.defeated': 'You were defeated! A med-droyd patched you up in town.',
+  'game.toast.shrineRefill': 'The shrine restores your life and energy!',
+  'game.start.newHero': 'New Hero',
+  'game.start.continue': 'Continue',
+  'game.start.chooseClass': 'Choose your hero',
+  'game.start.name': 'Hero name',
+  'game.start.play': 'Start Adventure',
+  'game.start.loading': 'Loading the galaxy...',
+  'game.start.role.yediKnight': 'Litesaber warrior. Up close and fearless.',
+  'game.start.role.bountyHuntur': 'Blastur sharpshooter. Strikes from afar.',
+  'game.start.role.forseAdept': 'Wields the Forse: plasma, storms and ice.',
+  'game.waypoint.title': 'Holo-Beacons',
+  'game.waypoint.close': 'Close',
+} satisfies Record<string, string>;
