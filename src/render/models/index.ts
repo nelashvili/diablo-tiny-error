@@ -4,7 +4,7 @@
  */
 import type * as THREE from 'three';
 import type { EntityVisual, ModelEntry, VisualFactory } from '../types';
-import { DEFAULT_PLACEHOLDER, MODEL_CATALOG } from '../assets/catalog';
+import { DEFAULT_PLACEHOLDER, MODEL_CATALOG, getModelEntry } from '../assets/catalog';
 import { GltfRig } from './gltfRig';
 import { AssetLoader } from './loader';
 import { buildPlaceholderRig } from './placeholders';
@@ -22,6 +22,16 @@ export interface VisualFactoryOptions {
 export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFactory {
   const catalog = new Map<string, ModelEntry>();
   for (const e of opts.catalog ?? MODEL_CATALOG) catalog.set(e.id, e);
+  // Unknown ids (e.g. per-NPC model ids) resolve through the catalog's prefix fallbacks.
+  const lookup = (id: string): ModelEntry | undefined => {
+    let e = catalog.get(id);
+    if (!e && !opts.catalog) {
+      e = getModelEntry(id);
+      if (e.placeholder === DEFAULT_PLACEHOLDER && e.url === null) return undefined;
+      catalog.set(id, e);
+    }
+    return e;
+  };
   const loader = new AssetLoader(opts.renderer);
   const staticCache = new Map<string, StaticPart[]>();
   const placeholderStatics = new Map<string, StaticPart[]>();
@@ -34,8 +44,8 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
   });
 
   const env: VisualEnv = {
-    entryFor: (id) => catalog.get(id),
-    assetFor: (id) => loader.peek(catalog.get(id)?.url ?? null),
+    entryFor: (id) => lookup(id),
+    assetFor: (id) => loader.peek(lookup(id)?.url ?? null),
   };
 
   const buildRig = (id: string, entry: ModelEntry): Rig => {
@@ -52,14 +62,14 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
     async preload(modelIds) {
       await Promise.all(
         modelIds.map((id) => {
-          const e = catalog.get(id);
+          const e = lookup(id);
           return e ? loadFor(e) : Promise.resolve(null);
         }),
       );
     },
 
     create(modelId): EntityVisual {
-      const entry = catalog.get(modelId) ?? fallbackEntry(modelId);
+      const entry = lookup(modelId) ?? fallbackEntry(modelId);
       const visual = new Visual(env, buildRig(modelId, entry));
       // Not loaded yet: show the placeholder now and hot-swap when the glTF arrives.
       if (entry.url && !loader.peek(entry.url) && !loader.hasFailed(entry.url)) {
@@ -71,7 +81,7 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
     },
 
     getStaticMesh(modelId) {
-      const entry = catalog.get(modelId) ?? fallbackEntry(modelId);
+      const entry = lookup(modelId) ?? fallbackEntry(modelId);
       let parts = staticCache.get(modelId);
       if (!parts) {
         const asset = loader.peek(entry.url);

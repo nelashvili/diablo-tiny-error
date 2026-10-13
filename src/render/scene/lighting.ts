@@ -141,7 +141,8 @@ export class SceneLighting {
     this.sun.color.setHex(p.sun);
     this.sun.intensity = p.sunI;
     this.playerLight.color.setHex(p.playerLight);
-    this.playerLight.intensity = p.playerLightI;
+    // Kept subtle: a strong point light washes out light ground (and blooms) around the hero.
+    this.playerLight.intensity = p.playerLightI * 0.2;
   }
 
   setQuality(q: QualityLevel): void {
@@ -183,7 +184,7 @@ export class SceneLighting {
     this.sun.target.position.set(sx, 0, sz);
     this.sun.position.set(sx + SUN_DIR.x * 45, SUN_DIR.y * 45, sz + SUN_DIR.z * 45);
     this.sun.target.updateMatrixWorld();
-    this.playerLight.position.set(px, 1.8, pz);
+    this.playerLight.position.set(px, 3.2, pz);
 
     this.poolTimer += dt;
     if (this.poolTimer < 0.25) return;

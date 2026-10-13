@@ -303,7 +303,9 @@ for (const [ts, kinds] of Object.entries(TILE_FILES)) {
     TILES.push(
       stat(
         `tile.endoor.${ts}.${kind}`,
-        file,
+        // Flat ground uses clean procedural slabs: the CC0 road/path tiles have lane markings and
+        // dark borders that read as seams when tiled and rotated.
+        kind === 'floor' || kind === 'road' || kind === 'grass' ? null : file,
         scale,
         ph('box', TILE_COLORS[ts]?.[kind] ?? 0x777777, KIND_HEIGHT[kind], 0.5),
         kind === 'water' ? 0x66aaff : undefined,
