@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Panels harness - Diablo Tiny Error</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
+        background: #0b0d17;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(60% 50% at 50% 55%, rgba(70, 104, 63, 0.55), transparent 70%),
+          repeating-conic-gradient(from 45deg, #2d4a2c 0 25%, #36573a 0 50%) 0 0 / 80px 80px;
+      }
+      #ui-root {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        color: #f2ead3;
+      }
+      #dev-bar {
+        position: fixed;
+        left: 50%;
+        bottom: 6px;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: center;
+        font: 12px system-ui;
+        opacity: 0.85;
+      }
+      #dev-bar button {
+        font: inherit;
+        padding: 4px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="ui-root"></div>
+    </div>
+    <script type="module" src="./panels.tsx"></script>
+  </body>
+</html>
