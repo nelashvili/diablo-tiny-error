@@ -1,0 +1,77 @@
+import type { ClassDef } from '../schema';
+
+/** D2 starting values: Barbarian / Amazon / Sorceress analogs (PLAN §3-4). */
+export default [
+  {
+    id: 'yediKnight',
+    name: 'class.yediKnight',
+    start: { strength: 30, dexterity: 20, vitality: 25, energy: 10 },
+    baseLife: 55,
+    baseMana: 10,
+    baseStamina: 92,
+    growth: {
+      lifePerLevel: 2,
+      lifePerVit: 4,
+      manaPerLevel: 1,
+      manaPerEnergy: 1,
+      staminaPerLevel: 1,
+      staminaPerVit: 1,
+    },
+    trees: [
+      { id: 'yediKnight.saberForms', name: 'tree.yediKnight.saberForms' },
+      { id: 'yediKnight.masteries', name: 'tree.yediKnight.masteries' },
+      { id: 'yediKnight.commands', name: 'tree.yediKnight.commands' },
+    ],
+    startingItems: ['trainingLitesaber', 'buckler', 'baktaStim', 'baktaStim', 'recallBeacon'],
+    resourceName: 'resource.energy',
+    modelId: 'hero.yediKnight',
+  },
+  {
+    id: 'bountyHuntur',
+    name: 'class.bountyHuntur',
+    start: { strength: 20, dexterity: 25, vitality: 20, energy: 15 },
+    baseLife: 50,
+    baseMana: 15,
+    baseStamina: 84,
+    growth: {
+      lifePerLevel: 2,
+      lifePerVit: 3,
+      manaPerLevel: 1.5,
+      manaPerEnergy: 1.5,
+      staminaPerLevel: 1,
+      staminaPerVit: 1,
+    },
+    trees: [
+      { id: 'bountyHuntur.blasturs', name: 'tree.bountyHuntur.blasturs' },
+      { id: 'bountyHuntur.instincts', name: 'tree.bountyHuntur.instincts' },
+      { id: 'bountyHuntur.spearArc', name: 'tree.bountyHuntur.spearArc' },
+    ],
+    startingItems: ['scoutBlastur', 'javelinTrainer', 'baktaStim', 'baktaStim', 'recallBeacon'],
+    resourceName: 'resource.energy',
+    modelId: 'hero.bountyHuntur',
+  },
+  {
+    id: 'forseAdept',
+    name: 'class.forseAdept',
+    start: { strength: 10, dexterity: 25, vitality: 10, energy: 35 },
+    baseLife: 40,
+    baseMana: 35,
+    baseStamina: 74,
+    growth: {
+      lifePerLevel: 1,
+      lifePerVit: 2,
+      manaPerLevel: 2,
+      manaPerEnergy: 2,
+      staminaPerLevel: 1,
+      staminaPerVit: 1,
+    },
+    trees: [
+      { id: 'forseAdept.plasma', name: 'tree.forseAdept.plasma' },
+      { id: 'forseAdept.storm', name: 'tree.forseAdept.storm' },
+      { id: 'forseAdept.cryo', name: 'tree.forseAdept.cryo' },
+    ],
+    startingItems: ['apprenticeStaff', 'baktaStim', 'baktaStim', 'energyCell', 'recallBeacon'],
+    resourceName: 'resource.forse',
+    modelId: 'hero.forseAdept',
+  },
+] satisfies ClassDef[];
