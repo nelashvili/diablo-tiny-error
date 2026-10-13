@@ -1,33 +1,44 @@
-# Diablo Tiny Error — Game Plan (v2)
+# Diablo Tiny Error — Game Plan (v3)
 
-A browser-based action RPG for ages 9–10 that **plays like Diablo II**. It has
-the full skill trees, stats, items, acts, and difficulties, but the content is
-toned down to a **PG adventure-fantasy** level instead of gore and horror. It's
-isometric, works on desktop, Chromebooks, and tablets, and is deployed to
-Vercel as a static site.
+A browser-based action RPG for ages 9–10 that **plays like Diablo II** but is set
+in a **Star Wars–style space fantasy**. It has laser swords, blasters, droids,
+desert spaceports, jungle moons, and a mystical energy field, along with the
+full D2 skill trees, stats, items, acts, and difficulties. The tone is
+exciting and can be a little scary, but it's never gory. It's isometric 3D,
+works on desktop, Chromebooks, and tablets, and is deployed to Vercel as a
+static site.
 
-> **Changes from v1:** the full D2 skill trees and stat system are back, the
-> tone is now "adventure, not baby", there are 3 classes at launch, there's no
-> co-op, tablets are a launch requirement, there's no artist (we use CC0 3D
-> asset packs), and implementation is built for **parallel sub-agents** (§13).
+> **Changes from v2:** the setting is now space fantasy (Star Wars–inspired),
+> scarier enemies are allowed (they still vanish into smoke or sparks), and the
+> real-time 3D isometric approach is approved.
+
+> **Naming / IP note:** *Star Wars* names, characters, and trademarks (Jedi, Sith,
+> lightsaber, the Force, Tatooine, droid model names, etc.) belong to
+> Lucasfilm/Disney. Lucasfilm has historically shut down public fan games. This
+> game will be **publicly deployed**, so everything uses **original names with
+> the same feel**: "laser sword", "the Weave", "Dunehaven". All names live in
+> data/locale files, so a private build could rename them in minutes. Everything
+> below uses the original names.
 
 ---
 
 ## 1. Design pillars
 
-1. **It's Diablo II.** Someone who knows D2 should feel at home: the class
-   trees, the 5 stat points per level, attack rating vs. defense, resistances,
-   magic/rare/set/unique loot, sockets, mercenaries, and 3 difficulties. We
-   lean on 20+ years of D2 design knowledge instead of reinventing it.
-2. **Exciting, not gory.** The tone is like *Minecraft Dungeons*, *Zelda*, or
-   *Torchlight* (target is roughly ESRB E10+ / PEGI 7). Monsters are real
-   monsters and battles feel dangerous, but there's no blood, no gore, no
-   corpses, no demons or hell imagery, and no torture or horror themes.
-3. **Modern quality-of-life, not dumbing-down.** We remove D2 *friction*
-   (corpse runs, unidentified items, tiny fonts) and keep D2 *depth*.
-4. **Runs anywhere.** It plays in a browser tab on a Chromebook or iPad at
-   60 fps (30 fps minimum) with nothing to install, no accounts, and no
-   data collection.
+1. **It's Diablo II.** Someone who knows D2 should feel at home: the class trees,
+   5 stat points per level, attack rating vs. defense, resistances,
+   magic/rare/set/unique loot, sockets, mercenaries, and 3 difficulties.
+2. **It feels like Star Wars.** It has laser-sword duels, blaster fire,
+   cantinas, droids, a heroic resistance against a dark order, mystic powers,
+   and every act on a different planet.
+3. **Thrilling, not gory.** It can be scary, with dark cultists, shadowy
+   wraiths, and big beasts. The target is roughly **ESRB E10+ / PEGI 7–12**,
+   similar to *LEGO Star Wars*, the *Clone Wars* cartoon, and *Minecraft
+   Dungeons*. There's no blood, no dismemberment, and no corpses.
+4. **Modern quality-of-life, not dumbing-down.** We remove D2 *friction* (corpse
+   runs, unidentified items, tiny fonts) and keep D2 *depth*.
+5. **Runs anywhere.** It plays in a browser tab on a Chromebook or iPad at
+   60 fps (30 fps minimum) with nothing to install, no accounts, and no data
+   collection.
 
 ---
 
@@ -35,21 +46,27 @@ Vercel as a static site.
 
 | Topic | Rule |
 |---|---|
-| Death of enemies | Enemies **dissolve into dark smoke / crystal shards**. They leave a short-lived glowing "remnant" for a few seconds (used by skills like *Find Item*) and then fade. There are no corpses or body parts. |
-| Hits | Colored impact sparks per damage type (white physical, orange fire, blue cold, yellow lightning, green poison). There's no blood. |
-| Enemies | Goblins, skeletons, shamblers (mud and moss creatures), giant beetles, wraiths, golems, elementals, and corrupted beasts. "Shadeborn" replace demons. |
-| Villains | Menacing but not disturbing. They're corrupted beings, not devils, with no religious or satanic imagery. |
-| Player death | "**Defeated**". You respawn in town with all your gear. There's no corpse run. You lose some gold, and a small XP loss applies only on higher difficulties (like D2). |
-| Language | Clear, adventurous, with light humor allowed. No profanity, and dialogue is written for a 4th–5th grade reading level. |
+| Organic enemies | When defeated they **collapse into dark smoke** and leave a short-lived glowing "remnant" (used by skills like *Salvage*), which then fades. |
+| Droids / machines | They **burst into sparks and scrap** that fades. Droids make up a large share of enemies, so combat can feel intense without anything being "hurt". |
+| Hits | Colored impact sparks per damage type. Physical is white, plasma is orange, cryo is blue, storm is yellow, and toxin is green. There's no blood, and laser swords never dismember. |
+| Scary is OK | Dark cultists, hooded shadow-wraiths, swamp horrors, giant insects, and creepy ruined temples. Bosses get dramatic intros and music. |
+| Player death | "**Defeated**". A med-droid revives you at base with all your gear. There's no corpse run. You lose some credits, and a small XP loss applies only on higher difficulties (like D2). |
+| Language | Adventurous, with banter and light humor (droid sidekicks). No profanity, and dialogue is written for a 4th–5th grade reading level. |
 | Safety | No chat, no UGC, no external links, no ads, no purchases, no identifying analytics (COPPA-friendly). |
 
 ### Story: "The Tiny Error"
-A young apprentice made a tiny error in a spell that guarded the **Heartstone**,
-the crystal that keeps the world in balance. A hairline crack let out
-**The Error**, a living corruption that splits itself into powerful champions
-and twists creatures into monsters. The player follows the crack's trail across
-four acts and stops each champion, then faces The Error itself. This mirrors
-D2's chase after the Wanderer, the Prime Evils, and the Worldstone.
+The galaxy is held in balance by **the Weave**, a mystical energy that flows
+through all living things. It is anchored by the ancient **Starheart Crystal**
+in a hidden temple. A young apprentice made a **tiny error** while re-tuning the
+crystal. The resulting hairline crack woke **The Error**, a dark presence that
+was sealed inside long ago. It splits off **three dark champions** that
+spread across the galaxy to corrupt worlds and build a fleet for the dark
+**Hollow Order**.
+
+The player is a hero of the **Free Worlds Resistance**. They follow the trail
+planet by planet, defeat each champion, and then board the Order's citadel to
+face The Error itself. This mirrors D2's chase after the Wanderer, the Prime
+Evils, and the Worldstone.
 
 ---
 
@@ -60,99 +77,113 @@ The launch trio covers the classic roles: melee, ranged physical, and caster.
 ### Class rules (D2 rules, kept)
 - **3 trees × 10 skills** per class, with skill tiers unlocking at character
   level **1 / 6 / 12 / 18 / 24 / 30**.
-- **Prerequisites** (e.g. Frozen Orb needs Ice Blast and Frost Nova).
+- **Prerequisites** and **synergies** follow D2. For example, Plasma Bolt
+  boosts Plasma Orb, and Frozen Orb requires Ice Blast and Frost Nova.
 - **1 skill point per level**, plus **quest rewards** (+1 skill ×3 across the
-  acts, as in D2).
+  acts).
 - **Max 20 hard points** per skill, and **+skills from items** can go beyond 20.
-- **Synergies**: points in one skill boost related skills (e.g. Fire Bolt
-  boosts Fire Ball).
-- **Respec**: one free respec per difficulty (Akara-style), plus a craftable
-  *Token of Renewal* (like the Token of Absolution).
-- An optional **"Build Guide" overlay** highlights a suggested path for kids
-  who want help. It's off by default and doesn't change any rules.
+- **Respec**: one free respec per difficulty, plus a craftable *Memory Wipe
+  Chip* (Token of Absolution analog).
+- An optional **"Build Guide" overlay** suggests a path. It's off by default
+  and doesn't change any rules.
 
-### Vanguard (Barbarian analog)
-| Tier | Combat | Masteries | Warcries |
+### Saber Knight (Barbarian analog): laser-sword warrior
+Trees: **Saber Forms**, **Masteries**, **Commands**.
+
+| Tier | Saber Forms (Combat) | Masteries | Commands (Warcries) |
 |---|---|---|---|
-| 1 | Bash | Blade Mastery, Axe Mastery, Hammer Mastery | Howl, Find Potion |
-| 6 | Leap, Double Swing | Throwing Mastery, Spear Mastery | Taunt, Shout |
-| 12 | Stun, Double Throw | Increased Stamina | Find Item |
-| 18 | Leap Attack, Concentrate | Iron Skin | Battle Cry |
-| 24 | Frenzy | Increased Speed | Battle Orders, Rally Banner |
-| 30 | Whirlwind, Berserk | Natural Resistance | War Cry, Battle Command |
+| 1 | Saber Strike *(Bash)* | Saber Mastery, Twin-Blade Mastery, Vibro-Axe Mastery | Fear Roar *(Howl)*, Scavenge Stim *(Find Potion)* |
+| 6 | Weave Leap *(Leap)*, Twin Strike *(Double Swing)* | Throwing Mastery, Pike Mastery | Provoke *(Taunt)*, Rally *(Shout)* |
+| 12 | Stun Strike *(Stun)*, Twin Throw *(Double Throw)* | Endurance *(Inc. Stamina)* | Salvage *(Find Item)* |
+| 18 | Leap Strike *(Leap Attack)*, Focus Strike *(Concentrate)* | Iron Will *(Iron Skin)* | Weave Roar *(Battle Cry)* |
+| 24 | Saber Flurry *(Frenzy)* | Swift Step *(Inc. Speed)* | Battle Orders, Command Banner |
+| 30 | **Saber Cyclone** *(Whirlwind)*, Overcharge *(Berserk)* | Weave Resilience *(Natural Res.)* | Shockwave *(War Cry)*, Battle Command |
 
-### Ranger (Amazon analog)
-| Tier | Bow & Crossbow | Passive & Magic | Javelin & Spear |
+### Scout (Amazon analog): blaster & vibro-spear sharpshooter
+Trees: **Blasters**, **Instincts**, **Spear & Arc**.
+
+| Tier | Blasters (Bow) | Instincts (Passive & Magic) | Spear & Arc (Javelin) |
 |---|---|---|---|
-| 1 | Magic Arrow, Fire Arrow | Inner Sight, Critical Strike | Jab |
-| 6 | Cold Arrow, Multiple Shot | Dodge | Power Strike, Venom Javelin |
-| 12 | Exploding Arrow | Slow Missiles, Avoid | Impale, Lightning Bolt |
-| 18 | Ice Arrow, Guided Arrow | Penetrate | Charged Strike, Toxic Cloud |
-| 24 | Strafe, Blazing Arrow | Decoy, Evade | Fend |
-| 30 | Freezing Arrow | Spirit Guardian, Pierce | Lightning Strike, Lightning Fury |
+| 1 | Charged Shot, Plasma Shot | Scan Pulse *(Inner Sight)*, Precision *(Critical Strike)* | Vibro-Jab |
+| 6 | Cryo Shot, Spread Shot *(Multishot)* | Dodge | Power Thrust, Toxin Dart |
+| 12 | Burst Round *(Exploding Arrow)* | Deflector Field *(Slow Missiles)*, Avoid | Impale, Arc Javelin *(Lightning Bolt)* |
+| 18 | Freeze Round, Seeker Round *(Guided Arrow)* | Armor Piercing *(Penetrate)* | Charged Thrust, Toxin Cloud |
+| 24 | Rapid Fire *(Strafe)*, Incendiary Round | Holo-Decoy, Evade | Fend |
+| 30 | **Cryo Burst** *(Freezing Arrow)* | **Battle Droid** *(Valkyrie)*, Overpenetrate *(Pierce)* | Thunder Thrust, **Arc Fury** |
 
-### Elementalist (Sorceress analog)
-| Tier | Fire | Lightning | Cold |
+### Mystic (Sorceress analog): wielder of the Weave
+Trees: **Plasma** (fire), **Storm** (lightning), **Cryo** (cold).
+
+| Tier | Plasma | Storm | Cryo |
 |---|---|---|---|
-| 1 | Fire Bolt, Warmth | Charged Bolt | Ice Bolt, Frozen Armor |
-| 6 | Inferno | Static Field, Telekinesis | Frost Nova, Ice Blast |
-| 12 | Blaze, Fire Ball | Nova, Lightning | Shiver Armor |
-| 18 | Fire Wall, Enchant | Chain Lightning, Teleport | Glacial Spike |
-| 24 | Meteor | Thunder Storm, Energy Shield | Blizzard, Chilling Armor |
-| 30 | Fire Mastery, Hydra | Lightning Mastery | Frozen Orb, Cold Mastery |
+| 1 | Plasma Bolt, Inner Heat *(Warmth)* | Spark Bolts *(Charged Bolt)* | Ice Bolt, Frost Armor |
+| 6 | Plasma Stream *(Inferno)* | Static Field, **Telekinesis** | Frost Nova, Ice Blast |
+| 12 | Burning Trail *(Blaze)*, Plasma Orb *(Fire Ball)* | Storm Nova, Lightning | Shiver Armor |
+| 18 | Plasma Wall, Empower *(Enchant)* | Chain Lightning, **Blink** *(Teleport)* | Glacial Spike |
+| 24 | **Starfall** *(Meteor)* | Storm Cloud *(Thunder Storm)*, Weave Shield *(Energy Shield)* | Blizzard, Chill Armor |
+| 30 | Plasma Mastery, Plasma Sentry *(Hydra)* | Storm Mastery | **Frozen Orb**, Cryo Mastery |
 
-**Post-launch classes** (the data model supports them from day 1): a
-**Warden** (Paladin analog with auras), a **Beastcaller** (Druid analog with
-summons and shapeshifting), and a **Tinker** (Assassin analog with traps).
-A Necromancer analog fits poorly with the "no corpses" rule. If we add one, it
-would be a "Spiritbinder" who uses enemy remnants.
+**Post-launch classes** (the data model supports them from day 1):
+- **Guardian** (Paladin analog): auras and shield. A "Weave-knight" defender.
+- **Beastmaster** (Druid analog): alien beast companions and shapeshifting.
+- **Infiltrator** (Assassin analog): traps, cloaking, and martial arts.
+- **Droidsmith** (Necromancer analog): builds droid minions from **salvaged
+  scrap**. This replaces corpse-raising and fits the no-corpse rule.
 
 ---
 
 ## 4. Character stats (D2 system, kept)
 
 - **Strength / Dexterity / Vitality / Energy**, with class-specific starting
-  values (e.g. Vanguard 30/20/25/10, Ranger 20/25/20/15, Elementalist 10/25/10/35).
+  values (Saber Knight 30/20/25/10, Scout 20/25/20/15, Mystic 10/25/10/35).
 - **5 stat points per level**, plus **+5 from an Act III quest** (Lam Esen analog).
-- Life, mana, and stamina per level and per point vary by class, using D2-style
-  values.
-- **Item requirements** (Str/Dex/level) and **Strength/Dexterity damage bonus**
-  per weapon type.
-- **Attack Rating vs. Defense** hit chance, **Block** chance, and **Resistances**
-  (fire/cold/lightning/poison) with a per-difficulty penalty (−0 / −40 / −100
-  like D2), capped at 75%.
+- Life, mana ("**Weave**" for the Mystic, "**Energy**" for the others), and
+  stamina per level and per point vary by class, using D2-style values.
+- **Item requirements** (Str/Dex/level) and Str/Dex damage bonuses per weapon type.
+- **Attack Rating vs. Defense**, **Block**, and **Resistances**
+  (plasma/cryo/storm/toxin, the D2 fire/cold/lightning/poison equivalents)
+  with a per-difficulty penalty (−0 / −40 / −100), capped at 75%.
 - Secondary stats: Increased Attack Speed, Faster Cast Rate, Faster Hit Recovery,
-  Faster Run/Walk, Life/Mana steal, Crushing Blow, Deadly Strike, Magic Find,
-  Gold Find, Cannot Be Frozen, and so on.
+  Faster Run/Walk, Life/Energy steal, Crushing Blow, Deadly Strike, Salvage Find
+  (Magic Find), Credit Find, Cannot Be Frozen, and so on.
 - **One deliberate deviation:** speed stats scale *continuously* rather than
-  in D2's animation-frame **breakpoints**. Breakpoints came from D2's 25 fps
-  sprite engine and are opaque to kids. The effective formulas otherwise follow
-  D2.
-- Stats are never auto-assigned. A **"Suggested" hint** (optional, like the Build
-  Guide) shows what this class usually raises.
+  in D2's animation-frame breakpoints, which are opaque.
+- Stats are never auto-assigned. An optional **"Suggested" hint** is available.
 
 ---
 
-## 5. World & progression
+## 5. World & progression: one planet per act
 
-**4 acts** (D2 has 5; our Act IV is short like D2's) × **3 difficulties:
-Normal / Nightmare → "Heroic" / Hell → "Legend"**. The level cap is **75**, with
-an XP curve tuned so finishing Legend takes about lvl 65–75.
+**4 acts** × **3 difficulties: Normal / Veteran / Legend**. The level cap is
+**75**.
 
-| Act | Setting | Town | Key areas (randomized layouts) | Quests (6 / 6 / 4 / 3 like D2) | Boss |
+| Act | Planet / setting | Hub (town) | Key areas (randomized layouts) | Quests | Champion boss |
 |---|---|---|---|---|---|
-| **I** | Greenmarch Wilds: forests, moors, an old abbey | Hearthwatch Camp | Bramble Moor, Den of Shadows, Cold Plains, Old Barrow, Stony Field, Dark Wood, Black Marsh, Forgotten Tower, Silverbell Abbey, Catacombs | Den (+1 skill), Old Barrow, Rescue the Sage, Forgotten Tower, Tools of the Trade (imbue), The Abbey | **The Thornmother** (Andariel analog) |
-| **II** | Sunscar Desert: dunes, tombs, a palace | Sandhaven | Rocky Waste, Dry Hills, Far Oasis, Lost City, Sewers, Palace, Arcane Sanctum, 7 Tombs (1 true) | Sewer Beast (+1 skill), Horadric Staff analog, Tainted Sun, Arcane Sanctum, Summoner, Seven Tombs | **The Sand Wyrm** (Duriel analog) |
-| **III** | Verdant Deep: jungle, a flooded ruined city | Port Mirel | Spider Forest → "Beetle Forest", Great Marsh, Flayer Jungle → "Lurker Jungle", Kurast analogs, Temples, Travincal, Durance | Golden Bird (+20 life), Gidbinn, Khalim's Will analog, **Lam Esen's Tome (+5 stats)**, Blackened Temple, Guardian | **The Hollow Council** → **The Mirrorborn** (Mephisto analog) |
-| **IV** | The Fractured Realm: crystal wastes inside the crack | Last Light Bastion | Outer Steppes, Plains of Static, City of Shards, River of Light, **Heart Sanctum** (3 seals, each guarded by a champion, like Chaos Sanctuary) | Fallen Hero (+1 skill: Izual analog), Hellforge → "Shard Forge", Terror's End | **The Error** |
+| **I** | **Verdance**, a misty forest moon with ancient ruins | Ridgeline Outpost (Resistance camp) | Mossfields, Raider Den *(Den of Evil)*, Crash Site *(Burial Grounds)*, Standing Stones, Ruined Settlement *(Tristram)*, Darkwood, Sunken Marsh, Old Comm Tower *(Forgotten Tower)*, Silent Temple *(Monastery)*, Undercroft *(Catacombs)* | Clear the Raider Den (+1 skill), Crash Site, Rescue the Old Archivist *(Cain)*, Comm Tower, Tools of the Trade (imbue), The Silent Temple | **Matriarch Vexa**, a dark sorceress *(Andariel)* |
+| **II** | **Kessaro**, a twin-sun desert planet | Dunehaven Spaceport (cantina, merchants, hangar) | Rocky Waste, Dry Canyons, Far Oasis, Lost City, Undercity *(Sewers)*, Governor's Palace, Hidden Archive *(Arcane Sanctuary)*, Seven Vaults *(Tombs)* | Undercity Beast (+1 skill), Assemble the Star-Key *(Horadric Staff)*, The Dark Sun, Hidden Archive, The Archivist *(Summoner)*, Seven Vaults | **The Sand Leviathan**, a giant burrowing beast *(Duriel)* |
+| **III** | **Thyrra**, a giant-tree jungle world with a flooded temple city | Canopy Station | Beetle Forest, Great Swamp, Lurker Jungle, Lower/Upper Ruins, Temples, Order Stronghold *(Travincal)*, The Deep Vault *(Durance)* | Golden Shrike (+20 life), Ancient Saber *(Gidbinn)*, The Eye Relic *(Khalim's Will)*, **Lost Holocron (+5 stats)**, Blackened Temple, The Guardian | **The Shadow Council** → **Lord Malvex** *(Mephisto)* |
+| **IV** | **The Void Citadel**, the Hollow Order's fortress orbiting a dying star | *Last Light* (Resistance cruiser docked outside) | Outer Hull, Plains of Static, Reactor City, River of Plasma, **Starheart Core** (3 seals, each guarded by a champion, like Chaos Sanctuary) | Fallen Knight (+1 skill, an Izual analog with a redemption ending), Shard Forge *(Hellforge)*, The Error's End | **The Error** |
 
-- **Waypoints**, **Town Portal** (scroll/tome), **mercenaries** (an act-based
-  hireling per act with D2-style auras/skills), **D2-style monster packs**
-  (champions, uniques with random modifiers such as *Extra Fast*,
-  *Fire Enchanted*, *Cursed*, *Multishot*, *Lightning Enchanted*), and the
-  **goblin + shaman revive** mechanic (Fallen/Fallen Shaman analog) all stay.
-- The **Cow Level analog** is a secret level: the **Moo-tant Meadow**, a silly
-  secret area as a reward for curious kids.
+**Kept from D2, reskinned:**
+- **Waypoints** → **Holo-Beacons**.
+- **Town Portal** → **Recall Beacon** (a consumable or a rechargeable module).
+- **Gold** → **Credits**.
+- **Potions** → **Med-stims** (life) and **Energy cells** (mana/rejuvenation).
+- **Mercenaries** → **hirelings per act**: Resistance troopers (Act I, Rogue
+  analog), Dunehaven guards with auras (Act II), Weave adepts (Act III), and
+  combat droids.
+- **Monster packs** keep D2 champions and uniques with random modifiers:
+  *Extra Fast*, *Plasma Enchanted*, *Cursed*, *Multishot*, *Storm Enchanted*,
+  and so on.
+- **The goblin + shaman revive mechanic** → **scrap-droids + repair-droids**
+  that revive them. It's the same "kill the healer first" lesson.
+
+**Enemy families:** raiders, scrap-droids, battle droids, Hollow cultists,
+shadow-wraiths, swamp horrors, giant beetles, sand wurms, jungle stalkers,
+sentinel walkers, and void-touched beasts.
+
+**Secret level:** the **Moo-n**, a moon full of armored space-cows. It's the
+Cow Level analog.
 
 ---
 
@@ -160,26 +191,38 @@ an XP curve tuned so finishing Legend takes about lvl 65–75.
 
 - **Quality:** Inferior (grey) → Normal (white) → Magic (blue) → Rare (yellow)
   → Set (green) → Unique (gold). Crafted (orange) comes post-launch.
-- **Base tiers:** Normal / Exceptional / Elite per base type (e.g. Short Sword →
-  Gladius → Falcata). There are D2-style weapon classes (swords, axes, maces,
-  spears, javelins, bows, crossbows, staves, wands, orbs) and armor slots
-  (helm, body, gloves, belt, boots, shield, 2 rings, amulet).
-- **Affixes:** a D2-style prefix/suffix table with item level (ilvl) and
-  affix level (alvl) rules, plus **class-specific items** (Ranger bows, Elementalist
-  orbs, Vanguard helms) with +skills.
-- **Sockets, gems (chipped → perfect), and runes**, with **Runewords** in
-  post-launch milestone M8.
-- **Horadric Cube analog ("Tinkerer's Box")** with basic recipes (gem upgrades,
-  rerolls). Charms come post-launch.
+- **Base tiers:** Normal / Exceptional / Elite per base (e.g. Training Saber →
+  Duelist Saber → Masterwork Saber).
+- **Weapon classes (D2 mapping):**
+
+  | Ours | D2 analog |
+  |---|---|
+  | Laser swords | Swords |
+  | Twin-blade sabers | 2-handed swords |
+  | Vibro-axes | Axes |
+  | Shock batons | Maces |
+  | Vibro-pikes | Polearms |
+  | Throwing discs | Throwing weapons |
+  | Javelins | Javelins |
+  | Blaster pistols / rifles | Bows / crossbows |
+  | Weave focus-staffs and crystals | Staves and orbs |
+
+- **Armor slots:** helmet, chest armor, gloves, utility belt, boots, energy
+  shield (off-hand), 2 rings, amulet.
+- **Affixes** are a D2-style prefix/suffix table with ilvl/alvl rules, plus
+  **class-specific items** (Scout blasters, Mystic focus crystals, Saber Knight
+  helms) with +skills.
+- **Sockets** hold **crystals** (gem analog, chipped → perfect) and
+  **data-glyphs** (rune analog). **Glyphwords** (runewords) are in M8.
+- **Fabricator** (Horadric Cube analog) with basic recipes. Charms come
+  post-launch.
 - **Shared stash** across characters.
 - **Kept with quality-of-life changes:**
-  - Items **auto-identify** on pickup.
-  - Inventory is a **D2-style grid with item sizes**, plus an **auto-sort**
-    button.
-  - Gold is **auto-picked up**, and you can **pick up potions straight into
-    the belt**.
-  - **Compare tooltips** with green/red deltas, and a loot filter
-    (hide grey/white) setting.
+  - Items auto-identify on pickup.
+  - Inventory is a D2-style grid with item sizes, plus an auto-sort button.
+  - Credits are auto-picked up, and you can pick up stims straight into the
+    belt.
+  - Compare tooltips show green/red deltas, and there's a loot filter setting.
 
 ---
 
@@ -187,52 +230,43 @@ an XP curve tuned so finishing Legend takes about lvl 65–75.
 
 | Input | Scheme |
 |---|---|
-| Mouse + keyboard | D2 classic: left-click move/attack, right-click skill, F1–F8 skill hotkeys, Tab map, Alt shows items, Shift stand-still, TAB/I/S/C/Q panels |
+| Mouse + keyboard | D2 classic: left-click move/attack, right-click skill, F1–F8 skill hotkeys, Tab map, Alt shows items, Shift stand-still, I/S/C/Q panels |
 | Gamepad | Left stick move, face buttons are 4 skills plus primary attack, auto-target nearest (like D2R controller mode) |
-| **Touch / tablet** | **Virtual joystick** (left) **or tap-to-move** (setting). The **skill wheel** (right, D2R controller layout) has 6 skill buttons plus potion buttons. **Tap enemy** to attack with soft auto-aim. **Long-press** shows a tooltip instead of hover. **Drag-and-drop** inventory. Pinch disabled; fixed zoom with 2 presets |
+| **Touch / tablet** | **Virtual joystick** (left) **or tap-to-move** (setting). The **skill wheel** (right) has 6 skill buttons plus stim buttons. **Tap enemy** to attack with soft auto-aim. **Long-press** shows a tooltip. **Drag-and-drop** inventory. Fixed zoom with 2 presets |
 
-- UI is **responsive**: it adapts to 16:9 laptop, 4:3 iPad, and phone landscape
-  (best effort). Minimum touch target is 44 px.
+- UI is responsive: 16:9 laptop, 4:3 iPad, and phone landscape (best effort).
+  Minimum touch target is 44 px.
 - Tablet-specific handling covers iOS Safari audio unlock, fullscreen/PWA
-  "Add to Home Screen", `visibilitychange` auto-pause, and avoiding the
-  iOS 300 ms delay and scroll bounce.
+  "Add to Home Screen", auto-pause on `visibilitychange`, and no scroll bounce.
 
 ---
 
-## 8. Art & audio without an artist
+## 8. Art & audio without an artist (approved: real-time 3D, isometric camera)
 
-### Key decision: real-time 3D with a fixed isometric camera
-With no artist, **pre-rendered sprites** would mean building a Blender rendering
-pipeline for every model × animation × 8 directions × equipment variant.
-Instead we **render low-poly 3D models live with an orthographic isometric
-camera**:
-- It looks exactly isometric (D2 / D2R / *Hades* camera), and it's "simple and
-  modern".
-- It has free smooth rotation (no 8-direction limit), real lighting, and
-  shadows.
-- **Equipment shows on the character** by attaching weapon and helm meshes to
-  bones. D2 had this, and kids love it.
-- It uses massive **CC0 3D asset libraries**, which are consistent and already
-  animated.
+Low-poly 3D models are **rendered live with an orthographic isometric camera**.
+This gives the D2/D2R camera angle, smooth rotation, real lighting, and
+**equipment that shows on the character**. Laser swords get colored glowing
+blades, and helmets and armor are visible. It uses free CC0 asset libraries.
 
 ### Asset sources (license must be CC0 or similar)
 | Need | Source | License |
 |---|---|---|
-| Heroes (rigged, animated), skeletons, weapons | **KayKit** Adventurers, Skeletons, and other packs (Kay Lousberg) | CC0 |
-| Monsters | **Quaternius** Ultimate Monsters / RPG packs | CC0 |
-| Dungeon/forest/desert tilesets & props | KayKit Dungeon / Forest, **Kenney** 3D packs, Quaternius nature packs | CC0 |
+| Heroes (rigged, animated) | **Quaternius** Ultimate Animated Character / Sci-Fi packs, **KayKit** Adventurers (re-skinned with sci-fi gear) | CC0 |
+| Droids, aliens, creatures | **Quaternius** Ultimate Space Kit / Monsters / Animated Robots, **KayKit** packs | CC0 |
+| Environments (outposts, spaceport, ruins, ships) | **Kenney** Space Kit / Space Station Kit / Blaster Kit, **KayKit** Space Base, **Quaternius** Sci-Fi Essentials, nature and desert packs | CC0 |
+| Weapons | Kenney Blaster Kit, Quaternius sci-fi guns. Laser-sword blades are procedural glowing meshes | CC0 |
 | Skill & item icons | **game-icons.net** (recolored SVGs) | CC BY 3.0 → `CREDITS.md` |
-| UI frames/fonts | Kenney UI packs; Google Fonts (e.g. Cinzel + Nunito) | CC0 / OFL |
-| SFX | Kenney audio, OpenGameArt CC0, Sonniss GDC bundles | CC0 / royalty-free |
-| Music | OpenGameArt / freepd.com fantasy tracks | CC0 / CC BY |
+| UI frames / fonts | Kenney Sci-Fi UI; Google Fonts (e.g. Orbitron + Nunito) | CC0 / OFL |
+| SFX (blaster, saber hum, droids) | Kenney Sci-Fi Sounds, OpenGameArt CC0, Sonniss GDC bundles, plus **procedurally synthesized** saber hum and blaster zaps (Web Audio) | CC0 / royalty-free |
+| Music | OpenGameArt / freepd.com orchestral and sci-fi tracks | CC0 / CC BY |
 
-- A unifying **toon shader + outline pass + per-act color grading** makes mixed
-  packs look like one game.
-- **Skill VFX are procedural**: particles, shader effects, and textured quads.
-  We need about 90 skill effects, so we build a small VFX toolkit (projectile,
-  nova, beam, aoe-zone, aura, buff-glow) and give skills data-driven parameters.
+- A unifying **toon shader + outline pass + per-planet color grading** makes
+  mixed packs look like one game. **Bloom** gives sabers, blaster bolts, and
+  Weave powers their glow.
+- **Skill VFX are procedural.** A small toolkit (projectile/bolt, beam, nova,
+  aoe-zone, aura, buff-glow, saber-trail) drives about 90 skills from data.
 - **Every asset's license is tracked** in `assets/manifest.json` and generated
-  into `CREDITS.md` at build time.
+  into `CREDITS.md`.
 
 ---
 
@@ -321,12 +355,12 @@ tests/                     # vitest + playwright
 | # | Milestone | Done when… |
 |---|---|---|
 | **M0** | Skeleton & contracts | Repo, tooling, CI, and Vercel deploy are in place. `core` interfaces (entity, stats, modifiers, skill def, item def, commands, events) are written and frozen. An iso camera shows a test map |
-| **M1** | Core feel slice | One class (Vanguard) walks and fights skeletons in a generated area on desktop **and touch**, with combat formulas, death/respawn, and dissolve VFX |
+| **M1** | Core feel slice | One class (Saber Knight) walks and fights scrap-droids and raiders in a generated area on desktop **and touch**, with combat formulas, death/respawn, and dissolve VFX |
 | **M2** | RPG systems | Full stats, all 3 skill trees for all 3 classes (the data and the first ~10 skills of each class playable), XP/leveling, items/affixes/loot, inventory/belt/stash UI, and save/load |
-| **M3** | Act I complete | Town, NPCs (vendor, smith, healer/respec, merc hire), waypoints/TP, Act I areas/quests/monsters, and the Thornmother. **First playtest with kids** |
+| **M3** | Act I complete | Town, NPCs (vendor, smith, healer/respec, merc hire), waypoints/TP, Act I areas/quests/monsters, and Matriarch Vexa. **First playtest with kids** |
 | **M4** | All skills | All 90 skills, synergies, and mercenaries are implemented and balanced across Act I |
 | **M5** | Acts II–IV | All areas, quests, monsters, and bosses, plus music. Normal difficulty is completable |
-| **M6** | Difficulties & endgame | Heroic/Legend, resist penalties, monster scaling, sets/uniques complete, Moo-tant Meadow |
+| **M6** | Difficulties & endgame | Veteran/Legend, resist penalties, monster scaling, sets/uniques complete, the Moo-n secret level |
 | **M7** | Release polish | Performance on Chromebook/iPad, gamepad, accessibility (colorblind, text size, screen shake), PWA, and credits |
 | *M8* | *Post-launch* | Runewords, crafting, charms, and classes 4–6 |
 
@@ -369,20 +403,20 @@ Scaffold, tooling, CI, Vercel config, and the **frozen interfaces** in
 **Wave 2: about 9 agents (skills & monsters)**
 | Agent | Owns |
 |---|---|
-| 1–3 | Vanguard: Combat / Masteries / Warcries trees |
-| 4–6 | Ranger: Bow / Passive / Javelin trees |
-| 7–9 | Elementalist: Fire / Lightning / Cold trees |
+| 1–3 | Saber Knight: Saber Forms / Masteries / Commands trees |
+| 4–6 | Scout: Blasters / Instincts / Spear & Arc trees |
+| 7–9 | Mystic: Plasma / Storm / Cryo trees |
 | 10 | `core/monsters` + `core/ai` (pack spawning, modifiers, revive shaman, boss script framework) |
 | 11 | `core/mercs` + `core/player` (leveling, respec, death rules) |
-| 12 | `core/quests` engine + town NPC/vendor flows |
+| 12 | `core/quests` engine + hub NPC/vendor flows |
 
 **Wave 3: one agent per act, plus specialists**
 | Agent | Owns |
 |---|---|
-| 1 | Act I content (levels, presets, monsters, quests, boss, dialogue) |
-| 2 | Act II content |
-| 3 | Act III content |
-| 4 | Act IV content |
+| 1 | Act I (Verdance) content (levels, presets, monsters, quests, boss, dialogue) |
+| 2 | Act II (Kessaro) content |
+| 3 | Act III (Thyrra) content |
+| 4 | Act IV (Void Citadel) content |
 | 5 | Uniques & sets data |
 | 6 | Audio/music integration |
 | 7 | Balance simulator: a headless sim that runs builds through acts and reports time-to-kill and survival |
@@ -394,9 +428,6 @@ a **QA agent** running Playwright and touch-emulation play-throughs, and a
 ---
 
 ## 14. Remaining open questions
-1. Do the class names (Vanguard / Ranger / Elementalist) and act/boss names
-   work for you, or do you want to name them?
-2. Is skeletons-as-enemies OK? They're common in E10+ games such as Minecraft.
-   Or should we avoid them entirely?
-3. Is the **real-time 3D with an iso camera** decision OK, versus 2D
-   pre-rendered sprites? I strongly recommend it given there's no artist.
+1. Do the original names (Saber Knight / Scout / Mystic, the Weave, Verdance →
+   Kessaro → Thyrra → Void Citadel) work for you? They're easy to change later
+   because they live in data files.
