@@ -27,6 +27,7 @@ export type Command =
   | { type: 'equip'; uid: ItemUid; slot: EquipSlot }
   | { type: 'unequip'; slot: EquipSlot }
   | { type: 'useItem'; uid: ItemUid }
+  /** Belt column 0-3 (keys 1-4); uses that column's bottom item. */
   | { type: 'useBeltSlot'; index: number }
   | { type: 'dropItem'; uid: ItemUid }
   | { type: 'pickup'; targetId: EntityId }

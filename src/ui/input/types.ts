@@ -17,6 +17,8 @@ export interface InputContext {
   togglePanel(id: PanelId): void;
   /** True if a UI panel is capturing the pointer at this position. */
   isOverUi(px: number, py: number): boolean;
+  /** Nearest hostile within `range` tiles, biased toward `dir` (gamepad/touch auto-aim). */
+  findAutoTarget?(range: number, dir: Vec2): EntityId | null;
 }
 
 export interface InputDevice {
