@@ -54,6 +54,8 @@ export interface AccountSave {
   sharedStash: GridContainer[];
   settings: Settings;
   characterIds: string[];
+  /** Last played character, for a "Continue" button. */
+  lastCharacterId?: string;
 }
 
 export interface Settings {
