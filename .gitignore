@@ -6,3 +6,4 @@ test-results
 .vercel
 *.log
 .DS_Store
+.claude/worktrees/
