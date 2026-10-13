@@ -58,6 +58,17 @@ function detach(p: PlayerEntity, uid: ItemUid): ItemInstance | null {
   }
 }
 
+/** D2 belt: after the bottom-row item of a column is used, the column shifts down. */
+function shiftBeltColumn(p: PlayerEntity, col: number): void {
+  const slots = p.belt.slots;
+  for (let r = 0; r < p.belt.rows; r++) {
+    const here = r * 4 + col;
+    if (slots[here] !== null) continue;
+    slots[here] = slots[here + 4] ?? null;
+    if (here + 4 < slots.length) slots[here + 4] = null;
+  }
+}
+
 function beltFreeIndex(p: PlayerEntity): number {
   return p.belt.slots.findIndex((s) => s === null);
 }
@@ -191,14 +202,24 @@ export function pickupGroundItem(world: SimWorld, p: PlayerEntity, g: GroundItem
   }
   if (!giveItem(p, g.item)) return (toast(world, 'toast.inventoryFull'), false);
   g.alive = false;
-  world.emit({ type: 'itemPickedUp', playerId: p.id, baseId: g.item.base });
+  world.emit({
+    type: 'itemPickedUp',
+    playerId: p.id,
+    baseId: g.item.base,
+    uid: g.item.uid,
+    quality: g.item.quality,
+  });
   changed(world, p);
   return true;
 }
 
 function consume(world: SimWorld, p: PlayerEntity, item: ItemInstance): void {
   if (item.quantity && item.quantity > 1) item.quantity -= 1;
-  else detach(p, item.uid);
+  else {
+    const f = locateItem(p, item.uid);
+    detach(p, item.uid);
+    if (f?.loc.where === 'belt') shiftBeltColumn(p, f.loc.index % 4);
+  }
   changed(world, p);
 }
 
@@ -255,6 +276,7 @@ export function useItem(world: SimWorld, p: PlayerEntity, uid: ItemUid): boolean
 }
 
 export function useBeltSlot(world: SimWorld, p: PlayerEntity, index: number): boolean {
+  // `index` is the belt column 0-3; its bottom-row (row 0) item is consumed.
   const it = p.belt.slots[index];
   return it ? useItem(world, p, it.uid) : false;
 }
