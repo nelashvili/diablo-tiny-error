@@ -145,15 +145,8 @@ const ACTORS: ModelEntry[] = [
   },
   kay('mon.nightsistah', 'heroes/mage', 0x3a2a55, 0xc040ff, 0.75),
   kay('mon.shadowWraith', 'monsters/skeletonMage', 0x2a2a3a, 0x8866ff, 0.75),
-  {
-    id: 'mon.countDooky',
-    url: M('monsters/demon'),
-    scale: 0.9,
-    clips: { ...QM_CLIPS },
-    bones: { ...QM_BONES },
-    placeholder: ph('capsule', 0x5a1a2a, 2.6, 0.6),
-    accent: 0xff2a2a, // boss: tint dark crimson, red litesaber
-  },
+  // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery) — larger, dark crimson, red litesaber
+  kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95),
   // generic fallbacks
   {
     id: 'mon.default',

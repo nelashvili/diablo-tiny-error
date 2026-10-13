@@ -153,7 +153,7 @@ Skill and item icons (game-icons.net, CC BY 3.0) and fonts are credited separate
 - Modifications: re-packed as single-file GLB (textures embedded)
 - Files (4): `models/items/pistol.glb`, `models/items/rifle.glb`, `models/items/shotgun.glb`, `models/items/sniper.glb`
 
-## Quaternius Ultimate Monsters (demon/orc)
+## Quaternius Ultimate Monsters (orc)
 
 - Author: Quaternius
 - License: [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/)
@@ -161,7 +161,7 @@ Skill and item icons (game-icons.net, CC BY 3.0) and fonts are credited separate
 - Obtained from: https://github.com/511action/descent-3d-assets
 - License evidence: Quaternius publishes all packs as CC0; the mirror repository describes these files as CC0 / public domain
 - Modifications: re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size
-- Files (2): `models/monsters/demon.glb`, `models/monsters/orc.glb`
+- Files (1): `models/monsters/orc.glb`
 
 ## RobotExpressive (three.js examples)
 

@@ -96,7 +96,6 @@ const T = [
     src: 'robot/RobotExpressive.glb',
     anims: ['Idle', 'Walking', 'Running', 'Punch', 'Death', 'Jump', 'Wave', 'Yes', 'No', 'ThumbsUp', 'Dance'],
   },
-  { dest: 'monsters/demon', src: 'descent-3d-assets/models/Demon.gltf', anims: QM_ANIMS },
   { dest: 'monsters/orc', src: 'descent-3d-assets/models/Orc.gltf', anims: QM_ANIMS },
   // ---- weapons / items ----
   ...'a b c d e f g h i j k l m n o p q r'

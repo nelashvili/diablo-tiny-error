@@ -1679,23 +1679,10 @@
       "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
     },
     {
-      "path": "public/assets/models/monsters/demon.glb",
-      "bytes": 464924,
-      "source": "https://github.com/511action/descent-3d-assets  (models/Demon.gltf)",
-      "pack": "Quaternius Ultimate Monsters (demon/orc)",
-      "author": "Quaternius",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://quaternius.com/packs/ultimatemonsters.html",
-      "repo": "https://github.com/511action/descent-3d-assets",
-      "licenseNote": "Quaternius publishes all packs as CC0; the mirror repository describes these files as CC0 / public domain",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
       "path": "public/assets/models/monsters/orc.glb",
       "bytes": 476540,
       "source": "https://github.com/511action/descent-3d-assets  (models/Orc.gltf)",
-      "pack": "Quaternius Ultimate Monsters (demon/orc)",
+      "pack": "Quaternius Ultimate Monsters (orc)",
       "author": "Quaternius",
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
