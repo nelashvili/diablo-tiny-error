@@ -502,7 +502,7 @@ describe('player rules', () => {
   });
 
   it('player defeat: Defeated event, creditz loss, respawn with full life', () => {
-    const { world, run, player, events } = setup();
+    const { run, player, events } = setup();
     player.creditz = 1000;
     player.life = 0;
     run(2);
