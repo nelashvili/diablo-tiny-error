@@ -5,7 +5,8 @@
  *
  * CONTRACT FILE — frozen after Wave 0. Additive changes only, coordinated by the lead.
  */
-import type { DamageType, DefId, EntityId, Vec2 } from '../types';
+import type { DamageType, DefId, EntityId, ItemQuality, Vec2 } from '../types';
+import type { ItemUid } from '../items/types';
 import type { AttackOutcome } from '../combat/types';
 
 export type GameEvent =
@@ -30,7 +31,14 @@ export type GameEvent =
   | { type: 'levelUp'; id: EntityId; level: number }
   | { type: 'xpGained'; id: EntityId; amount: number }
   | { type: 'itemDropped'; id: EntityId; quality: string; pos: Vec2 }
-  | { type: 'itemPickedUp'; playerId: EntityId; baseId: DefId; creditz?: number }
+  | {
+      type: 'itemPickedUp';
+      playerId: EntityId;
+      baseId: DefId;
+      creditz?: number;
+      uid?: ItemUid;
+      quality?: ItemQuality;
+    }
   | { type: 'creditzChanged'; playerId: EntityId; creditz: number }
   | { type: 'inventoryChanged'; playerId: EntityId }
   | { type: 'statsChanged'; id: EntityId }

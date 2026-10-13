@@ -44,7 +44,7 @@ export interface GridContainer {
 
 export type Equipment = Partial<Record<EquipSlot, ItemInstance>>;
 
-/** Belt: columns x rows of consumables (rows depend on belt item). */
+/** Belt: columns x rows of consumables (rows depend on belt item). slots[row*4+col]; row 0 = hotkey (bottom) row. */
 export interface Belt {
   rows: number;
   cols: 4;
