@@ -1,24 +1,23 @@
-# Diablo Tiny Error — Game Plan (v3)
+# Diablo Tiny Error — Game Plan (v4)
 
 A browser-based action RPG for ages 9–10 that **plays like Diablo II** but is set
-in a **Star Wars–style space fantasy**. It has laser swords, blasters, droids,
-desert spaceports, jungle moons, and a mystical energy field, along with the
-full D2 skill trees, stats, items, acts, and difficulties. The tone is
-exciting and can be a little scary, but it's never gory. It's isometric 3D,
-works on desktop, Chromebooks, and tablets, and is deployed to Vercel as a
+in a **Star Wars parody galaxy**. Every name is a **funny typo of the real
+thing**: *Yedi Knights*, *Litesabers*, *the Forse*, *Darth Vapor*, *Tatoonie*.
+The game has the full D2 skill trees, stats, items, acts, and difficulties. The
+tone is exciting and can be a little scary, but it's never gory. It's isometric
+3D, works on desktop, Chromebooks, and tablets, and is deployed to Vercel as a
 static site.
 
-> **Changes from v2:** the setting is now space fantasy (Star Wars–inspired),
-> scarier enemies are allowed (they still vanish into smoke or sparks), and the
-> real-time 3D isometric approach is approved.
+> **Changes from v3:** the original-name setting is replaced by
+> **funny-typo parody names** (§2a glossary).
 
-> **Naming / IP note:** *Star Wars* names, characters, and trademarks (Jedi, Sith,
-> lightsaber, the Force, Tatooine, droid model names, etc.) belong to
-> Lucasfilm/Disney. Lucasfilm has historically shut down public fan games. This
-> game will be **publicly deployed**, so everything uses **original names with
-> the same feel**: "laser sword", "the Weave", "Dunehaven". All names live in
-> data/locale files, so a private build could rename them in minutes. Everything
-> below uses the original names.
+> **Naming / IP note:** typo parody names are a *Spaceballs*-style parody
+> posture. They're more recognizable than the original names were, but also
+> closer to Lucasfilm/Disney trademarks. Parody is a common defense but not a
+> guarantee, so the game should never use real logos, the official font, John
+> Williams' music, or actual character likenesses, and it should stay
+> free/non-commercial. **All names live in one locale file** (`data/names.ts`),
+> so if there's ever a takedown request we can swap to neutral names in minutes.
 
 ---
 
@@ -28,7 +27,7 @@ static site.
    5 stat points per level, attack rating vs. defense, resistances,
    magic/rare/set/unique loot, sockets, mercenaries, and 3 difficulties.
 2. **It feels like Star Wars.** It has laser-sword duels, blaster fire,
-   cantinas, droids, a heroic resistance against a dark order, mystic powers,
+   cantinas, droids, a scrappy Rebel Allowance against the Galactic Umpire, mystic powers,
    and every act on a different planet.
 3. **Thrilling, not gory.** It can be scary, with dark cultists, shadowy
    wraiths, and big beasts. The target is roughly **ESRB E10+ / PEGI 7–12**,
@@ -50,23 +49,58 @@ static site.
 | Droids / machines | They **burst into sparks and scrap** that fades. Droids make up a large share of enemies, so combat can feel intense without anything being "hurt". |
 | Hits | Colored impact sparks per damage type. Physical is white, plasma is orange, cryo is blue, storm is yellow, and toxin is green. There's no blood, and laser swords never dismember. |
 | Scary is OK | Dark cultists, hooded shadow-wraiths, swamp horrors, giant insects, and creepy ruined temples. Bosses get dramatic intros and music. |
-| Player death | "**Defeated**". A med-droid revives you at base with all your gear. There's no corpse run. You lose some credits, and a small XP loss applies only on higher difficulties (like D2). |
+| Player death | "**Defeated**". A med-droyd revives you in a Bakta tank at base with all your gear. There's no corpse run. You lose some Creditz, and a small XP loss applies only on higher difficulties (like D2). |
 | Language | Adventurous, with banter and light humor (droid sidekicks). No profanity, and dialogue is written for a 4th–5th grade reading level. |
 | Safety | No chat, no UGC, no external links, no ads, no purchases, no identifying analytics (COPPA-friendly). |
 
 ### Story: "The Tiny Error"
-The galaxy is held in balance by **the Weave**, a mystical energy that flows
-through all living things. It is anchored by the ancient **Starheart Crystal**
-in a hidden temple. A young apprentice made a **tiny error** while re-tuning the
-crystal. The resulting hairline crack woke **The Error**, a dark presence that
-was sealed inside long ago. It splits off **three dark champions** that
-spread across the galaxy to corrupt worlds and build a fleet for the dark
-**Hollow Order**.
+The galaxy is held in balance by **the Forse**, a mystical energy that flows
+through all living things. It is anchored by the ancient **Kybur Heart**, a
+giant crystal in the hidden Yedi Temple. A young Padawon made a **tiny error**
+(a typo!) while re-tuning the crystal. The resulting hairline crack woke
+**The Error**, a dark presence that was sealed inside long ago. The Error
+whispers to the **Syth**, who split into **three dark champions**. They spread
+across the galaxy to build the **Deaf Star** for the **Galactic Umpire**.
 
-The player is a hero of the **Free Worlds Resistance**. They follow the trail
-planet by planet, defeat each champion, and then board the Order's citadel to
-face The Error itself. This mirrors D2's chase after the Wanderer, the Prime
-Evils, and the Worldstone.
+The player is a hero of the **Rebel Allowance**. They follow the trail
+planet by planet, defeat each champion, and then board the Deaf Star to face
+**Emperor Palpitate**, the host of The Error. This mirrors D2's chase after the
+Wanderer, the Prime Evils, and the Worldstone. The typo theme is a running
+joke: the whole universe is "slightly misspelled" because of the Error.
+
+---
+
+## 2a. Name glossary (funny typos)
+
+Names are stored in `data/names.ts` and are never hard-coded.
+
+| Real | In-game | | Real | In-game |
+|---|---|---|---|---|
+| Jedi | **Yedi** | | Sith | **Syth** |
+| Padawan | **Padawon** | | The Force | **The Forse** |
+| Lightsaber | **Litesaber** | | Blaster | **Blastur** |
+| Droid | **Droyd** | | Stormtrooper | **Normtrooper** |
+| Rebel Alliance | **Rebel Allowance** | | Galactic Empire | **Galactic Umpire** |
+| Death Star | **Deaf Star** | | Millennium Falcon | **Millennium Falcone** |
+| Darth Vader | **Darth Vapor** | | Emperor Palpatine | **Emperor Palpitate** |
+| Darth Maul | **Darth Mole** | | Count Dooku | **Count Dooky** |
+| General Grievous | **General Grevious** | | Grand Moff Tarkin | **Grand Moff Tarkin't** |
+| Yoda | **Master Yoduh** | | Jabba the Hutt | **Jabbo the Hutz** |
+| Wookiee | **Wookie-Cookie** | | Ewoks | **Ewokz** |
+| Jawas | **Jawwas** | | Tusken Raiders | **Tuskin Raiders** |
+| Sarlacc | **Sarlack** | | Rancor | **Rankor** |
+| Wampa | **Wompa** | | Bantha | **Banthaa** |
+| Porg | **Porg** (already perfect) | | Holocron | **Holocrumb** |
+| Kyber crystal | **Kybur crystal** | | Bacta | **Bakta** |
+| Credits | **Creditz** | | Cantina | **Cantino** |
+| Tatooine | **Tatoonie** | | Endor | **Endoor** |
+| Dagobah | **Dagobaa** | | Kashyyyk | **Kashyyyyyk** |
+| Mos Eisley | **Moss Easily** | | Sandcrawler | **Sandcrawlr** |
+| AT-AT Walker | **AT-AT Walkur** | | "Roger, roger" | **"Rodger, rodger"** |
+
+Writers' rules: one obvious typo per name, so it's still instantly
+recognizable. Keep jokes kind (no bathroom humor beyond "Count Dooky"). NPCs
+occasionally notice the typos ("Did that sign always say *Deaf* Star?").
 
 ---
 
@@ -83,23 +117,23 @@ The launch trio covers the classic roles: melee, ranged physical, and caster.
   acts).
 - **Max 20 hard points** per skill, and **+skills from items** can go beyond 20.
 - **Respec**: one free respec per difficulty, plus a craftable *Memory Wipe
-  Chip* (Token of Absolution analog).
+  Chip* (from a protocol droyd) (Token of Absolution analog).
 - An optional **"Build Guide" overlay** suggests a path. It's off by default
   and doesn't change any rules.
 
-### Saber Knight (Barbarian analog): laser-sword warrior
+### Yedi Knight (Barbarian analog): Litesaber warrior
 Trees: **Saber Forms**, **Masteries**, **Commands**.
 
 | Tier | Saber Forms (Combat) | Masteries | Commands (Warcries) |
 |---|---|---|---|
-| 1 | Saber Strike *(Bash)* | Saber Mastery, Twin-Blade Mastery, Vibro-Axe Mastery | Fear Roar *(Howl)*, Scavenge Stim *(Find Potion)* |
-| 6 | Weave Leap *(Leap)*, Twin Strike *(Double Swing)* | Throwing Mastery, Pike Mastery | Provoke *(Taunt)*, Rally *(Shout)* |
+| 1 | Litesaber Strike *(Bash)* | Saber Mastery, Double-Litesaber Mastery, Vibro-Axe Mastery | Fear Roar *(Howl)*, Scavenge Stim *(Find Potion)* |
+| 6 | Forse Leap *(Leap)*, Twin Strike *(Double Swing)* | Throwing Mastery, Pike Mastery | Provoke *(Taunt)*, Rally *(Shout)* |
 | 12 | Stun Strike *(Stun)*, Twin Throw *(Double Throw)* | Endurance *(Inc. Stamina)* | Salvage *(Find Item)* |
-| 18 | Leap Strike *(Leap Attack)*, Focus Strike *(Concentrate)* | Iron Will *(Iron Skin)* | Weave Roar *(Battle Cry)* |
+| 18 | Leap Strike *(Leap Attack)*, Focus Strike *(Concentrate)* | Iron Will *(Iron Skin)* | Forse Roar *(Battle Cry)* |
 | 24 | Saber Flurry *(Frenzy)* | Swift Step *(Inc. Speed)* | Battle Orders, Command Banner |
-| 30 | **Saber Cyclone** *(Whirlwind)*, Overcharge *(Berserk)* | Weave Resilience *(Natural Res.)* | Shockwave *(War Cry)*, Battle Command |
+| 30 | **Saber Cyclone** *(Whirlwind)*, Overcharge *(Berserk)* | Forse Resilience *(Natural Res.)* | Shockwave *(War Cry)*, Battle Command |
 
-### Scout (Amazon analog): blaster & vibro-spear sharpshooter
+### Bounty Huntur (Amazon analog): blastur & vibro-spear sharpshooter
 Trees: **Blasters**, **Instincts**, **Spear & Arc**.
 
 | Tier | Blasters (Bow) | Instincts (Passive & Magic) | Spear & Arc (Javelin) |
@@ -109,25 +143,25 @@ Trees: **Blasters**, **Instincts**, **Spear & Arc**.
 | 12 | Burst Round *(Exploding Arrow)* | Deflector Field *(Slow Missiles)*, Avoid | Impale, Arc Javelin *(Lightning Bolt)* |
 | 18 | Freeze Round, Seeker Round *(Guided Arrow)* | Armor Piercing *(Penetrate)* | Charged Thrust, Toxin Cloud |
 | 24 | Rapid Fire *(Strafe)*, Incendiary Round | Holo-Decoy, Evade | Fend |
-| 30 | **Cryo Burst** *(Freezing Arrow)* | **Battle Droid** *(Valkyrie)*, Overpenetrate *(Pierce)* | Thunder Thrust, **Arc Fury** |
+| 30 | **Cryo Burst** *(Freezing Arrow)* | **Battle Droyd** *(Valkyrie)*, Overpenetrate *(Pierce)* | Thunder Thrust, **Arc Fury** |
 
-### Mystic (Sorceress analog): wielder of the Weave
+### Forse Adept (Sorceress analog): wielder of the Forse
 Trees: **Plasma** (fire), **Storm** (lightning), **Cryo** (cold).
 
 | Tier | Plasma | Storm | Cryo |
 |---|---|---|---|
 | 1 | Plasma Bolt, Inner Heat *(Warmth)* | Spark Bolts *(Charged Bolt)* | Ice Bolt, Frost Armor |
-| 6 | Plasma Stream *(Inferno)* | Static Field, **Telekinesis** | Frost Nova, Ice Blast |
+| 6 | Plasma Stream *(Inferno)* | Static Field, **Forse Pull** *(Telekinesis)* | Frost Nova, Ice Blast |
 | 12 | Burning Trail *(Blaze)*, Plasma Orb *(Fire Ball)* | Storm Nova, Lightning | Shiver Armor |
-| 18 | Plasma Wall, Empower *(Enchant)* | Chain Lightning, **Blink** *(Teleport)* | Glacial Spike |
-| 24 | **Starfall** *(Meteor)* | Storm Cloud *(Thunder Storm)*, Weave Shield *(Energy Shield)* | Blizzard, Chill Armor |
-| 30 | Plasma Mastery, Plasma Sentry *(Hydra)* | Storm Mastery | **Frozen Orb**, Cryo Mastery |
+| 18 | Plasma Wall, Empower *(Enchant)* | Chain Lightning, **Forse Blink** *(Teleport)* | Glacial Spike |
+| 24 | **Starfall** *(Meteor)* | Storm Cloud *(Thunder Storm)*, Forse Shield *(Energy Shield)* | Blizzard, Chill Armor |
+| 30 | Plasma Mastery, Blastur Turret *(Hydra)* | Storm Mastery | **Frozen Orb**, Cryo Mastery |
 
 **Post-launch classes** (the data model supports them from day 1):
-- **Guardian** (Paladin analog): auras and shield. A "Weave-knight" defender.
+- **Guardian** (Paladin analog): auras and shield. A Yedi Guardian defender.
 - **Beastmaster** (Druid analog): alien beast companions and shapeshifting.
 - **Infiltrator** (Assassin analog): traps, cloaking, and martial arts.
-- **Droidsmith** (Necromancer analog): builds droid minions from **salvaged
+- **Droydsmith** (Necromancer analog): builds droyd minions from **salvaged
   scrap**. This replaces corpse-raising and fits the no-corpse rule.
 
 ---
@@ -135,9 +169,9 @@ Trees: **Plasma** (fire), **Storm** (lightning), **Cryo** (cold).
 ## 4. Character stats (D2 system, kept)
 
 - **Strength / Dexterity / Vitality / Energy**, with class-specific starting
-  values (Saber Knight 30/20/25/10, Scout 20/25/20/15, Mystic 10/25/10/35).
+  values (Yedi Knight 30/20/25/10, Bounty Huntur 20/25/20/15, Forse Adept 10/25/10/35).
 - **5 stat points per level**, plus **+5 from an Act III quest** (Lam Esen analog).
-- Life, mana ("**Weave**" for the Mystic, "**Energy**" for the others), and
+- Life, mana ("**Forse**" for the Forse Adept, "**Energy**" for the others), and
   stamina per level and per point vary by class, using D2-style values.
 - **Item requirements** (Str/Dex/level) and Str/Dex damage bonuses per weapon type.
 - **Attack Rating vs. Defense**, **Block**, and **Resistances**
@@ -145,7 +179,7 @@ Trees: **Plasma** (fire), **Storm** (lightning), **Cryo** (cold).
   with a per-difficulty penalty (−0 / −40 / −100), capped at 75%.
 - Secondary stats: Increased Attack Speed, Faster Cast Rate, Faster Hit Recovery,
   Faster Run/Walk, Life/Energy steal, Crushing Blow, Deadly Strike, Salvage Find
-  (Magic Find), Credit Find, Cannot Be Frozen, and so on.
+  (Magic Find), Creditz Find, Cannot Be Frozen, and so on.
 - **One deliberate deviation:** speed stats scale *continuously* rather than
   in D2's animation-frame breakpoints, which are opaque.
 - Stats are never auto-assigned. An optional **"Suggested" hint** is available.
@@ -159,30 +193,31 @@ Trees: **Plasma** (fire), **Storm** (lightning), **Cryo** (cold).
 
 | Act | Planet / setting | Hub (town) | Key areas (randomized layouts) | Quests | Champion boss |
 |---|---|---|---|---|---|
-| **I** | **Verdance**, a misty forest moon with ancient ruins | Ridgeline Outpost (Resistance camp) | Mossfields, Raider Den *(Den of Evil)*, Crash Site *(Burial Grounds)*, Standing Stones, Ruined Settlement *(Tristram)*, Darkwood, Sunken Marsh, Old Comm Tower *(Forgotten Tower)*, Silent Temple *(Monastery)*, Undercroft *(Catacombs)* | Clear the Raider Den (+1 skill), Crash Site, Rescue the Old Archivist *(Cain)*, Comm Tower, Tools of the Trade (imbue), The Silent Temple | **Matriarch Vexa**, a dark sorceress *(Andariel)* |
-| **II** | **Kessaro**, a twin-sun desert planet | Dunehaven Spaceport (cantina, merchants, hangar) | Rocky Waste, Dry Canyons, Far Oasis, Lost City, Undercity *(Sewers)*, Governor's Palace, Hidden Archive *(Arcane Sanctuary)*, Seven Vaults *(Tombs)* | Undercity Beast (+1 skill), Assemble the Star-Key *(Horadric Staff)*, The Dark Sun, Hidden Archive, The Archivist *(Summoner)*, Seven Vaults | **The Sand Leviathan**, a giant burrowing beast *(Duriel)* |
-| **III** | **Thyrra**, a giant-tree jungle world with a flooded temple city | Canopy Station | Beetle Forest, Great Swamp, Lurker Jungle, Lower/Upper Ruins, Temples, Order Stronghold *(Travincal)*, The Deep Vault *(Durance)* | Golden Shrike (+20 life), Ancient Saber *(Gidbinn)*, The Eye Relic *(Khalim's Will)*, **Lost Holocron (+5 stats)**, Blackened Temple, The Guardian | **The Shadow Council** → **Lord Malvex** *(Mephisto)* |
-| **IV** | **The Void Citadel**, the Hollow Order's fortress orbiting a dying star | *Last Light* (Resistance cruiser docked outside) | Outer Hull, Plains of Static, Reactor City, River of Plasma, **Starheart Core** (3 seals, each guarded by a champion, like Chaos Sanctuary) | Fallen Knight (+1 skill, an Izual analog with a redemption ending), Shard Forge *(Hellforge)*, The Error's End | **The Error** |
+| **I** | **Endoor**, a misty forest moon with Ewokz and ancient ruins | Rebel Allowance Outpost | Mossfields, Tuskin Den *(Den of Evil)*, Crash Site *(Burial Grounds)*, Standing Stones, Ewokz Village Ruins *(Tristram)*, Darkwood, Dagobaa Swamp, Old Comm Tower *(Forgotten Tower)*, Old Yedi Temple *(Monastery)*, Undercroft *(Catacombs)* | Clear the Den (+1 skill), Crash Site, Rescue Master Yoduh *(Cain)*, Comm Tower, Tools of the Trade (imbue), The Old Yedi Temple | **Count Dooky**, Syth Lord *(Andariel)* |
+| **II** | **Tatoonie**, a twin-sun desert planet | Moss Easily Spaceport (with the Cantino, Jabbo's palace, and the hangar) | Dune Sea, Jundland Canyons, Far Oasis, Jawwa Sandcrawlr, Undercity *(Sewers)*, Jabbo's Palace, Hidden Holo-Archive *(Arcane Sanctuary)*, Seven Vaults *(Tombs)* | Undercity Rankor (+1 skill), Assemble the Star-Key *(Horadric Staff)*, Twin Suns Eclipse, Hidden Archive, The Archivist *(Summoner)*, Seven Vaults | **The Great Sarlack**, a giant pit beast *(Duriel)* |
+| **III** | **Kashyyyyyk** (yes, extra y's), a giant-tree Wookie-Cookie jungle world | Treehouse Station | Wompa Forest, Great Swamp, Lurker Jungle, Lower/Upper Ruins, Temples, Syth Stronghold *(Travincal)*, The Deep Vault *(Durance)* | Golden Porg (+20 life), Ancient Litesaber *(Gidbinn)*, The Eye Relic *(Khalim's Will)*, **Lost Holocrumb (+5 stats)**, Blackened Temple, The Guardian | **The Syth Council** → **Darth Mole** *(Mephisto)* |
+| **IV** | **The Deaf Star**, the Umpire's battle station orbiting a dying star | *Millennium Falcone* (docked in a hangar) | Docking Bay, Trash Compactorz, Reactor City, Plasma Trench, **Kybur Core** (3 seals, each guarded by **Darth Vapor**, General Grevious, and Grand Moff Tarkin't, like Chaos Sanctuary) | Fallen Yedi (+1 skill), Kybur Forge *(Hellforge)*, The Error's End | **Emperor Palpitate**, host of **The Error** |
 
 **Kept from D2, reskinned:**
 - **Waypoints** → **Holo-Beacons**.
 - **Town Portal** → **Recall Beacon** (a consumable or a rechargeable module).
-- **Gold** → **Credits**.
-- **Potions** → **Med-stims** (life) and **Energy cells** (mana/rejuvenation).
-- **Mercenaries** → **hirelings per act**: Resistance troopers (Act I, Rogue
-  analog), Dunehaven guards with auras (Act II), Weave adepts (Act III), and
-  combat droids.
+- **Gold** → **Creditz**.
+- **Potions** → **Bakta stims** (life) and **Energy cells** (mana/rejuvenation).
+- **Mercenaries** → **hirelings per act**: Rebel Allowance troopers (Act I, Rogue
+  analog), Moss Easily guards with auras (Act II), Wookie-Cookie warriors (Act III), and
+  battle droyds.
 - **Monster packs** keep D2 champions and uniques with random modifiers:
   *Extra Fast*, *Plasma Enchanted*, *Cursed*, *Multishot*, *Storm Enchanted*,
   and so on.
-- **The goblin + shaman revive mechanic** → **scrap-droids + repair-droids**
-  that revive them. It's the same "kill the healer first" lesson.
+- **The goblin + shaman revive mechanic** → **Jawwas** that
+  repair and revive fallen **Battle Droydz**. It's the same "kill the healer first" lesson.
 
-**Enemy families:** raiders, scrap-droids, battle droids, Hollow cultists,
-shadow-wraiths, swamp horrors, giant beetles, sand wurms, jungle stalkers,
-sentinel walkers, and void-touched beasts.
+**Enemy families:** Normtroopers (famously bad aim, but they come in big
+squads), Battle Droydz ("Rodger rodger"), Tuskin Raiders, Jawwas, Probe Droydz,
+Wompas, Rankors, Syth cultists, Nightsistahs, swamp horrors, AT-AT Walkurs
+(mini-boss), and Error-touched shadow-wraiths.
 
-**Secret level:** the **Moo-n**, a moon full of armored space-cows. It's the
+**Secret level:** the **Moo-n**, a moon full of armored space-Banthaas ("moo"). It's the
 Cow Level analog.
 
 ---
@@ -191,36 +226,36 @@ Cow Level analog.
 
 - **Quality:** Inferior (grey) → Normal (white) → Magic (blue) → Rare (yellow)
   → Set (green) → Unique (gold). Crafted (orange) comes post-launch.
-- **Base tiers:** Normal / Exceptional / Elite per base (e.g. Training Saber →
-  Duelist Saber → Masterwork Saber).
+- **Base tiers:** Normal / Exceptional / Elite per base (e.g. Training Litesaber →
+  Duelist Litesaber → Masterwork Litesaber).
 - **Weapon classes (D2 mapping):**
 
   | Ours | D2 analog |
   |---|---|
-  | Laser swords | Swords |
-  | Twin-blade sabers | 2-handed swords |
+  | Litesabers | Swords |
+  | Double Litesabers | 2-handed swords |
   | Vibro-axes | Axes |
   | Shock batons | Maces |
   | Vibro-pikes | Polearms |
   | Throwing discs | Throwing weapons |
   | Javelins | Javelins |
-  | Blaster pistols / rifles | Bows / crossbows |
-  | Weave focus-staffs and crystals | Staves and orbs |
+  | Blastur pistols / rifles | Bows / crossbows |
+  | Forse staffs and Kybur crystals | Staves and orbs |
 
 - **Armor slots:** helmet, chest armor, gloves, utility belt, boots, energy
   shield (off-hand), 2 rings, amulet.
 - **Affixes** are a D2-style prefix/suffix table with ilvl/alvl rules, plus
-  **class-specific items** (Scout blasters, Mystic focus crystals, Saber Knight
+  **class-specific items** (Bounty Huntur blasturs, Forse Adept focus crystals, Yedi Knight
   helms) with +skills.
-- **Sockets** hold **crystals** (gem analog, chipped → perfect) and
+- **Sockets** hold **Kybur crystals** (gem analog, chipped → perfect) and
   **data-glyphs** (rune analog). **Glyphwords** (runewords) are in M8.
-- **Fabricator** (Horadric Cube analog) with basic recipes. Charms come
+- **Droyd Workshop** (Horadric Cube analog) with basic recipes. Charms come
   post-launch.
 - **Shared stash** across characters.
 - **Kept with quality-of-life changes:**
   - Items auto-identify on pickup.
   - Inventory is a D2-style grid with item sizes, plus an auto-sort button.
-  - Credits are auto-picked up, and you can pick up stims straight into the
+  - Creditz are auto-picked up, and you can pick up stims straight into the
     belt.
   - Compare tooltips show green/red deltas, and there's a loot filter setting.
 
@@ -245,7 +280,7 @@ Cow Level analog.
 
 Low-poly 3D models are **rendered live with an orthographic isometric camera**.
 This gives the D2/D2R camera angle, smooth rotation, real lighting, and
-**equipment that shows on the character**. Laser swords get colored glowing
+**equipment that shows on the character**. Litesabers get colored glowing
 blades, and helmets and armor are visible. It uses free CC0 asset libraries.
 
 ### Asset sources (license must be CC0 or similar)
@@ -254,15 +289,15 @@ blades, and helmets and armor are visible. It uses free CC0 asset libraries.
 | Heroes (rigged, animated) | **Quaternius** Ultimate Animated Character / Sci-Fi packs, **KayKit** Adventurers (re-skinned with sci-fi gear) | CC0 |
 | Droids, aliens, creatures | **Quaternius** Ultimate Space Kit / Monsters / Animated Robots, **KayKit** packs | CC0 |
 | Environments (outposts, spaceport, ruins, ships) | **Kenney** Space Kit / Space Station Kit / Blaster Kit, **KayKit** Space Base, **Quaternius** Sci-Fi Essentials, nature and desert packs | CC0 |
-| Weapons | Kenney Blaster Kit, Quaternius sci-fi guns. Laser-sword blades are procedural glowing meshes | CC0 |
+| Weapons | Kenney Blaster Kit, Quaternius sci-fi guns. Litesaber blades are procedural glowing meshes | CC0 |
 | Skill & item icons | **game-icons.net** (recolored SVGs) | CC BY 3.0 → `CREDITS.md` |
 | UI frames / fonts | Kenney Sci-Fi UI; Google Fonts (e.g. Orbitron + Nunito) | CC0 / OFL |
 | SFX (blaster, saber hum, droids) | Kenney Sci-Fi Sounds, OpenGameArt CC0, Sonniss GDC bundles, plus **procedurally synthesized** saber hum and blaster zaps (Web Audio) | CC0 / royalty-free |
 | Music | OpenGameArt / freepd.com orchestral and sci-fi tracks | CC0 / CC BY |
 
 - A unifying **toon shader + outline pass + per-planet color grading** makes
-  mixed packs look like one game. **Bloom** gives sabers, blaster bolts, and
-  Weave powers their glow.
+  mixed packs look like one game. **Bloom** gives Litesabers, blaster bolts, and
+  Forse powers their glow.
 - **Skill VFX are procedural.** A small toolkit (projectile/bolt, beam, nova,
   aoe-zone, aura, buff-glow, saber-trail) drives about 90 skills from data.
 - **Every asset's license is tracked** in `assets/manifest.json` and generated
@@ -355,9 +390,9 @@ tests/                     # vitest + playwright
 | # | Milestone | Done when… |
 |---|---|---|
 | **M0** | Skeleton & contracts | Repo, tooling, CI, and Vercel deploy are in place. `core` interfaces (entity, stats, modifiers, skill def, item def, commands, events) are written and frozen. An iso camera shows a test map |
-| **M1** | Core feel slice | One class (Saber Knight) walks and fights scrap-droids and raiders in a generated area on desktop **and touch**, with combat formulas, death/respawn, and dissolve VFX |
+| **M1** | Core feel slice | One class (Yedi Knight) walks and fights Battle Droydz and Tuskin Raiders in a generated area on desktop **and touch**, with combat formulas, death/respawn, and dissolve VFX |
 | **M2** | RPG systems | Full stats, all 3 skill trees for all 3 classes (the data and the first ~10 skills of each class playable), XP/leveling, items/affixes/loot, inventory/belt/stash UI, and save/load |
-| **M3** | Act I complete | Town, NPCs (vendor, smith, healer/respec, merc hire), waypoints/TP, Act I areas/quests/monsters, and Matriarch Vexa. **First playtest with kids** |
+| **M3** | Act I complete | Town, NPCs (vendor, smith, healer/respec, merc hire), waypoints/TP, Act I areas/quests/monsters, and Count Dooky. **First playtest with kids** |
 | **M4** | All skills | All 90 skills, synergies, and mercenaries are implemented and balanced across Act I |
 | **M5** | Acts II–IV | All areas, quests, monsters, and bosses, plus music. Normal difficulty is completable |
 | **M6** | Difficulties & endgame | Veteran/Legend, resist penalties, monster scaling, sets/uniques complete, the Moo-n secret level |
@@ -403,9 +438,9 @@ Scaffold, tooling, CI, Vercel config, and the **frozen interfaces** in
 **Wave 2: about 9 agents (skills & monsters)**
 | Agent | Owns |
 |---|---|
-| 1–3 | Saber Knight: Saber Forms / Masteries / Commands trees |
-| 4–6 | Scout: Blasters / Instincts / Spear & Arc trees |
-| 7–9 | Mystic: Plasma / Storm / Cryo trees |
+| 1–3 | Yedi Knight: Saber Forms / Masteries / Commands trees |
+| 4–6 | Bounty Huntur: Blasters / Instincts / Spear & Arc trees |
+| 7–9 | Forse Adept: Plasma / Storm / Cryo trees |
 | 10 | `core/monsters` + `core/ai` (pack spawning, modifiers, revive shaman, boss script framework) |
 | 11 | `core/mercs` + `core/player` (leveling, respec, death rules) |
 | 12 | `core/quests` engine + hub NPC/vendor flows |
@@ -413,10 +448,10 @@ Scaffold, tooling, CI, Vercel config, and the **frozen interfaces** in
 **Wave 3: one agent per act, plus specialists**
 | Agent | Owns |
 |---|---|
-| 1 | Act I (Verdance) content (levels, presets, monsters, quests, boss, dialogue) |
-| 2 | Act II (Kessaro) content |
-| 3 | Act III (Thyrra) content |
-| 4 | Act IV (Void Citadel) content |
+| 1 | Act I (Endoor) content (levels, presets, monsters, quests, boss, dialogue) |
+| 2 | Act II (Tatoonie) content |
+| 3 | Act III (Kashyyyyyk) content |
+| 4 | Act IV (Deaf Star) content |
 | 5 | Uniques & sets data |
 | 6 | Audio/music integration |
 | 7 | Balance simulator: a headless sim that runs builds through acts and reports time-to-kill and survival |
@@ -428,6 +463,4 @@ a **QA agent** running Playwright and touch-emulation play-throughs, and a
 ---
 
 ## 14. Remaining open questions
-1. Do the original names (Saber Knight / Scout / Mystic, the Weave, Verdance →
-   Kessaro → Thyrra → Void Citadel) work for you? They're easy to change later
-   because they live in data files.
+- None blocking. Names can be tweaked any time in `data/names.ts`.
