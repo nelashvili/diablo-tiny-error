@@ -1,22 +1,18 @@
 import type { SkillDef } from '../schema';
 
 /**
- * Free basic skills available to every class (no class: `classId` is empty). The 'basicAttack'
+ * Free basic skills available to every class (no `classId`). The 'basicAttack'
  * behavior (core/skills/behaviors.ts) picks melee or a missile from the equipped weapon class.
  */
-const free: Pick<
-  SkillDef,
-  'classId' | 'tree' | 'reqLevel' | 'prereqs' | 'maxHardPoints' | 'manaCost' | 'leftClickable'
-> = {
-  // Empty classId marks a class-less free skill (see report: schema should make classId optional).
-  classId: '' as unknown as SkillDef['classId'],
-  tree: 'common',
-  reqLevel: 1,
-  prereqs: [],
-  maxHardPoints: 20,
-  manaCost: 0,
-  leftClickable: true,
-};
+const free: Pick<SkillDef, 'tree' | 'reqLevel' | 'prereqs' | 'maxHardPoints' | 'manaCost' | 'leftClickable'> =
+  {
+    tree: 'common',
+    reqLevel: 1,
+    prereqs: [],
+    maxHardPoints: 20,
+    manaCost: 0,
+    leftClickable: true,
+  };
 
 export default [
   {

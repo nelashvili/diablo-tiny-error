@@ -60,3 +60,22 @@ describe('loot & pickup', () => {
     expect(player.creditz).toBe(42);
   });
 });
+
+describe('belt columns', () => {
+  it('using a column shifts the items above it down', () => {
+    const sim = makeTestSim(13);
+    const player = createPlayer(sim.world, 'yediKnight', 'B', {
+      startingItems: ['test.saber', 'test.stim'],
+      pos: { x: 10.5, y: 10.5 },
+    });
+    const first = player.belt.slots[0]!;
+    player.belt.rows = 2;
+    player.belt.slots.push(null, null, null, null);
+    player.belt.slots[4] = { ...first, uid: 'upper' };
+    player.life = 1;
+    sim.world.commands.push({ type: 'useBeltSlot', index: 0 });
+    sim.run(2);
+    expect(player.belt.slots[0]?.uid).toBe('upper');
+    expect(player.belt.slots[4]).toBeNull();
+  });
+});

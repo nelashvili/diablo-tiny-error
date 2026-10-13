@@ -191,7 +191,6 @@ export function spawnTestMonster(world: SimWorld, o: TestMonsterOpts): MonsterEn
 /** Register a one-off skill for a test. */
 export function registerTestSkill(def: Partial<SkillDef> & { id: string; kind: SkillDef['kind'] }): SkillDef {
   const full: SkillDef = {
-    classId: '' as unknown as SkillDef['classId'],
     tree: 'common',
     name: `skill.${def.id}`,
     d2Analog: 'test',

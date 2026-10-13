@@ -8,49 +8,20 @@ import { evalLevel } from '../../data/levelScaled';
 import { levelFromParts } from '../skills/level';
 import { computeStats } from '../stats/compute';
 import type { DerivedStats, Modifier, StatSources } from '../stats/types';
-import type { Difficulty, EquipSlot } from '../types';
+import type { Difficulty } from '../types';
 import type { Actor, PlayerEntity } from '../sim/entities';
 import type { Equipment, ItemInstance } from '../items/types';
-import { WEAPON_STAT_BONUS, getEquippedWeapon } from './weapon';
-
-function itemMods(item: ItemInstance, slot: EquipSlot, out: Modifier[]): void {
-  const src = `item:${item.uid}`;
-  for (const m of item.mods) out.push(m.source ? m : { ...m, source: src });
-  if (item.defense) out.push({ stat: 'defense', op: 'flat', value: item.defense, source: src });
-  const base = DB.items.get(item.base);
-  if (base?.block && base.armorClass === 'shield')
-    out.push({ stat: 'blockChance', op: 'flat', value: base.block, source: src });
-  // Gems / glyphs in sockets.
-  const kind = slot === 'mainHand' ? 'weapon' : base?.armorClass === 'shield' ? 'shield' : 'armor';
-  for (const gem of item.socketed) {
-    const g = DB.gems.get(gem.base);
-    if (g) for (const m of g[kind]) out.push({ ...m, source: `gem:${gem.base}` });
-  }
-}
+import { getEquippedWeapon } from './weapon';
+import { itemModifiers, setBonusModifiers } from '../items/helpers';
 
 function equipmentMods(eq: Equipment, out: Modifier[]): void {
-  const setCounts = new Map<string, number>();
-  for (const [slot, item] of Object.entries(eq) as [EquipSlot, ItemInstance | undefined][]) {
+  const worn: ItemInstance[] = [];
+  for (const item of Object.values(eq)) {
     if (!item) continue;
-    itemMods(item, slot, out);
-    if (item.setItemId) {
-      for (const set of DB.sets.values()) {
-        if (set.items.some((s) => s.id === item.setItemId)) {
-          setCounts.set(set.id, (setCounts.get(set.id) ?? 0) + 1);
-          break;
-        }
-      }
-    }
+    worn.push(item);
+    for (const m of itemModifiers(item)) out.push(m);
   }
-  for (const [setId, count] of setCounts) {
-    const set = DB.sets.get(setId);
-    if (!set) continue;
-    for (const [n, mods] of Object.entries(set.bonuses)) {
-      if (Number(n) <= count)
-        for (const m of mods)
-          out.push({ stat: m.stat, op: m.op, value: m.max, param: m.param, source: `set:${setId}` });
-    }
-  }
+  for (const m of setBonusModifiers(worn)) out.push(m);
 }
 
 /** All modifiers on a player (equipment + passives + buffs). */
@@ -92,7 +63,6 @@ export function gatherModifiers(p: PlayerEntity): Modifier[] {
 export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSources {
   const cls = DB.classes.get(p.classId);
   const w = getEquippedWeapon(p);
-  const sb = w?.weaponClass ? WEAPON_STAT_BONUS[w.weaponClass] : { strBonus: 0, dexBonus: 0 };
   return {
     level: p.level,
     base: cls
@@ -110,7 +80,7 @@ export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSou
     modifiers: gatherModifiers(p),
     difficulty,
     weapon: w
-      ? { min: w.min, max: w.max, strBonus: sb.strBonus, dexBonus: sb.dexBonus, speed: w.speed }
+      ? { min: w.min, max: w.max, strBonus: w.strBonus, dexBonus: w.dexBonus, speed: w.speed }
       : undefined,
     growth: cls?.growth,
   };
