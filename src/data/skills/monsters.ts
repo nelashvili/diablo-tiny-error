@@ -1,4 +1,3 @@
-import type { ClassId } from '../../core/types';
 import type { LevelScaled, SkillDef } from '../schema';
 
 /**
@@ -7,7 +6,6 @@ import type { LevelScaled, SkillDef } from '../schema';
  * Damage is mostly "use the monster's own damage range" (weaponDamagePct); monsters scale via
  * their stats, not skill levels.
  */
-const NO_CLASS = '' as ClassId;
 
 interface Spec {
   id: string;
@@ -28,7 +26,6 @@ interface Spec {
 
 function mk(p: Spec): SkillDef {
   return {
-    classId: NO_CLASS,
     tree: 'monster',
     name: `skill.${p.id}`,
     description: `skill.${p.id}.desc`,

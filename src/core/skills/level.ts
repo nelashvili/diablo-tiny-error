@@ -14,7 +14,13 @@ export function levelFromParts(def: SkillDef, hard: number, bonus: DerivedStats[
   if (isBasicSkill(def)) return Math.max(1, hard);
   const single = bonus.bySkill[def.id] ?? 0;
   if (hard > 0) {
-    return hard + bonus.all + (bonus.byClass[def.classId] ?? 0) + (bonus.byTree[def.tree] ?? 0) + single;
+    return (
+      hard +
+      bonus.all +
+      (def.classId ? (bonus.byClass[def.classId] ?? 0) : 0) +
+      (bonus.byTree[def.tree] ?? 0) +
+      single
+    );
   }
   return Math.max(0, single);
 }
