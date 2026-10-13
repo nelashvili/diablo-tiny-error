@@ -1,0 +1,19 @@
+export default {
+  'skill.attack': 'Attack',
+  'skill.attack.desc': 'Strike with your weapon. Uses a blastur, javelin or disc if you wield one.',
+  'skill.throw': 'Throw',
+  'skill.throw.desc': 'Hurl your javelin or throwing disc.',
+  'skill.kick': 'Kick',
+  'skill.kick.desc': 'A quick kick. Handy when you have no weapon.',
+
+  'toast.notEnoughMana': 'Not enough energy!',
+  'toast.wrongWeapon': 'You need a different weapon for that.',
+  'toast.inventoryFull': 'Your inventory is full.',
+  'toast.cannotEquip': "You can't equip that there.",
+  'toast.requirementsNotMet': "You aren't strong enough to use that yet.",
+  'toast.twoHanded': 'You need both hands for that weapon.',
+  'toast.notAvailable': "That isn't available right now.",
+  'toast.skillNotAvailable': "You haven't learned that skill.",
+  'toast.cannotAllocate': "You can't spend a point there.",
+  'toast.noRespec': 'No free respec left.',
+} satisfies Record<string, string>;
