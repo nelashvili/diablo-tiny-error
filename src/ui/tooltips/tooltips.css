@@ -1,0 +1,215 @@
+.dte-tip-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  pointer-events: none;
+  max-width: calc(100vw - 16px);
+  font-family: var(--font-ui);
+  font-size: calc(15px * var(--text-scale, 1));
+  color: var(--ui-text);
+}
+.dte-tip-layer.pinned {
+  pointer-events: auto;
+}
+.dte-tip-compare {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.dte-tip {
+  min-width: 200px;
+  max-width: min(340px, calc(100vw - 24px));
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(10, 12, 22, 0.97), rgba(18, 20, 34, 0.97));
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    inset 0 0 24px rgba(201, 168, 92, 0.06);
+  text-align: center;
+  line-height: 1.35;
+}
+.dte-tip-item.q-magic {
+  border-color: color-mix(in srgb, var(--q-magic) 60%, transparent);
+}
+.dte-tip-item.q-rare {
+  border-color: color-mix(in srgb, var(--q-rare) 55%, transparent);
+}
+.dte-tip-item.q-set {
+  border-color: color-mix(in srgb, var(--q-set) 55%, transparent);
+}
+.dte-tip-item.q-unique {
+  border-color: color-mix(in srgb, var(--q-unique) 70%, transparent);
+}
+.dte-tip-header {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ui-text-dim);
+  margin-bottom: 4px;
+}
+.dte-tip-name {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.08em;
+  letter-spacing: 0.02em;
+}
+.q-inferior .dte-tip-name {
+  color: var(--q-inferior);
+}
+.q-normal .dte-tip-name {
+  color: var(--q-normal);
+}
+.q-magic .dte-tip-name {
+  color: var(--q-magic);
+}
+.q-rare .dte-tip-name,
+.q-rare .dte-tip-base {
+  color: var(--q-rare);
+}
+.q-set .dte-tip-name,
+.q-set .dte-tip-base {
+  color: var(--q-set);
+}
+.q-unique .dte-tip-name,
+.q-unique .dte-tip-base {
+  color: var(--q-unique);
+}
+.q-crafted .dte-tip-name,
+.q-crafted .dte-tip-base {
+  color: var(--q-crafted);
+}
+.dte-tip-name.skill {
+  color: var(--ui-border-hi);
+}
+.dte-tip-qmark {
+  font-size: 0.8em;
+  opacity: 0.9;
+}
+.dte-tip-base {
+  color: var(--ui-text-dim);
+}
+.dte-tip-desc {
+  color: var(--ui-text);
+  margin: 6px 0;
+  font-size: 0.93em;
+}
+.dte-tip-lines {
+  margin-top: 6px;
+}
+.dte-tip-line {
+  color: var(--ui-text);
+}
+.dte-tip-line.s-base {
+  color: var(--ui-text);
+}
+.dte-tip-line.s-mod {
+  color: var(--q-magic);
+}
+.dte-tip-line.s-req,
+.dte-tip-line.s-reqOk {
+  color: var(--ui-text-dim);
+}
+.dte-tip-line.s-reqFail {
+  color: #ff5a5a;
+}
+.dte-tip-line.s-set {
+  color: var(--q-set);
+}
+.dte-tip-line.s-flavor {
+  color: var(--q-unique);
+  font-style: italic;
+}
+.dte-tip-line.s-socket {
+  color: #9aa6b8;
+}
+.dte-tip-line.s-better {
+  color: #4fe07a;
+}
+.dte-tip-line.s-worse {
+  color: #ff6b6b;
+}
+.dte-tip-line.s-dim {
+  color: var(--ui-text-dim);
+}
+.dte-tip-sub {
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ui-border-hi);
+  margin: 8px 0 3px;
+}
+.dte-tip-cols {
+  display: flex;
+  gap: 12px;
+  text-align: left;
+}
+.dte-tip-col {
+  flex: 1;
+  min-width: 0;
+}
+.dte-tip-col.next {
+  opacity: 0.85;
+  border-left: 1px solid rgba(201, 168, 92, 0.25);
+  padding-left: 10px;
+}
+.dte-tip-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.92em;
+}
+.dte-tip-kv span {
+  color: var(--ui-text-dim);
+}
+.dte-tip-kv b {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.el-physical {
+  color: var(--dmg-physical);
+}
+.el-plasma {
+  color: var(--dmg-plasma);
+}
+.el-cryo {
+  color: var(--dmg-cryo);
+}
+.el-storm {
+  color: var(--dmg-storm);
+}
+.el-toxin {
+  color: var(--dmg-toxin);
+}
+.el-magic {
+  color: var(--dmg-magic);
+}
+.dte-tip-syn {
+  text-align: left;
+  margin-top: 4px;
+  font-size: 0.92em;
+}
+.dte-tip-footer {
+  margin-top: 8px;
+  color: var(--q-unique);
+  font-weight: 700;
+}
+.dte-tip-footer.bad {
+  color: #ff6b6b;
+}
+.dte-tip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+.dte-tip-actions .dte-btn {
+  flex: 1 1 auto;
+}
+.dte-tip-skill {
+  min-width: min(340px, calc(100vw - 24px));
+  max-width: min(420px, calc(100vw - 24px));
+}
