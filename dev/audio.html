@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audio harness</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0b0d17;
+        color: #e8ecff;
+        margin: 16px;
+      }
+      h2 {
+        margin: 16px 0 6px;
+        font-size: 14px;
+        color: #8fa0ff;
+      }
+      button {
+        margin: 3px;
+        padding: 8px 12px;
+        font-size: 14px;
+        background: #1c2142;
+        color: inherit;
+        border: 1px solid #3a4280;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2b3366;
+      }
+      label {
+        display: inline-block;
+        margin-right: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Audio harness</h1>
+    <p>Click anything first to unlock audio (browser autoplay policy).</p>
+    <div id="vol"></div>
+    <div id="app"></div>
+    <script type="module" src="./audio.ts"></script>
+  </body>
+</html>

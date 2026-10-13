@@ -1,0 +1,97 @@
+import { describe, expect, it } from 'vitest';
+import {
+  busGains,
+  clamp01,
+  distanceGain,
+  finalGain,
+  panFor,
+  positional,
+  SfxThrottle,
+  VoiceLimiter,
+} from './mixer';
+
+describe('volume buses', () => {
+  it('clamps and sanitizes', () => {
+    expect(clamp01(NaN)).toBe(0);
+    expect(clamp01(5)).toBe(1);
+    expect(clamp01(-1)).toBe(0);
+  });
+  it('applies a squared curve', () => {
+    expect(busGains({ master: 0.5, music: 1, sfx: 0 })).toEqual({ master: 0.25, music: 1, sfx: 0 });
+  });
+  it('multiplies base, bus and master', () => {
+    const v = { master: 0.5, music: 0.5, sfx: 1 };
+    expect(finalGain(1, 'sfx', v)).toBeCloseTo(0.25);
+    expect(finalGain(0.5, 'music', v)).toBeCloseTo(0.5 * 0.25 * 0.25);
+  });
+});
+
+describe('positional', () => {
+  it('distance gain falls off', () => {
+    expect(distanceGain(0)).toBe(1);
+    expect(distanceGain(100)).toBe(0);
+    expect(distanceGain(10)).toBeLessThan(distanceGain(5));
+  });
+  it('pans by isometric screen x', () => {
+    expect(panFor(10, 0)).toBeGreaterThan(0);
+    expect(panFor(0, 10)).toBeLessThan(0);
+    expect(panFor(5, 5)).toBe(0);
+    expect(panFor(100, 0)).toBe(1);
+  });
+  it('combines', () => {
+    const p = positional({ x: 0, y: 0 }, { x: 8, y: 0 });
+    expect(p.gain).toBeGreaterThan(0);
+    expect(p.gain).toBeLessThan(1);
+    expect(p.pan).toBeGreaterThan(0);
+  });
+});
+
+describe('VoiceLimiter', () => {
+  it('caps per id and releases', () => {
+    const l = new VoiceLimiter(2, 10);
+    const a = l.acquire('x');
+    const b = l.acquire('x');
+    expect(a && b).toBeTruthy();
+    expect(l.acquire('x')).toBe(0);
+    expect(l.acquire('y')).toBeGreaterThan(0);
+    l.release(a);
+    expect(l.count('x')).toBe(1);
+    expect(l.acquire('x')).toBeGreaterThan(0);
+  });
+  it('caps globally and honors overrides', () => {
+    const l = new VoiceLimiter(5, 3, { solo: 1 });
+    expect(l.acquire('solo')).toBeGreaterThan(0);
+    expect(l.acquire('solo')).toBe(0);
+    l.acquire('a');
+    l.acquire('b');
+    expect(l.acquire('c')).toBe(0);
+    expect(l.count()).toBe(3);
+  });
+  it('double release is harmless', () => {
+    const l = new VoiceLimiter();
+    const h = l.acquire('x');
+    l.release(h);
+    l.release(h);
+    expect(l.count()).toBe(0);
+  });
+});
+
+describe('SfxThrottle', () => {
+  it('limits per batch', () => {
+    const t = new SfxThrottle(0, 3);
+    t.beginBatch();
+    let n = 0;
+    for (let i = 0; i < 50; i++) if (t.allow('hit', 1)) n++;
+    expect(n).toBe(3);
+    t.beginBatch();
+    expect(t.allow('hit', 1)).toBe(true);
+  });
+  it('enforces cooldown', () => {
+    const t = new SfxThrottle(0.1, 10);
+    t.beginBatch();
+    expect(t.allow('a', 1)).toBe(true);
+    expect(t.allow('a', 1.05)).toBe(false);
+    expect(t.allow('a', 1.2)).toBe(true);
+    expect(t.allow('b', 1.0)).toBe(true);
+  });
+});
