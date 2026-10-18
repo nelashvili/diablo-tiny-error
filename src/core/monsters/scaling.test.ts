@@ -32,7 +32,12 @@ describe('monster level scaling', () => {
   });
 
   it('difficulty multiplies on top and is monotonic', () => {
-    expect(scaledMultipliers(20, 'normal')).toEqual(levelMultipliers(20));
+    const base = levelMultipliers(20);
+    const normal = scaledMultipliers(20, 'normal');
+    for (const k of keys) expect(normal[k]).toBeCloseTo(base[k] * DIFFICULTY_MULT.normal[k], 9);
+    // Normal is softened: monsters never hit harder or more accurately than the raw level table.
+    expect(DIFFICULTY_MULT.normal.damage).toBeLessThanOrEqual(1);
+    expect(DIFFICULTY_MULT.normal.attackRating).toBeLessThanOrEqual(1);
     for (const k of keys) {
       expect(DIFFICULTY_MULT.veteran[k]).toBeGreaterThan(DIFFICULTY_MULT.normal[k]);
       expect(DIFFICULTY_MULT.legend[k]).toBeGreaterThan(DIFFICULTY_MULT.veteran[k]);

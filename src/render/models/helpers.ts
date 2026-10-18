@@ -44,7 +44,14 @@ export type ItemKind =
   | 'litesaber'
   | 'blade'
   | 'blaster'
+  | 'rifle'
   | 'spear'
+  | 'javelin'
+  | 'staff'
+  | 'axe'
+  | 'baton'
+  | 'disc'
+  | 'focus'
   | 'helm'
   | 'armor'
   | 'shield'
@@ -60,9 +67,16 @@ export type ItemKind =
 
 const ITEM_RULES: [RegExp, ItemKind][] = [
   [/(itesaber|ightsaber|lightsabre)/i, 'litesaber'],
-  [/(blast|gun|pistol|rifle|carbine|cannon)/i, 'blaster'],
-  [/(spear|staff|stave|pike|lance|rod|wand)/i, 'spear'],
-  [/(sword|blade|vibro|knife|dagger|axe|mace|club)/i, 'blade'],
+  [/(rifle|carbine|sniper|cannon)/i, 'rifle'],
+  [/(blast|gun|pistol)/i, 'blaster'],
+  [/(staff|stave|rod|wand)/i, 'staff'],
+  [/javelin/i, 'javelin'],
+  [/(spear|pike|lance)/i, 'spear'],
+  [/(axe|hatchet)/i, 'axe'],
+  [/(baton|stick|mace|club)/i, 'baton'],
+  [/(disc|disk)/i, 'disc'],
+  [/focus/i, 'focus'],
+  [/(sword|blade|vibro|knife|dagger)/i, 'blade'],
   [/(helm|hat|hood|cap|mask|crown|circlet)/i, 'helm'],
   [/(shield|buckler|deflector)/i, 'shield'],
   [/(boot|shoe|greave)/i, 'boots'],
@@ -81,6 +95,27 @@ export function classifyItem(name: string): ItemKind {
   for (const [re, kind] of ITEM_RULES) if (re.test(n)) return kind;
   return 'generic';
 }
+
+/**
+ * Model id for a weapon by its class (item names vary too much to classify by name).
+ * Blasters map to catalog entries with real glTF models; the rest classify via ITEM_RULES.
+ */
+export const WEAPON_MODEL_IDS: Record<string, string> = {
+  litesaber: 'item.litesaber',
+  doubleLitesaber: 'item.doubleLitesaber',
+  blasturPistol: 'item.blastur.pistol',
+  blasturRifle: 'item.blastur.rifle',
+  forseStaff: 'item.forseStaff',
+  vibroAxe: 'item.vibroAxe',
+  shockBaton: 'item.shockBaton',
+  vibroPike: 'item.vibroPike',
+  throwingDisc: 'item.throwingDisc',
+  javelin: 'item.javelin',
+  kyburFocus: 'item.kyburFocus',
+};
+
+/** Weapon classes whose basic attack is a shot/throw (render plays the ranged clip). */
+export const RANGED_WEAPON_CLASSES = new Set(['blasturPistol', 'blasturRifle', 'javelin', 'throwingDisc']);
 
 export function isLitesaberId(id: string): boolean {
   return /(itesaber|ightsaber)/i.test(id);

@@ -485,6 +485,48 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.box(), dark, 0.07, 0.16, 0.08, 0, -0.1, -0.02));
       g.add(mk(unit.box(), glow, 0.04, 0.08, 0.04, 0, 0.14, 0.07));
       break;
+    case 'rifle':
+      g.add(mk(unit.box(), main, 0.09, 0.5, 0.13, 0, 0.2, 0));
+      g.add(mk(unit.cylinder(), dark, 0.055, 0.42, 0.055, 0, 0.66, 0));
+      g.add(mk(unit.box(), dark, 0.07, 0.26, 0.1, 0, -0.16, -0.02));
+      g.add(mk(unit.cylinder(), dark, 0.05, 0.18, 0.05, 0, 0.3, 0.1));
+      g.add(mk(unit.box(), glow, 0.04, 0.12, 0.04, 0, 0.22, 0.075));
+      break;
+    case 'staff':
+      g.add(mk(unit.cylinder(), main, 0.045, 1.5, 0.045, 0, 0.35, 0));
+      g.add(mk(unit.cylinder(), metal, 0.07, 0.06, 0.07, 0, 0.0, 0));
+      g.add(mk(unit.cylinder(), metal, 0.08, 0.08, 0.08, 0, 1.08, 0));
+      g.add(mk(unit.gem(), glow, 0.18, 0.26, 0.18, 0, 1.25, 0));
+      break;
+    case 'javelin':
+      g.add(mk(unit.cylinder(), main, 0.035, 1.3, 0.035, 0, 0.25, 0));
+      g.add(mk(unit.cone(), metal, 0.08, 0.26, 0.05, 0, 1.02, 0));
+      g.add(mk(unit.cylinder(), glow, 0.05, 0.08, 0.05, 0, 0.85, 0));
+      break;
+    case 'axe':
+      g.add(mk(unit.cylinder(), dark, 0.045, 0.75, 0.045, 0, 0.22, 0));
+      g.add(mk(unit.box(), metal, 0.3, 0.24, 0.035, 0.13, 0.5, 0));
+      g.add(mk(unit.box(), glow, 0.035, 0.26, 0.04, 0.28, 0.5, 0));
+      break;
+    case 'baton':
+      g.add(mk(unit.cylinder(), dark, 0.06, 0.24, 0.06, 0, -0.02, 0));
+      g.add(mk(unit.cylinder(), metal, 0.045, 0.55, 0.045, 0, 0.38, 0));
+      g.add(mk(unit.torus(), glow, 0.1, 0.1, 0.3, 0, 0.45, 0));
+      g.add(mk(unit.sphere(), glow, 0.1, 0.1, 0.1, 0, 0.68, 0));
+      break;
+    case 'disc': {
+      // Ring + glowing core in the XY plane, held at the rim.
+      g.add(mk(unit.torus(), metal, 0.5, 0.5, 1.6, 0, 0.2, 0));
+      const core = mk(unit.cylinder(), glow, 0.36, 0.03, 0.36, 0, 0.2, 0);
+      core.rotation.x = Math.PI / 2;
+      g.add(core);
+      break;
+    }
+    case 'focus':
+      g.add(mk(unit.cylinder(), metal, 0.06, 0.18, 0.06, 0, 0.0, 0));
+      g.add(mk(unit.torus(), metal, 0.2, 0.2, 0.5, 0, 0.18, 0));
+      g.add(mk(unit.gem(), glow, 0.2, 0.3, 0.2, 0, 0.26, 0));
+      break;
     case 'helm':
       g.add(mk(unit.sphere(), main, 0.36, 0.36, 0.36, 0, 0, 0));
       g.add(mk(unit.box(), glow, 0.28, 0.07, 0.05, 0, 0.0, 0.16));

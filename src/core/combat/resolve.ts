@@ -25,6 +25,8 @@ import {
 import type { AttackResult, DamagePacket, ResolveAttack, StatusEffectSpec } from './types';
 
 const CHILL_SLOW_PCT = 50;
+/** Player-side attacks never drop below this hit chance (D2's ~50% at equal level felt like whiffing). */
+export const PLAYER_MIN_HIT_PCT = 80;
 const KNOCKBACK_SECONDS = 0.3;
 
 const miss = (outcome: AttackResult['outcome']): AttackResult => ({
@@ -44,7 +46,8 @@ export const resolveAttack: ResolveAttack = (attacker, defender, spec, rng) => {
   // 1. To-hit (melee/missile only).
   if (physicalDelivery && !spec.ignoreDefense) {
     const ar = attacker.stats.attackRating * (1 + (spec.attackRatingPct ?? 0) / 100);
-    const chance = hitChance(ar, defender.stats.defense, attacker.level, defender.level);
+    let chance = hitChance(ar, defender.stats.defense, attacker.level, defender.level);
+    if (attacker.isPlayerSide) chance = Math.max(chance, PLAYER_MIN_HIT_PCT);
     if (!rng.percent(chance)) return miss('miss');
   }
 

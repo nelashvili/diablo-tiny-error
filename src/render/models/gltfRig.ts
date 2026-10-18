@@ -48,7 +48,13 @@ export class GltfRig implements Rig {
     this.procedural = byClip.size === 0;
 
     const h = asset.height * entry.scale;
-    const find = (n?: string) => (n ? (this.model.getObjectByName(n) ?? null) : null);
+    // GLTFLoader sanitizes node names ('handslot.r' -> 'handslotr'), so try both spellings.
+    const find = (n?: string) =>
+      n
+        ? (this.model.getObjectByName(n) ??
+          this.model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(n)) ??
+          null)
+        : null;
     const mkSock = (parent: THREE.Object3D, y: number) => {
       const s = new THREE.Object3D();
       s.position.y = y;

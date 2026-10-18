@@ -11,7 +11,19 @@ import type { LoadedAsset } from './loader';
 export interface VisualEnv {
   entryFor(id: string): ModelEntry | undefined;
   assetFor(id: string): LoadedAsset | null;
+  /** Start loading a model's glTF; resolves null when it has none or it failed. */
+  loadAsset?(id: string): Promise<LoadedAsset | null>;
 }
+
+/** Held weapons read better a size up on the chunky heroes. */
+export const HELD_WEAPON_SCALE = 1.35;
+/**
+ * Ready stance on glTF rigs (Euler XYZ in the hand-slot frame): the idle clips let the hand hang,
+ * which pointed blades at the floor; this raises them forward and up.
+ */
+export const HELD_WEAPON_POSE = new THREE.Euler(-0.4, 0, 1.0);
+/** Guns: barrel level and pointing where the hero faces (the hand slot's +Y is already forward). */
+export const AIMED_WEAPON_POSE = new THREE.Euler(0, 0, 0);
 
 interface AttachState {
   modelId: string;
@@ -66,10 +78,11 @@ export class Visual implements EntityVisual {
 
   private mount(slot: AttachSlot, att: Attachment): void {
     const sock = this.rig.socket(slot);
-    att.object.rotation.x =
-      att.tilt !== null && (slot === 'mainHand' || slot === 'offHand') && this.rig.handTilt !== 0
-        ? att.tilt
-        : 0;
+    const held = att.tilt !== null && (slot === 'mainHand' || slot === 'offHand');
+    if (!held) att.object.rotation.set(0, 0, 0);
+    else if (this.rig.handTilt !== 0) att.object.rotation.set(att.tilt ?? 0, 0, 0);
+    else att.object.rotation.copy(att.grip === 'aimed' ? AIMED_WEAPON_POSE : HELD_WEAPON_POSE);
+    att.object.scale.setScalar(held ? HELD_WEAPON_SCALE : 1);
     sock.add(att.object);
   }
 
@@ -93,9 +106,21 @@ export class Visual implements EntityVisual {
     }
     if (modelId === null) return;
     const entry = this.env.entryFor(modelId);
-    const att = createAttachment(slot, modelId, accent, entry, this.env.assetFor(modelId));
-    this.attached.set(slot, { modelId, accent, att });
+    const asset = this.env.assetFor(modelId);
+    const att = createAttachment(slot, modelId, accent, entry, asset);
+    const state = { modelId, accent, att };
+    this.attached.set(slot, state);
     this.mount(slot, att);
+    // Show the procedural shape now; hot-swap to the glTF item model once it loads.
+    if (!asset && entry?.url && this.env.loadAsset) {
+      void this.env.loadAsset(modelId).then((loaded) => {
+        if (!loaded || this.disposed || this.attached.get(slot) !== state) return;
+        this.rig.socket(slot).remove(att.object);
+        const next = createAttachment(slot, modelId, accent, entry, loaded);
+        this.attached.set(slot, { modelId, accent, att: next });
+        this.mount(slot, next);
+      });
+    }
   }
 
   setHighlight(on: boolean, color = 0xffffff): void {

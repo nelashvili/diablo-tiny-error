@@ -3,7 +3,7 @@ import { Rng } from '../rng';
 import { computeStats } from '../stats/compute';
 import type { Modifier, StatId } from '../stats/types';
 import { crushingBlowDamage, leechMultiplier, reducePhysical, rollRange } from './damage';
-import { resolveAttack } from './resolve';
+import { PLAYER_MIN_HIT_PCT, resolveAttack } from './resolve';
 import type { AttackSpec, CombatantView } from './types';
 
 const flat = (stat: StatId, value: number): Modifier => ({ stat, value, op: 'flat' });
@@ -51,6 +51,15 @@ describe('resolveAttack', () => {
     for (let i = 0; i < 100; i++) {
       expect(resolveAttack(a, d, melee, rng).outcome).toBe('hit');
     }
+  });
+  it('player-side attacks hit at least PLAYER_MIN_HIT_PCT of the time', () => {
+    const a = fighter([], { isPlayerSide: true }, { attackRating: 1 });
+    const d = fighter([], {}, { defense: 100000 });
+    const rng = new Rng(5);
+    let hits = 0;
+    const n = 4000;
+    for (let i = 0; i < n; i++) if (resolveAttack(a, d, meleeRoll, rng).outcome === 'hit') hits++;
+    expect((hits / n) * 100).toBeCloseTo(PLAYER_MIN_HIT_PCT, -1);
   });
   it('hit rate near formula', () => {
     const a = fighter([], {}, { attackRating: 1000 });

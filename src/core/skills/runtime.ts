@@ -35,7 +35,8 @@ export type SkillBlockReason =
 
 const INF = Number.POSITIVE_INFINITY;
 export const DEFAULT_CAST_SEC = 0.6;
-export const DEFAULT_MONSTER_ATTACK_SEC = 1.0;
+/** D2 melee monsters swing roughly every 1.3-1.6s; faster felt relentless at low level. */
+export const DEFAULT_MONSTER_ATTACK_SEC = 1.4;
 export const MIN_ACTION_SEC = 0.15;
 
 interface ActionExtra {

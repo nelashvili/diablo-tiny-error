@@ -46,6 +46,10 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
   const env: VisualEnv = {
     entryFor: (id) => lookup(id),
     assetFor: (id) => loader.peek(lookup(id)?.url ?? null),
+    loadAsset: (id) => {
+      const url = lookup(id)?.url ?? null;
+      return url && !loader.hasFailed(url) ? loader.load(url) : Promise.resolve(null);
+    },
   };
 
   const buildRig = (id: string, entry: ModelEntry): Rig => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  WEAPON_MODEL_IDS,
   classifyItem,
   classifyModelId,
   computePose,
@@ -38,6 +39,27 @@ describe('items', () => {
     expect(classifyItem('item.battleHelm')).toBe('helm');
     expect(classifyItem('item.stimPack')).toBe('potion');
     expect(classifyItem('item.mystery')).toBe('generic');
+  });
+  it('gives every weapon class a model id that classifies as a held weapon', () => {
+    const expected: Record<string, string> = {
+      litesaber: 'litesaber',
+      doubleLitesaber: 'litesaber',
+      blasturPistol: 'blaster',
+      blasturRifle: 'rifle',
+      forseStaff: 'staff',
+      vibroAxe: 'axe',
+      shockBaton: 'baton',
+      vibroPike: 'spear',
+      throwingDisc: 'disc',
+      javelin: 'javelin',
+      kyburFocus: 'focus',
+    };
+    for (const wc of Object.keys(expected)) {
+      const id = WEAPON_MODEL_IDS[wc];
+      expect(id, wc).toBeDefined();
+      const name = classifyModelId(id as string).name;
+      expect(classifyItem(name), wc).toBe(expected[wc]);
+    }
   });
   it('detects litesabers', () => {
     expect(isLitesaberId('item.greenLitesaber')).toBe(true);

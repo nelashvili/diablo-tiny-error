@@ -122,7 +122,10 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       const e = events[i];
       if (!e) continue;
       if (e.type === 'bossIntro') iso.shake.add(0.55);
-      else if (e.type === 'damage') {
+      else if (e.type === 'attackResult') {
+        if (e.outcome === 'hit') sync.onHit(e.targetId, e.attackerId, false);
+      } else if (e.type === 'damage') {
+        if (e.crit) sync.onHit(e.targetId, e.sourceId, true);
         if (e.targetId === local) {
           const p = view.get(local ?? -1);
           const max = p && 'stats' in p ? p.stats.lifeMax : 0;

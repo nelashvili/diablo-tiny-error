@@ -109,7 +109,7 @@ describe('combat loop', () => {
     const { world, run, player, events } = setup();
     const m = spawnTestMonster(world, { pos: { x: 14.5, y: 10.5 }, life: 30, level: 10 });
     world.commands.push({ type: 'interact', targetId: m.id });
-    run(400);
+    for (let t = 0; t < 400 && m.life > 0; t++) run(1);
     expect(m.life).toBe(0);
     expect(countOf(events, 'death')).toBeGreaterThanOrEqual(1);
     const death = events.find((e) => e.type === 'death' && e.id === m.id);

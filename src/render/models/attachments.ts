@@ -1,7 +1,7 @@
 /** Equipment attachments: procedural litesabers and item shapes (or loaded glTF clones). */
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { classifyItem, classifyModelId, isDoubleSaberId, isLitesaberId } from './helpers';
+import { classifyItem, classifyModelId, isDoubleSaberId, isLitesaberId, type ItemKind } from './helpers';
 import { buildItemShape } from './placeholders';
 import { mk, unit, type AttachSlot } from './rig';
 import { glowMaterial, toonMaterial } from './toon';
@@ -12,8 +12,12 @@ export interface Attachment {
   readonly object: THREE.Object3D;
   /** Rotation about X the socket should apply (0 for short items/shields). */
   readonly tilt: number | null;
+  /** How a held weapon sits in the hand: raised like a sword, or aimed forward like a gun. */
+  readonly grip?: 'raised' | 'aimed';
   update(time: number): void;
 }
+
+const AIMED_KINDS = new Set<ItemKind>(['blaster', 'rifle']);
 
 const BLADE_LEN = 0.95;
 const HILT_LEN = 0.26;
@@ -50,9 +54,9 @@ export function buildLitesaber(accent: number | undefined, double: boolean): Att
   const glowMat = glowMaterial(ac, 0.5, true);
   const addBlade = (dir: 1 | -1) => {
     const base = (hiltLen / 2) * dir;
-    const core = new THREE.Mesh(capsule('core', 0.018, BLADE_LEN - 0.036), coreMat);
+    const core = new THREE.Mesh(capsule('core', 0.026, BLADE_LEN - 0.05), coreMat);
     core.position.y = base + (dir * BLADE_LEN) / 2;
-    const glow = new THREE.Mesh(capsule('glow', 0.05, BLADE_LEN - 0.1), glowMat);
+    const glow = new THREE.Mesh(capsule('glow', 0.068, BLADE_LEN - 0.12), glowMat);
     glow.position.copy(core.position);
     core.userData.noTint = true;
     glow.userData.noTint = true;
@@ -72,13 +76,69 @@ export function buildLitesaber(accent: number | undefined, double: boolean): Att
   };
 }
 
+/** Item kinds held in a hand like a weapon (long axis +Y, grip at the origin). */
+const WEAPON_KINDS = new Set<ItemKind>([
+  'litesaber',
+  'blade',
+  'blaster',
+  'rifle',
+  'spear',
+  'javelin',
+  'staff',
+  'axe',
+  'baton',
+  'disc',
+  'focus',
+]);
+
+/** Procedural weapon colors (body, glow) — catalog fallbacks would paint them all crate-gold. */
+const WEAPON_COLORS: Partial<Record<ItemKind, [number, number]>> = {
+  blade: [0x9aa0aa, 0x4fc3ff],
+  blaster: [0x5a5f66, 0xff5a3a],
+  rifle: [0x4a4f56, 0xff5a3a],
+  spear: [0x7a6a50, 0x66ccff],
+  javelin: [0x9a7a50, 0xffd24a],
+  staff: [0x7a5434, 0xb36bff],
+  axe: [0x3a3d44, 0xff8a3d],
+  baton: [0x2a2d36, 0x66ccff],
+  disc: [0x9aa0aa, 0x4fc3ff],
+  focus: [0x9aa0aa, 0xb36bff],
+};
+
+/** Held length (before HELD_WEAPON_SCALE) that loaded gun models are normalized to. */
+const ASSET_WEAPON_LENGTH: Partial<Record<ItemKind, number>> = { blaster: 0.7, rifle: 1.25 };
+/** Fraction of the gun's length, from the back, where the hand grips it. */
+const GRIP_AT = 0.3;
+const box = new THREE.Box3();
+
 /** Clone a loaded item model for attachment (shares geometries/materials). */
-function fromAsset(asset: LoadedAsset, entry: ModelEntry): Attachment {
+function fromAsset(asset: LoadedAsset, entry: ModelEntry, kind: ItemKind): Attachment {
+  const weapon = WEAPON_KINDS.has(kind);
   const obj = SkeletonUtils.clone(asset.scene);
   obj.scale.multiplyScalar(entry.scale);
   const wrap = new THREE.Group();
   wrap.add(obj);
-  return { object: wrap, tilt: null, update() {} };
+  if (weapon) {
+    // Blaster-kit guns point their barrel along +Z; turn it to +Y like the procedural weapons,
+    // size them consistently (the kit mixes scales) and put the grip, not the stock end, in the hand.
+    obj.rotation.x = -Math.PI / 2;
+    wrap.updateMatrixWorld(true);
+    box.setFromObject(obj);
+    const len = box.max.y - box.min.y;
+    const target = ASSET_WEAPON_LENGTH[kind] ?? len;
+    if (len > 1e-3) {
+      const k = target / len;
+      obj.scale.multiplyScalar(k);
+      obj.position.y = -(box.min.y + len * GRIP_AT) * k;
+      obj.position.x = -((box.min.x + box.max.x) / 2) * k;
+    }
+  }
+  return {
+    object: wrap,
+    tilt: weapon ? 1.1 : null,
+    grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised',
+    update() {},
+  };
 }
 
 /**
@@ -93,11 +153,12 @@ export function createAttachment(
   asset: LoadedAsset | null,
 ): Attachment {
   if (isLitesaberId(modelId)) return buildLitesaber(accent ?? entry?.accent, isDoubleSaberId(modelId));
-  if (asset && entry) return fromAsset(asset, entry);
   const info = classifyModelId(modelId);
   const kind = classifyItem(info.kind === 'item' ? info.name : modelId);
-  const color = entry?.placeholder.color ?? 0x8a929c;
-  const shape = buildItemShape(kind, color, accent ?? entry?.accent);
+  if (asset && entry) return fromAsset(asset, entry, kind);
+  const wc = WEAPON_COLORS[kind];
+  const color = wc?.[0] ?? entry?.placeholder.color ?? 0x8a929c;
+  const shape = buildItemShape(kind, color, accent ?? wc?.[1] ?? entry?.accent);
   let tilt: number | null = 1.1;
   if (kind === 'shield') {
     tilt = null;
@@ -122,5 +183,5 @@ export function createAttachment(
   if (slot === 'head' || slot === 'chest') tilt = null;
   const wrap = new THREE.Group();
   wrap.add(shape);
-  return { object: wrap, tilt, update() {} };
+  return { object: wrap, tilt, grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised', update() {} };
 }

@@ -76,9 +76,12 @@ export interface LevelMultipliers {
   xp: number;
 }
 
-/** Extra multipliers by difficulty (D2 Nightmare/Hell columns). */
+/**
+ * Extra multipliers by difficulty (D2 Nightmare/Hell columns). Normal is deliberately softer than D2
+ * (monsters hit less often and less hard) so a fresh hero can clear Act I packs with basic attacks.
+ */
 export const DIFFICULTY_MULT: Record<Difficulty, LevelMultipliers> = {
-  normal: { life: 1, defense: 1, attackRating: 1, damage: 1, xp: 1 },
+  normal: { life: 1, defense: 1, attackRating: 0.7, damage: 0.5, xp: 1 },
   veteran: { life: 1.7, defense: 1.4, attackRating: 1.4, damage: 1.5, xp: 1.6 },
   legend: { life: 2.8, defense: 2, attackRating: 2, damage: 2.2, xp: 2.4 },
 };

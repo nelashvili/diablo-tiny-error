@@ -8,6 +8,13 @@ import { MotionBuffer, type MotionSample } from './interp';
 import { distSqToSegment } from '../camera/isoMath';
 import type { IsoCamera } from '../camera/isoCamera';
 import { rectContains, type GroundRect } from '../culling/viewRect';
+import { RANGED_WEAPON_CLASSES, WEAPON_MODEL_IDS } from '../models/helpers';
+
+/** Model id for an item base: weapons by class (names vary too much), everything else by base id. */
+function itemModelId(baseId: string): string {
+  const wc = DB.items.get(baseId)?.weaponClass;
+  return (wc && WEAPON_MODEL_IDS[wc]) ?? `item.${baseId}`;
+}
 
 const TINT_NONE = -1;
 const TINT_FROZEN = 0x66ccff;
@@ -16,6 +23,13 @@ const TINT_BURN = 0xff7a30;
 const TINT_CHAMPION = 0x7a8cff;
 const TINT_UNIQUE = 0xffd24a;
 
+/** Hit reaction: flash + recoil away from the attacker + squash, decaying over HIT_FX_SEC. */
+const HIT_FX_SEC = 0.18;
+const HIT_FLASH = 0xffffff;
+const HIT_RECOIL = 0.14;
+const HIT_SQUASH = 0.14;
+const CRIT_MUL = 1.8;
+
 export const QUALITY_COLORS: Record<string, number> = {
   magic: 0x6a8cff,
   rare: 0xffe14a,
@@ -23,6 +37,8 @@ export const QUALITY_COLORS: Record<string, number> = {
   unique: 0xffa826,
   crafted: 0xff9040,
 };
+
+const HOVER_COLOR: Partial<Record<EntityKind, number>> = { monster: 0xff4a3a, groundItem: 0xffffff };
 
 const PICK_PRIORITY: Partial<Record<EntityKind, number>> = {
   monster: 4,
@@ -47,12 +63,19 @@ interface Rec {
   equip1: string;
   equip2: string;
   equip3: string;
+  /** Main-hand weapon is ranged (attack mode plays the shoot clip). */
+  ranged: boolean;
   x: number;
   z: number;
   pickR: number;
   pickH: number;
   pickable: boolean;
   alwaysVisible: boolean;
+  /** Seconds left of the hit reaction (0 = none). */
+  hitT: number;
+  hitPower: number;
+  hitDx: number;
+  hitDz: number;
 }
 
 /** Shared tiny resources for beams / glows (created lazily, disposed with the sync). */
@@ -111,6 +134,54 @@ export class EntitySync {
     return true;
   }
 
+  /** Start a hit reaction on `targetId`, pushed away from `sourceId` when known. */
+  onHit(targetId: EntityId, sourceId: EntityId | undefined, crit: boolean): void {
+    const r = this.records.get(targetId);
+    if (!r || !r.visual) return;
+    const s = sourceId !== undefined ? this.records.get(sourceId) : undefined;
+    let dx = 0;
+    let dz = 0;
+    if (s && s !== r) {
+      dx = r.x - s.x;
+      dz = r.z - s.z;
+      const len = Math.hypot(dx, dz);
+      if (len > 1e-4) {
+        dx /= len;
+        dz /= len;
+      } else dx = dz = 0;
+    }
+    const power = crit ? CRIT_MUL : 1;
+    // A crit landing on an ongoing reaction upgrades it; a plain hit restarts it.
+    if (r.hitT > 0 && r.hitPower > power) return;
+    r.hitT = HIT_FX_SEC;
+    r.hitPower = power;
+    r.hitDx = dx;
+    r.hitDz = dz;
+  }
+
+  private applyHitReaction(r: Rec, v: EntityVisual, dt: number): void {
+    const o = v.object;
+    if (r.hitT <= 0) {
+      if (r.hitPower !== 0) {
+        r.hitPower = 0;
+        o.position.set(0, 0, 0);
+        o.scale.set(1, 1, 1);
+        v.setHighlight(r.highlighted, HOVER_COLOR[r.kind] ?? 0xffe070);
+      }
+      return;
+    }
+    r.hitT = Math.max(0, r.hitT - dt);
+    const k = r.hitT / HIT_FX_SEC; // 1 -> 0
+    // Fast out, eased back: peak displacement right at impact.
+    const ease = k * k;
+    const p = r.hitPower;
+    o.position.set(r.hitDx * HIT_RECOIL * p * ease, 0, r.hitDz * HIT_RECOIL * p * ease);
+    const sq = HIT_SQUASH * p * ease;
+    o.scale.set(1 + sq * 0.6, 1 - sq, 1 + sq * 0.6);
+    const flash = k > 0.45;
+    v.setHighlight(flash || r.highlighted, flash ? HIT_FLASH : (HOVER_COLOR[r.kind] ?? 0xffe070));
+  }
+
   clear(): void {
     for (const r of this.records.values()) this.destroy(r);
     this.records.clear();
@@ -137,7 +208,7 @@ export class EntitySync {
       case 'object':
         return `obj.${e.defId}`;
       case 'groundItem':
-        return e.creditz ? 'item.creditz' : `item.${e.item.base}`;
+        return e.creditz ? 'item.creditz' : itemModelId(e.item.base);
       default:
         return null;
     }
@@ -232,12 +303,18 @@ export class EntitySync {
       equip1: '',
       equip2: '',
       equip3: '',
+      ranged: false,
       x: 0,
       z: 0,
-      pickR: Math.max(0.5, e.radius + 0.2),
+      // Monsters get a fatter pick capsule: clicking a moving target should not need precision.
+      pickR: e.kind === 'monster' ? Math.max(0.75, e.radius + 0.4) : Math.max(0.5, e.radius + 0.2),
       pickH,
       pickable,
       alwaysVisible: e.id === localId || e.kind === 'missile' || e.kind === 'area',
+      hitT: 0,
+      hitPower: 0,
+      hitDx: 0,
+      hitDz: 0,
     };
   }
 
@@ -284,7 +361,9 @@ export class EntitySync {
                 : e.mode === 'cast' || e.mode === 'throw'
                   ? e.stats.castSpeedMul
                   : 1;
-            v.setMode(e.mode, e.modeTime, mul);
+            // Basic attacks with blasters/javelins/discs play the shooting clip, not a sword slash.
+            const shoot = e.mode === 'attack' && r.ranged;
+            v.setMode(shoot ? 'throw' : e.mode, e.modeTime, mul);
             r.mode = e.mode;
           }
           r.modeTime = e.modeTime;
@@ -303,8 +382,9 @@ export class EntitySync {
         const hl = this.hovered === e.id;
         if (hl !== r.highlighted) {
           r.highlighted = hl;
-          v.setHighlight(hl, e.kind === 'monster' ? 0xff4a3a : e.kind === 'groundItem' ? 0xffffff : 0xffe070);
+          if (r.hitT <= 0) v.setHighlight(hl, HOVER_COLOR[e.kind] ?? 0xffe070);
         }
+        if (r.hitT > 0 || r.hitPower !== 0) this.applyHitReaction(r, v, dt);
         v.update(dt);
       }
     }
@@ -351,11 +431,13 @@ export class EntitySync {
     const c = eq['chest']?.base ?? '';
     if (m !== r.equip0) {
       r.equip0 = m;
-      v.setAttachment('mainHand', m ? `item.${m}` : null);
+      const wc = m ? DB.items.get(m)?.weaponClass : undefined;
+      r.ranged = !!wc && RANGED_WEAPON_CLASSES.has(wc);
+      v.setAttachment('mainHand', m ? itemModelId(m) : null);
     }
     if (o !== r.equip1) {
       r.equip1 = o;
-      v.setAttachment('offHand', o ? `item.${o}` : null);
+      v.setAttachment('offHand', o ? itemModelId(o) : null);
     }
     if (h !== r.equip2) {
       r.equip2 = h;
@@ -370,7 +452,7 @@ export class EntitySync {
   /** Topmost pickable entity near the pointer. Priority monsters > items > npcs > objects. */
   pick(px: number, py: number, cam: IsoCamera, touch: boolean): EntityId | null {
     const ppu = cam.pxPerUnit;
-    const minPx = touch ? 30 : 16;
+    const minPx = touch ? 30 : 20;
     let bestId: EntityId | null = null;
     let bestPrio = -1;
     let bestD = Infinity;
