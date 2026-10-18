@@ -3,7 +3,8 @@
  * once the quest is done, its giver (or the NPC it is reported to) thanks the hero exactly once.
  */
 import type { QuestDef } from '@/data/schema';
-import type { DefId } from '@/core/types';
+import type { DefId, EntityId } from '@/core/types';
+import type { StoryHud } from '@/ui/types';
 import type { QuestStateMap } from '@/core/quests/engine';
 import { hasName } from '@/data/names';
 
@@ -50,4 +51,32 @@ export function storyTalk(
     if (step && has(key)) return { lines: [key] };
   }
   return null;
+}
+
+/** HUD guidance: the first unfinished quest's current step, and who to turn quests in to. */
+export function storyHud(
+  quests: readonly QuestDef[],
+  state: QuestStateMap,
+  npcs: readonly { id: EntityId; defId: DefId }[],
+): StoryHud {
+  let objective: StoryHud['objective'] = null;
+  for (const q of quests) {
+    const p = state[q.id];
+    if (p?.completed) continue;
+    const step = q.steps.find((s) => s.id === (p?.step ?? q.steps[0]?.id));
+    if (step) objective = { questKey: q.name, stepKey: step.text };
+    break;
+  }
+  const turnIn = npcs
+    .filter(
+      (n) =>
+        !!storyTalk(n.defId, quests, state)?.debrief ||
+        quests.some((q) => {
+          const p = state[q.id];
+          const step = p && !p.completed ? q.steps.find((s) => s.id === p.step) : undefined;
+          return step?.on.event === 'talkTo' && step.on.npc === n.defId;
+        }),
+    )
+    .map((n) => n.id);
+  return { objective, turnIn };
 }

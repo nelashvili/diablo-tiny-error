@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DB } from '@/data/db';
 import { hasName } from '@/data/names';
-import { QUEST_GIVER, storyTalk } from './story';
+import { QUEST_GIVER, storyHud, storyTalk } from './story';
 
 const quests = [...DB.quests.values()].filter((q) => q.act === 1);
 
@@ -38,5 +38,18 @@ describe('story dialogue', () => {
     const state = { a1q3: { step: '', completed: true, rewardClaimed: true } };
     expect(storyTalk('masterYoduh', quests, state)?.debrief).toBe('a1q3');
     expect(storyTalk('gheedo', quests, {})).toBeNull();
+  });
+
+  it('the HUD tracks the first unfinished quest and marks who to report to', () => {
+    const npcs = [
+      { id: 1, defId: 'medicAkarra' },
+      { id: 2, defId: 'captainKasha' },
+    ];
+    expect(storyHud(quests, {}, npcs)).toEqual({
+      objective: { questKey: 'quest.a1q1', stepKey: 'quest.a1q1.enter' },
+      turnIn: [],
+    });
+    const atReport = { a1q1: { step: 'report', completed: false, rewardClaimed: false } };
+    expect(storyHud(quests, atReport, npcs).turnIn).toEqual([1]);
   });
 });

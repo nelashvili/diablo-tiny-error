@@ -3,7 +3,7 @@
  * frame loop. Level travel (exits, waypoints, recall, respawn) is queued and applied between ticks.
  */
 import { DB } from '@/data/db';
-import { storyTalk } from './story';
+import { storyHud, storyTalk } from './story';
 import type { ClassId, DefId, Vec2 } from '@/core/types';
 import { SimWorld, type SimSystem } from '@/core/sim/world';
 import { FixedLoop } from '@/core/sim/loop';
@@ -350,6 +350,11 @@ export class Game {
     if (p) this.audio.setListener?.(p.pos);
     this.audio.handleEvents(events, this.cueCtx);
     this.updateSaberHum(events, realDt);
+    this.storyTimer -= realDt;
+    if (this.storyTimer <= 0) {
+      this.storyTimer = 0.25;
+      this.updateStoryHud();
+    }
     this.ui.api.store.view.value = w;
     this.ui.publish(events);
 
@@ -432,6 +437,23 @@ export class Game {
     }
     await this.afterLevelChange();
     void this.persist();
+  }
+
+  private storyTimer = 0;
+  private storyKey = '';
+
+  /** Refresh the HUD's objective line and turn-in markers (only when they change). */
+  private updateStoryHud(): void {
+    const sig = this.ui.api.store.story;
+    if (!sig) return;
+    const npcs: { id: number; defId: string }[] = [];
+    for (const e of this.world.entities.values())
+      if (e.kind === 'npc' && e.alive) npcs.push({ id: e.id, defId: e.defId });
+    const next = storyHud(this.quests.activeQuests(), this.quests.state, npcs);
+    const key = JSON.stringify(next);
+    if (key === this.storyKey) return;
+    this.storyKey = key;
+    sig.value = next;
   }
 
   /** Master Yoduh only waits in camp once he has been rescued (like Cain). */

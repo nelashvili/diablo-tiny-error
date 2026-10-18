@@ -7,7 +7,7 @@ import type { GameEvent } from '@/core/sim/events';
 import type { WorldView } from '@/core/sim/world';
 import type { Settings } from '@/core/save/types';
 import type { Vec2 } from '@/core/types';
-import type { PanelId, UiApi, UiStore } from '@/ui/types';
+import type { PanelId, StoryHud, UiApi, UiStore } from '@/ui/types';
 
 export interface UiBridge {
   api: UiApi;
@@ -31,6 +31,7 @@ export function createUiBridge(opts: {
     hoveredEntity: signal(null),
     interactNpc: signal(null),
     isTouch: signal(opts.isTouch),
+    story: signal<StoryHud>({ objective: null, turnIn: [] }),
     worldToScreen: opts.worldToScreen,
   };
 

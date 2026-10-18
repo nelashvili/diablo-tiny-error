@@ -26,6 +26,13 @@ export type PanelId =
   | 'dialogue'
   | 'menu';
 
+export interface StoryHud {
+  /** Name key of the tracked quest and text key of its current step. */
+  objective: { questKey: string; stepKey: string } | null;
+  /** NPCs waiting to thank or reward the hero ("?" over their heads). */
+  turnIn: EntityId[];
+}
+
 export interface UiStore {
   /** Bumped every frame the sim ticked; components derive from `view` when it changes. */
   frame: Signal<number>;
@@ -36,6 +43,8 @@ export interface UiStore {
   /** Which NPC/vendor the open panel refers to. */
   interactNpc: Signal<EntityId | null>;
   isTouch: Signal<boolean>;
+  /** Story guidance: the current objective and NPCs with something to say (absent in mocks). */
+  story?: Signal<StoryHud>;
   /** Screen projection supplied by the renderer for overlays. */
   worldToScreen: (p: Vec2, heightTiles?: number) => { x: number; y: number } | null;
 }
