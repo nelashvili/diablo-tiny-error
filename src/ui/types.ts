@@ -28,7 +28,7 @@ export type PanelId =
 
 export interface StoryHud {
   /** Name key of the tracked quest and text key of its current step. */
-  objective: { questKey: string; stepKey: string } | null;
+  objective: { questKey: string; stepKey: string; /** Hostiles left to clear here. */ left?: number } | null;
   /** NPCs waiting to thank or reward the hero ("?" over their heads). */
   turnIn: EntityId[];
   /** Level whose exit leads toward the objective (highlighted on the map, arrow on screen). */

@@ -51,6 +51,7 @@ function useMapCanvas(canvasRef: { current: HTMLCanvasElement | null }, mode: 'm
           monsterRadius: 24,
           markerScale: Math.min(1.2, W / 180),
           guideTo: api.store.story?.peek().guideTo ?? null,
+          revealHostiles: revealLastFew(api),
         });
       } else {
         const scale = fitScale(map.width, map.height, W * 0.9, H * 0.8);
@@ -63,6 +64,7 @@ function useMapCanvas(canvasRef: { current: HTMLCanvasElement | null }, mode: 'm
           monsterRadius: 30,
           markerScale: 1.4,
           guideTo: api.store.story?.peek().guideTo ?? null,
+          revealHostiles: revealLastFew(api),
         });
       }
     };
@@ -133,4 +135,13 @@ export function BigMap(): JSX.Element {
       </div>
     </div>
   );
+}
+
+/** While clearing a level, the last few hostiles show on the map wherever they are. */
+const REVEAL_AT = 5;
+function revealLastFew(api: {
+  store: { story?: { peek(): { objective: { left?: number } | null } } };
+}): boolean {
+  const left = api.store.story?.peek().objective?.left;
+  return left !== undefined && left > 0 && left <= REVEAL_AT;
 }

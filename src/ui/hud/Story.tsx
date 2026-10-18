@@ -11,6 +11,9 @@ export function Objective(): JSX.Element | null {
     <button type="button" class="hud-objective" onClick={() => api.togglePanel('quests')}>
       <span class="hud-objective__quest">{t(obj.questKey)}</span>
       <span class="hud-objective__step">{t(obj.stepKey)}</span>
+      {obj.left !== undefined && obj.left > 0 ? (
+        <span class="hud-objective__left">{t('hud.objective.left', { n: obj.left })}</span>
+      ) : null}
     </button>
   );
 }

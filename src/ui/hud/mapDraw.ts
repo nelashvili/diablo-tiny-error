@@ -179,6 +179,8 @@ export interface DrawOpts {
   markerScale: number;
   /** Exit toward the quest objective (by target level): always shown, gold, pinned to the edge. */
   guideTo?: string | null;
+  /** Show every hostile regardless of distance (the last few left in a level being cleared). */
+  revealHostiles?: boolean;
 }
 
 const GUIDE = '#ffd23f';
@@ -220,7 +222,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: WorldView, pal: Map
     if (player) {
       const dx = e.pos.x - player.pos.x;
       const dy = e.pos.y - player.pos.y;
-      if (e.kind === 'monster' && dx * dx + dy * dy > r2) continue;
+      if (e.kind === 'monster' && !o.revealHostiles && dx * dx + dy * dy > r2) continue;
     }
     const s = applyAffine(m, e.pos);
     if (s.x < -10 || s.y < -10 || s.x > W + 10 || s.y > H + 10) continue;

@@ -74,4 +74,15 @@ describe('story dialogue', () => {
           expect(nextHop('a1.town', target, levels), `${q.id}.${s.id}`).not.toBeNull();
       }
   });
+
+  it('counts the hostiles left while clearing the objective level', () => {
+    const levels = [...DB.levels.values()];
+    const state = { a1q1: { step: 'clear', completed: false, rewardClaimed: false } };
+    expect(
+      storyHud(quests, state, [], { level: 'a1.tuskinDen', levels, hostilesLeft: 3 }).objective?.left,
+    ).toBe(3);
+    expect(
+      storyHud(quests, state, [], { level: 'a1.mossfields', levels, hostilesLeft: 3 }).objective?.left,
+    ).toBeUndefined();
+  });
 });

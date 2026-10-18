@@ -447,14 +447,17 @@ export class Game {
     const sig = this.ui.api.store.story;
     if (!sig) return;
     const npcs: { id: number; defId: string }[] = [];
-    for (const e of this.world.entities.values())
+    let hostilesLeft = 0;
+    for (const e of this.world.entities.values()) {
       if (e.kind === 'npc' && e.alive) npcs.push({ id: e.id, defId: e.defId });
+      if (e.kind === 'monster' && e.alive && e.team === 'monsters' && e.life > 0) hostilesLeft++;
+    }
     const level = this.world.levelId;
     const next = storyHud(
       this.quests.activeQuests(),
       this.quests.state,
       npcs,
-      level ? { level, levels: [...DB.levels.values()] } : undefined,
+      level ? { level, levels: [...DB.levels.values()], hostilesLeft } : undefined,
     );
     const key = JSON.stringify(next);
     if (key === this.storyKey) return;

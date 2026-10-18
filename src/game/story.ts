@@ -58,7 +58,7 @@ export function storyHud(
   quests: readonly QuestDef[],
   state: QuestStateMap,
   npcs: readonly { id: EntityId; defId: DefId }[],
-  where?: { level: DefId; levels: readonly LevelDef[] },
+  where?: { level: DefId; levels: readonly LevelDef[]; hostilesLeft?: number },
 ): StoryHud {
   let objective: StoryHud['objective'] = null;
   let guideTo: DefId | null = null;
@@ -68,6 +68,12 @@ export function storyHud(
     const step = q.steps.find((s) => s.id === (p?.step ?? q.steps[0]?.id));
     if (step) {
       objective = { questKey: q.name, stepKey: step.text };
+      if (
+        step.on.event === 'clearLevel' &&
+        where?.level === step.on.level &&
+        where.hostilesLeft !== undefined
+      )
+        objective.left = where.hostilesLeft;
       const target = where ? stepLevel(step.on, where.levels, q.act) : null;
       if (where && target) guideTo = nextHop(where.level, target, where.levels);
     }
