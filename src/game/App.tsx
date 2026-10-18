@@ -52,7 +52,9 @@ export function App({ game }: { game: Game }): JSX.Element {
   return (
     <>
       {phase === 'playing' && <Hud api={api} />}
-      {phase === 'playing' && game.isTouch && <TouchControls api={api} ctx={game.inputCtx} />}
+      {phase === 'playing' && game.isTouch && (
+        <TouchControls api={api} ctx={game.inputCtx} showBelt={false} />
+      )}
       {phase === 'playing' && (
         <Panels
           api={api}

@@ -29,6 +29,11 @@ export interface TouchControlsProps {
   findAutoTarget?: (range: number, dir: Vec2) => EntityId | null;
   /** Haptic pulses via navigator.vibrate (default true). */
   haptics?: boolean;
+  /**
+   * Stim buttons and belt popover on the wheel (default true). Off when the HUD shows its own
+   * tappable belt, which sits where these would.
+   */
+  showBelt?: boolean;
 }
 
 type PE = JSX.TargetedPointerEvent<HTMLElement>;
@@ -43,7 +48,13 @@ function elementColor(id: string | null): string | undefined {
   return el ? `var(--dmg-${el})` : undefined;
 }
 
-export function TouchControls({ api, ctx, findAutoTarget, haptics }: TouchControlsProps): JSX.Element {
+export function TouchControls({
+  api,
+  ctx,
+  findAutoTarget,
+  haptics,
+  showBelt = true,
+}: TouchControlsProps): JSX.Element {
   const ctrl = useMemo(() => new TouchController(api, ctx, { findAutoTarget, haptics }), [api, ctx]);
   const rootRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(() => ({
@@ -198,6 +209,7 @@ export function TouchControls({ api, ctx, findAutoTarget, haptics }: TouchContro
         onUp={onUp}
         onCancel={onCancel}
         capture={capture}
+        showBelt={showBelt}
       />
 
       <Picker ctrl={ctrl} player={player} ctx={ctx} />
@@ -216,6 +228,7 @@ interface WheelProps {
   onUp: (e: PE) => void;
   onCancel: (e: PE) => void;
   capture: (e: PE) => void;
+  showBelt: boolean;
 }
 
 function Wheel(props: WheelProps): JSX.Element {
@@ -293,27 +306,29 @@ function Wheel(props: WheelProps): JSX.Element {
       {layout.slots
         .slice(0, SLOT_COUNT)
         .map((p, i) => skillBtn(i, sel.hotkeys[i] ?? null, p, layout.skillSize, 'tc-skill'))}
-      {stim('life', layout.stims.life, lifeN)}
-      {stim('mana', layout.stims.mana, manaN)}
-      <div
-        class={`tc-btn tc-belt ${ctrl.beltOpen.value ? 'is-pressed' : ''}`}
-        data-testid="tc-belt"
-        role="button"
-        aria-label={t('input.belt')}
-        style={place(layout.belt, layout.beltSize)}
-        onPointerDown={(e) => {
-          props.capture(e);
-          ctrl.toggleBelt();
-        }}
-      >
-        <span class="tc-belt-icon">
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
-      </div>
-      {ctrl.beltOpen.value && (
+      {props.showBelt && stim('life', layout.stims.life, lifeN)}
+      {props.showBelt && stim('mana', layout.stims.mana, manaN)}
+      {props.showBelt && (
+        <div
+          class={`tc-btn tc-belt ${ctrl.beltOpen.value ? 'is-pressed' : ''}`}
+          data-testid="tc-belt"
+          role="button"
+          aria-label={t('input.belt')}
+          style={place(layout.belt, layout.beltSize)}
+          onPointerDown={(e) => {
+            props.capture(e);
+            ctrl.toggleBelt();
+          }}
+        >
+          <span class="tc-belt-icon">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+        </div>
+      )}
+      {props.showBelt && ctrl.beltOpen.value && (
         <BeltPopover
           ctrl={ctrl}
           player={player}

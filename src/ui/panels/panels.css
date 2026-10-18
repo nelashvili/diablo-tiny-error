@@ -8,6 +8,8 @@
   --bad: #ff5a5a;
   position: absolute;
   inset: 0;
+  /* Above the HUD and the touch controls' world layer, so taps reach open panels on phones. */
+  z-index: 3;
   pointer-events: none;
   font-family: var(--font-ui);
   font-size: calc(15px * var(--text-scale, 1));

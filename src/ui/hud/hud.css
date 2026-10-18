@@ -21,6 +21,8 @@
 
   position: absolute;
   inset: 0;
+  /* Above the touch controls' world layer so HUD buttons get taps; empty areas pass through. */
+  z-index: 2;
   pointer-events: none;
   font-family: var(--font-ui);
   font-size: var(--fs);
