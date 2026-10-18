@@ -15,6 +15,7 @@ export default {
     'Now droyds march across the misty moon of Endoor, Tuskins raid the Mossfields, and the dark Count Dooky gathers his strength beneath the Old Yedi Temple. At a small outpost of the Rebel Allowance, a new hero arrives...',
   'story.crawl.skip': 'Tap or press any key to skip',
   'hud.objective.left': '{n} left',
+  'story.actDone.step': 'The Error has moved on to Tatoonie. Act II is coming soon!',
 
   // Closing crawl after Count Dooky falls (end of Act I).
   'story.act1End.intro': 'Meanwhile, in a galaxy still slightly misspelled...',

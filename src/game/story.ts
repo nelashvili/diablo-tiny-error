@@ -79,6 +79,9 @@ export function storyHud(
     }
     break;
   }
+  // Everything done: a closing line instead of an empty tracker.
+  if (!objective && quests.length && quests.every((q) => state[q.id]?.completed))
+    objective = { questKey: 'quest.actComplete', stepKey: 'story.actDone.step' };
   const turnIn = npcs
     .filter(
       (n) =>

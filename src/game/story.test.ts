@@ -85,4 +85,13 @@ describe('story dialogue', () => {
       storyHud(quests, state, [], { level: 'a1.mossfields', levels, hostilesLeft: 3 }).objective?.left,
     ).toBeUndefined();
   });
+
+  it('shows a closing objective once every quest of the act is done', () => {
+    const done = { step: '', completed: true, rewardClaimed: true, debriefed: true };
+    const state = Object.fromEntries(quests.map((q) => [q.id, done]));
+    expect(storyHud(quests, state, []).objective).toEqual({
+      questKey: 'quest.actComplete',
+      stepKey: 'story.actDone.step',
+    });
+  });
 });
