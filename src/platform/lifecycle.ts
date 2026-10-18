@@ -186,13 +186,22 @@ export async function lockLandscape(): Promise<boolean> {
   }
 }
 
+const CONTROLS = 'button, a, input, select, textarea, label, [role="button"], [role="radio"], [role="tab"]';
+
+function isControl(t: EventTarget | null): boolean {
+  const el = t as { closest?: (sel: string) => unknown } | null;
+  return !!el?.closest?.(CONTROLS);
+}
+
 /** Stop pinch-zoom and double-tap zoom (iOS ignores user-scalable=no). */
 export function preventZoomGestures(target: Document = document): Dispose {
   const prevent = (e: Event): void => e.preventDefault();
   let lastTouchEnd = 0;
   const onTouchEnd = (e: TouchEvent): void => {
     const now = e.timeStamp;
-    if (now - lastTouchEnd < 350) e.preventDefault();
+    // Never on controls: cancelling a touchend also cancels its click, which ate quick second
+    // taps on buttons (Start after picking a class, dialogue options, menus).
+    if (now - lastTouchEnd < 350 && !isControl(e.target)) e.preventDefault();
     lastTouchEnd = now;
   };
   const onTouchMove = (e: TouchEvent): void => {
