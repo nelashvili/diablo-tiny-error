@@ -90,6 +90,11 @@ export class QuestTracker {
     p.statsDirty = true;
   }
 
+  /** Quests of the active acts, in act order. */
+  activeQuests(): QuestDef[] {
+    return [...DB.quests.values()].filter((q) => this.acts.includes(q.act));
+  }
+
   /** Quest log: every quest of an active act shows with its next step (no hidden "???"). */
   view(currentAct: ActId): QuestLogView {
     const byAct = new Map<ActId, QuestDef[]>();

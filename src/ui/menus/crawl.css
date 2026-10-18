@@ -1,0 +1,132 @@
+.crawl {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  background: #000;
+  font-family: var(--font-ui);
+  user-select: none;
+}
+
+/* A few layers of tiny dots for stars. */
+.crawl-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 44% 66%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 78%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 27% 86%, #cfe 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 62% 40%, #fff 50%, transparent 51%);
+  background-size: 260px 260px;
+  opacity: 0.8;
+}
+
+.crawl-intro {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  max-width: min(90vw, 640px);
+  padding: 0 16px;
+  text-align: center;
+  font-size: clamp(16px, 2.6vw, 26px);
+  color: #4fc3ff;
+  opacity: 0;
+  animation: crawl-intro 4s ease-in-out forwards;
+}
+
+@keyframes crawl-intro {
+  0% {
+    opacity: 0;
+  }
+  20%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.crawl-stage {
+  position: absolute;
+  inset: 0;
+  perspective: 360px;
+  display: flex;
+  justify-content: center;
+}
+
+.crawl-text {
+  position: absolute;
+  top: 100%;
+  width: min(86vw, 620px);
+  transform-origin: 50% 100%;
+  transform: rotateX(24deg);
+  text-align: justify;
+  color: #ffd23f;
+  font-size: clamp(18px, 3.2vw, 32px);
+  line-height: 1.45;
+  font-weight: 700;
+  opacity: 0;
+  animation: crawl-roll 30s linear 4s forwards;
+}
+
+.crawl-text p {
+  margin: 0 0 1.1em;
+}
+
+.crawl-episode,
+.crawl-title {
+  text-align: center;
+}
+
+.crawl-title {
+  margin: 0 0 1em;
+  font-family: var(--font-title);
+  font-size: 1.6em;
+  letter-spacing: 3px;
+}
+
+@keyframes crawl-roll {
+  0% {
+    opacity: 1;
+    transform: rotateX(24deg) translateY(0);
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotateX(24deg) translateY(-260vh);
+  }
+}
+
+.crawl-skip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  padding-top: 28px;
+  background: linear-gradient(transparent, #000 60%);
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crawl-text {
+    top: 10%;
+    transform: none;
+    animation: none;
+    opacity: 1;
+  }
+  .crawl-intro {
+    display: none;
+  }
+}

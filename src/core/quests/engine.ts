@@ -22,6 +22,8 @@ export interface QuestProgress {
   rewardClaimed: boolean;
   /** Kill counts for `killMonster` steps with a count. */
   kills?: number;
+  /** The quest giver has thanked the hero (story dialogue shown once). */
+  debriefed?: boolean;
 }
 
 export type QuestStateMap = Record<DefId, QuestProgress>;
@@ -82,6 +84,9 @@ export function applyQuestSignal(
     let hit = -1;
     for (let i = from; i < q.steps.length; i++) {
       const on = q.steps[i]!.on;
+      // Later steps may be done out of order (a boss killed early), but reporting back only
+      // counts once everything before it is done.
+      if (on.event === 'talkTo' && i > from) continue;
       if (!matches(on, signal)) continue;
       if (on.event === 'killMonster' && (on.count ?? 1) > 1) {
         const kills = (p.kills ?? 0) + 1;

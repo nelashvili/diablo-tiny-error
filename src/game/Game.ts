@@ -3,6 +3,7 @@
  * frame loop. Level travel (exits, waypoints, recall, respawn) is queued and applied between ticks.
  */
 import { DB } from '@/data/db';
+import { storyTalk } from './story';
 import type { ClassId, DefId, Vec2 } from '@/core/types';
 import { SimWorld, type SimSystem } from '@/core/sim/world';
 import { FixedLoop } from '@/core/sim/loop';
@@ -433,6 +434,15 @@ export class Game {
     void this.persist();
   }
 
+  /** Master Yoduh only waits in camp once he has been rescued (like Cain). */
+  private placeStoryNpcs(): void {
+    const q = this.quests.state['a1q3'];
+    const rescued = !!q && (q.completed || q.step === 'report');
+    if (rescued) return;
+    for (const e of this.world.entities.values())
+      if (e.kind === 'npc' && e.defId === 'masterYoduh') e.alive = false;
+  }
+
   private async afterLevelChange(): Promise<void> {
     const w = this.world;
     const def = this.levels.current;
@@ -443,6 +453,7 @@ export class Game {
     } finally {
       this.loading = false;
     }
+    if (def.isTown) this.placeStoryNpcs();
     this.audio.playMusic(def.music ?? (def.isTown ? 'music.town' : 'music.wild'));
     w.emit({ type: 'toast', textKey: def.name });
     this.restorePortal();
@@ -587,10 +598,13 @@ export class Game {
       const npc = w.get(e.npcId);
       if (!npc || npc.kind !== 'npc') return;
       const def = DB.npcs.get(npc.defId);
+      const story = storyTalk(npc.defId, this.quests.activeQuests(), this.quests.state);
+      const done = story?.debrief ? this.quests.state[story.debrief] : undefined;
+      if (done) done.debriefed = true;
       this.dialogue = {
         npcId: npc.id,
         nameKey: def?.name ?? npc.defId,
-        lines: def?.dialogue ?? [e.lineKey],
+        lines: story?.lines ?? def?.dialogue ?? [e.lineKey],
         options: isVendor(npc) ? [{ id: 'trade', labelKey: 'ui.dlg.trade' }] : [],
       };
       this.ui.api.store.interactNpc.value = npc.id;

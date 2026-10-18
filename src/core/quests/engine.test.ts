@@ -31,8 +31,14 @@ describe('quest engine', () => {
 
   it('a later step skips the earlier ones (out of order play still counts)', () => {
     const s: QuestStateMap = {};
-    const r = applyQuestSignal(s, [den], { kind: 'talkTo', npc: 'medic' }, [1]);
-    expect(r[0]?.completed).toBe(true);
+    for (let i = 0; i < 3; i++) applyQuestSignal(s, [den], { kind: 'killMonster', monster: 'rat' }, [1]);
+    expect(progressOf(s, den).step).toBe('report');
+  });
+
+  it('reporting back before the work is done does not complete the quest', () => {
+    const s: QuestStateMap = {};
+    expect(applyQuestSignal(s, [den], { kind: 'talkTo', npc: 'medic' }, [1])).toEqual([]);
+    expect(progressOf(s, den).completed).toBe(false);
   });
 
   it('ignores quests of locked acts and unrelated signals', () => {

@@ -6,7 +6,7 @@ import type { JSX } from 'preact';
 import { t } from '@/data/names';
 import { Hud } from '@/ui/hud';
 import { Panels } from '@/ui/panels';
-import { MainMenu, type CharacterSummary } from '@/ui/menus';
+import { MainMenu, OpeningCrawl, type CharacterSummary } from '@/ui/menus';
 import { TouchControls } from '@/ui/touch';
 import type { PanelDataSource } from '@/ui/panels/services';
 import { itemValue } from '@/core/items/helpers';
@@ -19,6 +19,8 @@ export function App({ game }: { game: Game }): JSX.Element {
   const [phase, setPhase] = useState<Phase>('menu');
   const [chars, setChars] = useState<CharacterSummary[]>([]);
   const [lastId, setLastId] = useState<string | undefined>();
+  /** The story crawl plays once over the camp when a new hero starts. */
+  const [crawl, setCrawl] = useState(false);
   const api = game.ui.api;
 
   const refresh = () =>
@@ -70,12 +72,15 @@ export function App({ game }: { game: Game }): JSX.Element {
           settings={api.store.settings.value}
           {...(lastId ? { lastCharacterId: lastId } : {})}
           onPlay={(id) => void run(() => game.loadCharacter(id))}
-          onCreate={({ name, classId }) => void run(() => game.newCharacter(classId, name))}
+          onCreate={({ name, classId }) =>
+            void run(() => game.newCharacter(classId, name)).then(() => setCrawl(true))
+          }
           onDelete={(id) => void game.deleteCharacter(id).then(refresh)}
           onUpdateSettings={(patch) => api.updateSettings(patch)}
           version="0.1"
         />
       )}
+      {phase === 'playing' && crawl && <OpeningCrawl onDone={() => setCrawl(false)} />}
       {phase === 'loading' && <div class="g-loading">{t('game.start.loading')}</div>}
     </>
   );
