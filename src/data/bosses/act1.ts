@@ -33,7 +33,7 @@ export default [
   {
     // Bishibosh
     id: 'bishyBosh',
-    monster: 'scrapDroyd',
+    monster: 'jawwa',
     name: 'boss.bishyBosh',
     mods: ['extraFast', 'cursed'],
     minions: { monster: 'scrapDroyd', count: { min: 4, max: 6 } },
