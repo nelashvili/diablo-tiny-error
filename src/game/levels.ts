@@ -171,10 +171,16 @@ export class LevelManager {
     return w.add(o);
   }
 
+  /** Spawn an NPC at its placement in the current level if it isn't there (story arrivals). */
+  ensureNpc(npcId: DefId): void {
+    const pl = this.world.level?.placements.find((p) => p.kind === 'npc' && p.ref === npcId);
+    if (pl) this.addNpc(npcId, pl.pos, pl.facing ?? 0);
+  }
+
   private addNpc(npcId: DefId, pos: Vec2, facing: number): void {
     const def = DB.npcs.get(npcId);
     if (!def) return;
-    // Master Yoduh only appears in town once rescued (handled by quests later); keep one copy.
+    // Keep one copy (Master Yoduh's camp arrival is handled by Game.placeStoryNpcs).
     const w = this.world;
     for (const e of w.entities.values()) if (e.kind === 'npc' && e.defId === npcId) return;
     const stats = computeStats({

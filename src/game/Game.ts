@@ -469,7 +469,10 @@ export class Game {
   private placeStoryNpcs(): void {
     const q = this.quests.state['a1q3'];
     const rescued = !!q && (q.completed || q.step === 'report');
-    if (rescued) return;
+    if (rescued) {
+      this.levels.ensureNpc('masterYoduh'); // camp is restored from its saved state on return
+      return;
+    }
     for (const e of this.world.entities.values())
       if (e.kind === 'npc' && e.defId === 'masterYoduh') e.alive = false;
   }
