@@ -4,7 +4,10 @@ import type { ActorMode } from '../../core/sim/entities';
 import type { EntityVisual } from '../types';
 import { createAttachment, type Attachment } from './attachments';
 import type { AttachSlot, Rig } from './rig';
-import { variantMaterial } from './toon';
+import { recolorMaterial, variantMaterial } from './toon';
+import { isLitesaberId } from './helpers';
+import { outfitPartOf, outfitRules, type OutfitPart } from './outfit';
+import type { ArmorLookRef } from '../types';
 import type { ModelEntry } from '../types';
 import type { LoadedAsset } from './loader';
 
@@ -34,6 +37,21 @@ export const AIMED_WEAPON_POSE = new THREE.Euler(0, Math.PI / 2, 0);
  */
 const AIM_LOCAL = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
 const AIM_Q = new THREE.Quaternion();
+/**
+ * Sabers while moving (body frame, model faces +Z, right hand at -X): blade trailing low behind and
+ * out to the side, so the run clip's arm swing can't push it through the hood or torso.
+ */
+const TRAIL_MAIN = new THREE.Quaternion().setFromUnitVectors(
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(-0.5, -0.35, -0.8).normalize(),
+);
+const TRAIL_OFF = new THREE.Quaternion().setFromUnitVectors(
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0.5, -0.35, -0.8).normalize(),
+);
+const HELD_Q = new THREE.Quaternion().setFromEuler(HELD_WEAPON_POSE);
+/** Seconds to blend between the ready stance and the running trail. */
+const TRAIL_BLEND_SEC = 0.15;
 const AIM_PARENT = new THREE.Quaternion();
 
 interface AttachState {
@@ -55,6 +73,9 @@ export class Visual implements EntityVisual {
   private time = 0;
   private disposed = false;
   private readonly attached = new Map<AttachSlot, AttachState>();
+  private readonly outfit = new Map<OutfitPart, ArmorLookRef>();
+  /** 0 = ready stance, 1 = saber trailing (walk/run). */
+  private trail = 0;
   private readonly baseMats = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
 
   constructor(
@@ -147,8 +168,30 @@ export class Visual implements EntityVisual {
     this.applyLook();
   }
 
+  setOutfit(part: OutfitPart, look: ArmorLookRef | null): void {
+    if ((this.outfit.get(part)?.key ?? null) === (look?.key ?? null)) return;
+    if (look) this.outfit.set(part, look);
+    else this.outfit.delete(part);
+    this.applyLook();
+  }
+
+  /** The mesh's material with its part's armor palette (from the raw, pre-hero-palette material). */
+  private outfitBase(mesh: THREE.Mesh, base: THREE.Material | THREE.Material[]) {
+    const part = outfitPartOf(mesh.name);
+    const look = part ? this.outfit.get(part) : undefined;
+    const raw = mesh.userData.rawMaterial as THREE.Material | undefined;
+    if (!look || !raw || Array.isArray(base)) return base;
+    const m = recolorMaterial(raw, outfitRules(look, part!), `outfit:${look.key}:${part}`);
+    if (look.glow && (part === 'arms' || part === 'legs')) {
+      const toon = m as THREE.MeshToonMaterial;
+      if (toon.emissive && toon.emissive.getHex() === 0) toon.emissive.setHex(look.glow).multiplyScalar(0.22);
+    }
+    return m;
+  }
+
   private applyLook(): void {
-    for (const [mesh, base] of this.baseMats) {
+    for (const [mesh, rawBase] of this.baseMats) {
+      const base = this.outfitBase(mesh, rawBase);
       mesh.material = Array.isArray(base)
         ? base.map((b) => variantMaterial(b, this.tint, this.hl))
         : variantMaterial(base, this.tint, this.hl);
@@ -158,13 +201,33 @@ export class Visual implements EntityVisual {
   update(dt: number): void {
     this.time += dt;
     this.rig.update(dt);
+    const moving = this.mode === 'walk' || this.mode === 'run';
+    const step = dt / TRAIL_BLEND_SEC;
+    this.trail = Math.min(1, Math.max(0, this.trail + (moving ? step : -step)));
     for (const slot of SLOTS) {
       const a = this.attached.get(slot);
       if (!a) continue;
-      if (a.att.grip === 'aimed' && this.rig.handTilt === 0 && (slot === 'mainHand' || slot === 'offHand'))
-        this.aim(slot, a.att);
+      const hand = (slot === 'mainHand' || slot === 'offHand') && this.rig.handTilt === 0;
+      if (hand && a.att.grip === 'aimed') this.aim(slot, a.att);
+      else if (hand && isLitesaberId(a.modelId)) this.trailSaber(slot, a.att);
       a.att.update(this.time);
     }
+  }
+
+  /** Blend a held saber between its ready pose (hand frame) and the trailing pose (body frame). */
+  private trailSaber(slot: AttachSlot, att: Attachment): void {
+    if (this.trail <= 0) {
+      att.object.quaternion.copy(HELD_Q);
+      return;
+    }
+    const sock = this.rig.socket(slot);
+    sock.updateWorldMatrix(true, false);
+    this.object.getWorldQuaternion(AIM_Q);
+    AIM_Q.multiply(slot === 'offHand' ? TRAIL_OFF : TRAIL_MAIN);
+    sock.getWorldQuaternion(AIM_PARENT).invert();
+    const trailing = AIM_PARENT.multiply(AIM_Q);
+    const t = this.trail * this.trail * (3 - 2 * this.trail);
+    att.object.quaternion.slerpQuaternions(HELD_Q, trailing, t);
   }
 
   /**

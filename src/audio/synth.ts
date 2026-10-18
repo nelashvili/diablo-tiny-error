@@ -165,22 +165,167 @@ function itemDrop(base: number, partials: number[], tau: number, sparkle = false
   };
 }
 
+/**
+ * The classic movie blaster "pew": the original was a struck guy-wire, whose stiffness makes high
+ * frequencies outrun low ones, smearing the strike into a falling "pyew". A chain of first-order
+ * all-pass filters has the same dispersion, so a click through it becomes that chirp. The energy is
+ * then evened out over the sweep and the wire's echoes ("-ew") are added.
+ */
+function guyWireChirp(sr: number, rng: () => number, len: number): Float32Array {
+  const n = Math.floor(sr * len);
+  const a = 0.885 + rng() * 0.03; // dispersion per stage (sweep length)
+  const stages = 170 + Math.floor(rng() * 50);
+  let x = new Float32Array(n);
+  // Strike: a 1 ms bright burst rather than a perfect impulse (less clicky, a bit of grit).
+  const strike = Math.max(2, Math.floor(sr * 0.001));
+  for (let i = 0; i < strike; i++) x[i] = (1 - i / strike) * (0.6 + 0.4 * noise(rng));
+  let y = new Float32Array(n);
+  for (let k = 0; k < stages; k++) {
+    let x1 = 0;
+    let y1 = 0;
+    for (let i = 0; i < n; i++) {
+      const v = -a * x[i]! + x1 + a * y1;
+      y[i] = v;
+      x1 = x[i]!;
+      y1 = v;
+    }
+    [x, y] = [y, x];
+  }
+  // Even out the sweep (the chain front-loads energy into the first milliseconds), then fade.
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    x[i] = x[i]! * Math.min(6, Math.pow(1 + t / 0.004, 0.6)) * ad(t, 0.003, 0.065);
+  }
+  const out = new Float32Array(n);
+  // Wire echoes: the strike reflected back along the wire, quieter and later.
+  const taps: [number, number][] = [
+    [0, 1],
+    [0.038 + rng() * 0.01, 0.32],
+    [0.085 + rng() * 0.015, 0.12],
+  ];
+  for (const [delay, g] of taps) {
+    const off = Math.floor(delay * sr);
+    for (let i = 0; i + off < n; i++) out[i + off] = out[i + off]! + x[i]! * g;
+  }
+  lowpass(out, sr, () => 6500);
+  highpass(out, sr, 320);
+  for (let i = 0; i < n; i++) out[i] = softclip(out[i]! * 1.6);
+  return declick(normalize(out, 0.9), sr);
+}
+
+/**
+ * Movie-style saber tone at phase `ph` (radians of the fundamental): the projector-motor hum plus
+ * the buzzy "TV set" harmonics, with a slightly detuned second voice for the shimmering beat.
+ */
+function saberTone(ph: number, ph2: number): number {
+  let buzz = 0;
+  for (let k = 2; k <= 9; k++) buzz += Math.sin(ph * k) / k;
+  return Math.sin(ph) * 0.55 + buzz * 0.42 + Math.sin(ph2) * 0.3 + Math.sin(ph * 0.5) * 0.18;
+}
+
+/** A saber sound with a pitch curve `p(u)` and loudness `amp(u)` over u = 0..1 (Doppler swings etc). */
+function saberSweep(
+  sr: number,
+  rng: () => number,
+  sec: number,
+  base: number,
+  p: (u: number) => number,
+  amp: (u: number) => number,
+  hiss = 0,
+): Float32Array {
+  const d = buf(sr, sec);
+  let ph = 0;
+  let ph2 = 0;
+  for (let i = 0; i < d.length; i++) {
+    const u = i / d.length;
+    const f = base * p(u);
+    ph += (TAU * f) / sr;
+    ph2 += (TAU * f * 1.012) / sr;
+    d[i] = (softclip(saberTone(ph, ph2) * 1.6) + noise(rng) * hiss) * amp(u);
+  }
+  lowpass(d, sr, () => 5200);
+  return declick(normalize(d, 0.85), sr);
+}
+
 export const RECIPES: Record<string, SynthRecipe> = {
+  /** Saber swing "vwoom": the hum Doppler-bends up as the blade passes, then falls away. */
+  saberVwoom: {
+    pitchVar: 0.07,
+    gain: 0.6,
+    render(sr, rng) {
+      const peak = 1.45 + rng() * 0.25;
+      return saberSweep(
+        sr,
+        rng,
+        0.5,
+        92,
+        (u) => 0.9 + (peak - 0.9) * Math.sin(Math.PI * Math.min(1, u * 1.1)) - 0.2 * u,
+        (u) => Math.pow(Math.sin(Math.PI * u), 1.4) * (0.6 + 0.4 * Math.sin(Math.PI * u)),
+        0.06,
+      );
+    },
+  },
+  /** Saber hitting something: a high buzz burst with crackling sparks ("kssshh"). */
+  saberHit: {
+    pitchVar: 0.08,
+    gain: 0.6,
+    render(sr, rng) {
+      const d = saberSweep(
+        sr,
+        rng,
+        0.32,
+        170,
+        (u) => 1.15 - 0.45 * u,
+        (u) => ad(u * 0.32, 0.004, 0.09),
+        0.35,
+      );
+      // Sparse spark crackles over the burst.
+      for (let k = 0; k < 26; k++) {
+        const at = Math.floor(rng() * rng() * d.length * 0.8);
+        const len = Math.floor(sr * (0.001 + rng() * 0.003));
+        const g = 0.6 * (1 - at / d.length);
+        for (let i = 0; i < len && at + i < d.length; i++) add(d, at + i, noise(rng) * g * (1 - i / len));
+      }
+      return declick(normalize(d, 0.85), sr);
+    },
+  },
+  /** Ignition "snap-hiss": a crack, then the hum spins up from low to full pitch. */
+  saberIgnite: {
+    pitchVar: 0.03,
+    gain: 0.55,
+    render(sr, rng) {
+      const d = saberSweep(
+        sr,
+        rng,
+        0.7,
+        92,
+        (u) => 0.35 + 0.65 * Math.min(1, u / 0.35) + 0.12 * Math.sin(Math.PI * Math.min(1, u / 0.35)),
+        (u) => Math.min(1, u / 0.06) * (u < 0.6 ? 1 : 1 - (u - 0.6) / 0.4),
+        0.1,
+      );
+      const snap = Math.floor(sr * 0.03);
+      for (let i = 0; i < snap; i++) add(d, i, noise(rng) * 0.9 * decay(i / sr, 0.008));
+      return declick(normalize(d, 0.85), sr);
+    },
+  },
+  /** Classic movie-style blaster shot (see guyWireChirp). */
+  blasturClassic: {
+    pitchVar: 0.07,
+    gain: 0.6,
+    render(sr, rng) {
+      return guyWireChirp(sr, rng, 0.26);
+    },
+  },
   saberHum: {
     loop: true,
     gain: 0.35,
     render(sr) {
       // 1 second, integer-Hz components → seamless loop. Pitch is shifted via playbackRate.
       const d = buf(sr, 1);
+      // The movie hum: motor fundamental (92 Hz) + buzzy harmonics + a 93 Hz voice beating at 1 Hz.
       for (let i = 0; i < d.length; i++) {
         const t = i / sr;
-        const wob = 1.2 * Math.sin(TAU * 3 * t);
-        const v =
-          Math.sin(TAU * 110 * t + wob) * 0.55 +
-          Math.sin(TAU * 220 * t + wob * 0.5) * 0.3 +
-          Math.sin(TAU * 331 * t) * 0.12 +
-          Math.sin(TAU * 55 * t) * 0.25;
-        d[i] = softclip(v * 1.4) * (0.85 + 0.15 * Math.sin(TAU * 7 * t));
+        d[i] = softclip(saberTone(TAU * 92 * t, TAU * 93 * t) * 1.5) * (0.9 + 0.1 * Math.sin(TAU * 6 * t));
       }
       return normalize(d, 0.8);
     },

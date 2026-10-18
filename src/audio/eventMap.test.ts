@@ -70,7 +70,7 @@ describe('skill sound guess', () => {
     expect(elementForSkill('toxinCloud')).toBe('toxin');
     expect(elementForSkill('plasmaBurst')).toBe('plasma');
     expect(elementForSkill('mystery')).toBe('magic');
-    expect(soundForSkill('blasturShot')).toBe('blastur');
+    expect(soundForSkill('blasturShot')).toBe('blasturClassic');
   });
 });
 
@@ -90,14 +90,8 @@ describe('planCues', () => {
 describe('basic attack sounds', () => {
   const cast = { type: 'skillCast', casterId: 7, skillId: 'attack' } as const;
   it('follow the weapon the caster wields', () => {
-    expect(cuesForEvent(cast, { basicAttackSound: () => 'blastur' })[0]?.ids).toEqual([
-      'sfx.blasturShot',
-      'blastur',
-    ]);
-    expect(cuesForEvent(cast, { basicAttackSound: () => 'saber' })[0]?.ids).toEqual([
-      'sfx.saberSwing',
-      'saberSwing',
-    ]);
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'blastur' })[0]?.ids).toEqual(['blasturClassic']);
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'saber' })[0]?.ids).toEqual(['saberVwoom']);
     expect(cuesForEvent(cast, { basicAttackSound: () => 'swing' })[0]?.rate).toBeLessThan(1);
   });
   it('stay silent without a weapon sound instead of playing a spell chime', () => {
@@ -115,5 +109,58 @@ describe('basic attack sounds', () => {
       pos: { x: 0, y: 0 },
     } as never);
     expect(hit[0]?.ids).toEqual(['hit.physical', 'hit']);
+  });
+});
+
+describe('lightsaber sounds', () => {
+  const hit = (sourceId: number) =>
+    ({
+      type: 'damage',
+      targetId: 1,
+      sourceId,
+      amount: 5,
+      dtype: 'physical',
+      crit: false,
+      pos: { x: 0, y: 0 },
+    }) as const;
+  it('saber hits sizzle instead of thumping', () => {
+    expect(cuesForEvent(hit(7), { hitsWithSaber: (id) => id === 7 })[0]?.ids).toEqual(['saberHit']);
+    expect(cuesForEvent(hit(8), { hitsWithSaber: (id) => id === 7 })[0]?.ids).toEqual([
+      'hit.physical',
+      'hit',
+    ]);
+  });
+  it('saber recipes exist', () => {
+    for (const id of ['saberHum', 'saberVwoom', 'saberHit', 'saberIgnite', 'blasturClassic'])
+      expect(PROCEDURAL_IDS).toContain(id);
+  });
+});
+
+describe('enemy attack sounds', () => {
+  const cast = (casterId: number, skillId: string): GameEvent =>
+    ({ type: 'skillCast', casterId, skillId, targetPos: { x: 0, y: 0 } }) as GameEvent;
+  const ctx = {
+    hostileAttackSound: (id: number, skillId: string) =>
+      id >= 100 ? (skillId === 'm_claw' ? null : ('blastur' as const)) : undefined,
+  };
+
+  it('enemy melee is silent; the impact covers it', () => {
+    expect(cuesForEvent(cast(100, 'm_claw'), ctx)).toEqual([]);
+  });
+
+  it('enemy shots are quieter and pitched up', () => {
+    const [c] = cuesForEvent(cast(100, 'm_blastur'), ctx);
+    expect(c?.ids.at(-1)).toBe('blasturClassic');
+    expect(c?.volume).toBeLessThan(0.5);
+    expect(c?.rate).toBeGreaterThan(1);
+  });
+
+  it('caps enemy attacks per frame across every sound', () => {
+    const evs = [1, 2, 3, 4, 5].map((i) => cast(100 + i, 'm_blastur'));
+    expect(planCues(evs, 4, ctx)).toHaveLength(2);
+  });
+
+  it('heroes are unaffected', () => {
+    expect(cuesForEvent(cast(1, 'attack'), { ...ctx, basicAttackSound: () => 'blastur' })[0]?.volume).toBe(0.8);
   });
 });

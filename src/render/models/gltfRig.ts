@@ -32,6 +32,7 @@ export class GltfRig implements Rig {
       if (hidden.has(THREE.PropertyBinding.sanitizeNodeName(o.name))) o.visible = false;
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
+      mesh.userData.rawMaterial = mesh.material; // pre-palette material, for armor outfits
       if (entry.recolor?.length && !Array.isArray(mesh.material))
         mesh.material = recolorMaterial(mesh.material, entry.recolor, entry.id);
       this.bodyMeshes.push(mesh);

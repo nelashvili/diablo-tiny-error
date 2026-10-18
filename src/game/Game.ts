@@ -7,6 +7,7 @@ import type { ClassId, DefId, Vec2 } from '@/core/types';
 import { SimWorld, type SimSystem } from '@/core/sim/world';
 import { FixedLoop } from '@/core/sim/loop';
 import type { Command } from '@/core/sim/commands';
+import type { GameEvent } from '@/core/sim/events';
 import type { PlayerEntity } from '@/core/sim/entities';
 import { CommandHandlers, deathHooks, revivePlayer, createCoreSystems } from '@/core/sim/systems';
 import { createAiSystem } from '@/core/ai';
@@ -17,7 +18,7 @@ import { playerToSave, saveToPlayerInit, newCharacterSave, defaultSettings } fro
 import type { CharacterSave, Settings } from '@/core/save/types';
 import { createRenderer, type RenderController } from '@/render/renderer';
 import { createItemIcons, type ItemIconSource } from '@/render/icons/itemIcons';
-import { createAudioSystem, type FullAudioSystem } from '@/audio';
+import { createAudioSystem, type FullAudioSystem, type LoopHandle } from '@/audio';
 import { AUDIO_CATALOG } from '@/render/assets/audio';
 import { elementForSkill, type BasicAttackSound, type CueContext } from '@/audio/eventMap';
 import { basicMissileFor } from '@/core/skills/behaviors';
@@ -126,7 +127,8 @@ export class Game {
       isOverUi: (x, y) => {
         const r = this.canvas.getBoundingClientRect();
         const el = document.elementFromPoint(r.left + x, r.top + y);
-        return !!el && el !== this.canvas;
+        // The touch controls' world layer covers the canvas and stands in for it.
+        return !!el && el !== this.canvas && !el.classList.contains('tc-world');
       },
     };
     this.inputCtx = ctx;
@@ -145,7 +147,32 @@ export class Game {
 
   inputCtx!: InputContext;
   readonly quests: QuestTracker;
-  private readonly cueCtx: CueContext = { basicAttackSound: (id) => basicAttackSound(this.world, id) };
+  private saberHum: LoopHandle | null = null;
+  /** 1 right after the hero swings, decaying to 0 (bends the hum's pitch up). */
+  private saberSwing = 0;
+
+  /** Lit saber in hand: ignite + hum loop; swings bend the hum; put away = stop. */
+  private updateSaberHum(events: readonly GameEvent[], dt: number): void {
+    const p = this.player;
+    const lit = !this.loading && !!p && p.life > 0 && wieldsSaber(this.world, p.id);
+    if (lit && !this.saberHum) {
+      this.saberHum = this.audio.startLoop('saberHum', { volume: 0.2 });
+      this.audio.playSfx('saberIgnite', { volume: 0.7 });
+    } else if (!lit && this.saberHum) {
+      this.saberHum.stop();
+      this.saberHum = null;
+    }
+    if (!this.saberHum || !p) return;
+    for (const e of events) if (e.type === 'skillCast' && e.casterId === p.id) this.saberSwing = 1;
+    this.saberSwing = Math.max(0, this.saberSwing - dt / 0.35);
+    this.saberHum.setIntensity(this.saberSwing);
+  }
+
+  private readonly cueCtx: CueContext = {
+    basicAttackSound: (id) => basicAttackSound(this.world, id),
+    hitsWithSaber: (id) => wieldsSaber(this.world, id),
+    hostileAttackSound: (id, skillId) => hostileAttackSound(this.world, id, skillId),
+  };
 
   questView(): QuestLogView {
     return this.quests.view((this.levels.current?.act ?? 1) as ActId);
@@ -321,6 +348,7 @@ export class Game {
     const p = this.player;
     if (p) this.audio.setListener?.(p.pos);
     this.audio.handleEvents(events, this.cueCtx);
+    this.updateSaberHum(events, realDt);
     this.ui.api.store.view.value = w;
     this.ui.publish(events);
 
@@ -590,7 +618,30 @@ function basicAttackSound(world: SimWorld, id: number): BasicAttackSound {
     const fam = elementForSkill(missile.replace(/^m_/, ''));
     return fam === 'magic' || fam === 'saber' ? 'swing' : fam;
   }
+  return wieldsSaber(world, id) ? 'saber' : 'swing';
+}
+
+/** Enemy attack sound: melee is silent (the impact covers it), ranged uses its element family. */
+function hostileAttackSound(world: SimWorld, id: number, skillId: string): BasicAttackSound | undefined {
+  const a = world.get(id);
+  if (!a || a.kind !== 'monster' || a.team !== 'monsters') return undefined;
+  if (skillId === 'attack' || skillId === 'throw') {
+    const s = basicAttackSound(world, id);
+    return s === 'swing' || s === 'saber' ? null : s;
+  }
+  const def = DB.skills.get(skillId);
+  if (!def || def.kind === 'meleeAttack') return null;
+  const missile = def.missile ?? '';
+  if (/quill|javelin|disc/i.test(missile)) return null;
+  if (/blastur/i.test(missile)) return 'blastur';
+  const el = def.element;
+  if (el === 'storm' || el === 'plasma' || el === 'cryo' || el === 'toxin') return el;
+  return 'magic';
+}
+
+function wieldsSaber(world: SimWorld, id: number): boolean {
+  const a = world.get(id);
+  if (!a || (a.kind !== 'player' && a.kind !== 'merc')) return false;
   const wc = getEquippedWeapon(a)?.weaponClass;
-  if (wc && SABER_CLASSES.has(wc)) return 'saber';
-  return 'swing';
+  return !!wc && SABER_CLASSES.has(wc);
 }

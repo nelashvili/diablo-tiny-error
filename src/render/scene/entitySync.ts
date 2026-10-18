@@ -3,6 +3,7 @@ import type { EntityId } from '../../core/types';
 import type { WorldView } from '../../core/sim/world';
 import type { Entity, EntityKind } from '../../core/sim/entities';
 import type { EntityVisual, VfxSystem, VisualFactory } from '../types';
+import { armorLook } from '../models/outfit';
 import { DB } from '../../data/db';
 import { MotionBuffer, type MotionSample } from './interp';
 import { distSqToSegment } from '../camera/isoMath';
@@ -67,6 +68,7 @@ interface Rec {
   equip1: string;
   equip2: string;
   equip3: string;
+  outfitKey: string;
   /** Main-hand weapon is ranged (attack mode plays the shoot clip). */
   ranged: boolean;
   x: number;
@@ -339,6 +341,7 @@ export class EntitySync {
       equip1: '',
       equip2: '',
       equip3: '',
+      outfitKey: '',
       ranged: false,
       x: 0,
       z: 0,
@@ -482,6 +485,17 @@ export class EntitySync {
     if (c !== r.equip3) {
       r.equip3 = c;
       v.setAttachment('chest', c ? `item.${c}` : null);
+    }
+    // Armor reshapes the hero's colors per body part (cooler looks at higher lines/tiers).
+    const g = eq['gloves']?.base ?? '';
+    const b = eq['boots']?.base ?? '';
+    const outfitKey = `${h}|${c}|${g}|${b}`;
+    if (v.setOutfit && outfitKey !== r.outfitKey) {
+      r.outfitKey = outfitKey;
+      v.setOutfit('head', armorLook(h));
+      v.setOutfit('body', armorLook(c));
+      v.setOutfit('arms', armorLook(g));
+      v.setOutfit('legs', armorLook(b));
     }
   }
 

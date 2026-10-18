@@ -73,6 +73,8 @@ type Gesture =
       /** Ground item waiting for tap (pickup) vs long-press (label). */
       itemId: EntityId | null;
       holdMove: boolean;
+      /** Joystick mode: a quick tap on empty ground walks there on release. */
+      tapMove: boolean;
       done: boolean;
     }
   | {
@@ -174,6 +176,7 @@ export class TouchController {
       moved: 0,
       itemId: null,
       holdMove: false,
+      tapMove: false,
       done: false,
     };
     const id = this.ctx.pick(p.x, p.y);
@@ -189,6 +192,8 @@ export class TouchController {
       if (pos) this.send({ type: 'moveTo', pos });
       g.holdMove = true;
       this.moveRepeat.start();
+    } else {
+      g.tapMove = true;
     }
     this.gestures.set(e.pointerId, g);
     return true;
@@ -228,6 +233,9 @@ export class TouchController {
       if (!cancelled && !g.done && g.itemId != null && g.moved <= TAP_SLOP) {
         this.send({ type: 'interact', targetId: g.itemId });
         this.buzz(8);
+      } else if (!cancelled && g.tapMove && g.moved <= TAP_SLOP) {
+        const pos = this.ctx.screenToWorld(g.pos.x, g.pos.y);
+        if (pos) this.send({ type: 'moveTo', pos });
       }
     } else {
       this.buttonRelease(g, cancelled);

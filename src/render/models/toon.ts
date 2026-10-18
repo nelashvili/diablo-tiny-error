@@ -143,6 +143,10 @@ export interface RecolorRule {
   minSat?: number;
   /** Instead target greys (metal): texels at or below this saturation, ignoring hue. */
   maxSat?: number;
+  /** Grey rules: lowest texel brightness affected (default 0.12, which spares blacks like eyes). */
+  minVal?: number;
+  /** 0 = keep the texel's own brightness (default), 1 = paint the target color nearly flat. */
+  flat?: number;
   color: number;
 }
 
@@ -170,6 +174,8 @@ export function recolorMaterial(
     // x = min saturation (hue rules) or -max saturation (grey rules, ignoring hue).
     rcSat: { value: rules.slice(0, n).map((r) => (r.maxSat !== undefined ? -r.maxSat : (r.minSat ?? 0.25))) },
     rcCol: { value: rules.slice(0, n).map((r) => lin(r.color)) },
+    rcMinV: { value: rules.slice(0, n).map((r) => r.minVal ?? 0.12) },
+    rcFlat: { value: rules.slice(0, n).map((r) => r.flat ?? 0) },
   };
   out.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -180,6 +186,8 @@ export function recolorMaterial(
 uniform vec2 rcHue[${n}];
 uniform float rcSat[${n}];
 uniform vec3 rcCol[${n}];
+uniform float rcMinV[${n}];
+uniform float rcFlat[${n}];
 vec3 rcHsv(vec3 c) {
   vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
   vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -198,11 +206,13 @@ vec3 rcHsv(vec3 c) {
     vec2 r = rcHue[i];
     bool inside = r.x <= r.y ? (hsv.x >= r.x && hsv.x <= r.y) : (hsv.x >= r.x || hsv.x <= r.y);
     bool grey = rcSat[i] < 0.0;
-    if (grey ? (hsv.y <= -rcSat[i] && hsv.z > 0.12 && hsv.z < 0.97) : (inside && hsv.y >= rcSat[i])) {
+    if (grey ? (hsv.y <= -rcSat[i] && hsv.z > rcMinV[i] && hsv.z < 0.97) : (inside && hsv.y >= rcSat[i])) {
       vec3 tgt = pow(rcCol[i], vec3(1.0 / 2.2));
       float tv = max(max(tgt.r, tgt.g), max(tgt.b, 1e-3));
-      // Keep the texel's shading (its value relative to the palette's brightest) on the new color.
-      diffuseColor.rgb = pow(clamp(tgt * (hsv.z / tv) * (0.45 + 0.55 * tv), 0.0, 1.0), vec3(2.2));
+      // Keep the texel's shading (its value relative to the palette's brightest) on the new color,
+      // or (flat) mostly the target color itself with a little of the texel's shading.
+      float k = mix((hsv.z / tv) * (0.45 + 0.55 * tv), 0.72 + 0.28 * hsv.z, rcFlat[i]);
+      diffuseColor.rgb = pow(clamp(tgt * k, 0.0, 1.0), vec3(2.2));
       break;
     }
   }

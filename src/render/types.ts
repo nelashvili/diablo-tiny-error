@@ -90,6 +90,14 @@ export interface VfxDef {
 // ------------------------------------------------------------------ cross-module render contracts
 
 /** A live visual for one entity, produced by render/models. */
+/** Armor palette for a body part (see render/models/outfit.ts). */
+export interface ArmorLookRef {
+  key: string;
+  primary: number;
+  trim: number;
+  glow: number;
+}
+
 export interface EntityVisual {
   readonly object: Object3D;
   /** Play the clip for an actor mode; `t` = seconds in mode (for sync), speedMul for IAS/FCR. */
@@ -102,6 +110,8 @@ export interface EntityVisual {
     modelId: string | null,
     accent?: number,
   ): void;
+  /** Armor look for a body part (glTF heroes only; placeholders ignore it). null = the hero's own. */
+  setOutfit?(part: 'head' | 'body' | 'arms' | 'legs', look: ArmorLookRef | null): void;
   /** Hover/target highlight (outline) on/off. */
   setHighlight(on: boolean, color?: number): void;
   /** Tint for champions/uniques/status (frozen blue, toxin green). null = clear. */

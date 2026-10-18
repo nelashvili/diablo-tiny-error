@@ -8,6 +8,8 @@ export interface Cue {
   volume?: number;
   rate?: number;
   pos?: { x: number; y: number };
+  /** An enemy's attack (capped per batch as a group). */
+  hostile?: boolean;
 }
 
 export type SkillSound = 'saber' | 'blastur' | 'storm' | 'plasma' | 'cryo' | 'toxin' | 'magic';
@@ -25,8 +27,8 @@ export function elementForSkill(skillId: string): SkillSound {
 }
 
 const SKILL_SOUND: Record<SkillSound, string> = {
-  saber: 'saberSwing',
-  blastur: 'blastur',
+  saber: 'saberVwoom',
+  blastur: 'blasturClassic',
   storm: 'lightning',
   plasma: 'plasma',
   cryo: 'cryo',
@@ -36,8 +38,8 @@ const SKILL_SOUND: Record<SkillSound, string> = {
 
 /** Recorded clips (with their own variants) to prefer over the procedural sound, per family. */
 const SKILL_FILE: Partial<Record<SkillSound, string>> = {
-  saber: 'sfx.saberSwing',
-  blastur: 'sfx.blasturShot',
+  // Sabers and blasturs use synthesized movie-style sounds (saberVwoom, blasturClassic), not the
+  // generic recorded whooshes/shots.
 };
 
 export function soundForSkill(skillId: string): string {
@@ -83,7 +85,20 @@ export type BasicAttackSound = SkillSound | 'swing' | null;
 
 export interface CueContext {
   basicAttackSound?(casterId: number): BasicAttackSound;
+  /** True when the attacker hits with a lit saber (hits then sizzle instead of thumping). */
+  hitsWithSaber?(sourceId: number): boolean;
+  /**
+   * For an enemy caster: what its attack sounds like (null = silent, the impact covers melee).
+   * Undefined for anyone else (heroes and mercs use the normal sounds).
+   */
+  hostileAttackSound?(casterId: number, skillId: string): BasicAttackSound | undefined;
 }
+
+/** Enemy attacks: quieter and pitched up so they sit under the hero's own sounds. */
+const HOSTILE_VOLUME = 0.3;
+const HOSTILE_RATE = 1.15;
+/** Most enemy attack sounds heard per frame, however many enemies attack. */
+const HOSTILE_CAP = 2;
 
 const BASIC_SKILLS = new Set(['attack', 'throw']);
 
@@ -99,15 +114,27 @@ function basicAttackCue(sound: BasicAttackSound, pos?: { x: number; y: number })
 export function cuesForEvent(e: GameEvent, ctx?: CueContext): Cue[] {
   switch (e.type) {
     case 'damage':
-      return e.amount > 0 ? [hitCue(e.dtype, e.crit, e.pos)] : [];
+      if (e.amount <= 0) return [];
+      if (e.dtype === 'physical' && e.sourceId !== undefined && ctx?.hitsWithSaber?.(e.sourceId))
+        return [{ ids: ['saberHit'], volume: e.crit ? 1 : 0.75, rate: e.crit ? 0.9 : 1, pos: e.pos }];
+      return [hitCue(e.dtype, e.crit, e.pos)];
     case 'death':
       return e.droyd
         ? [{ ids: ['death.droyd', 'droydDeath'], pos: e.pos }]
         : [{ ids: ['death.organic', 'smoke'], volume: 0.8, pos: e.pos }];
-    case 'skillCast':
+    case 'skillCast': {
+      const hostile = ctx?.hostileAttackSound?.(e.casterId, e.skillId);
+      if (hostile !== undefined)
+        return basicAttackCue(hostile, e.targetPos).map((c) => ({
+          ...c,
+          volume: (c.volume ?? 1) * HOSTILE_VOLUME,
+          rate: (c.rate ?? 1) * HOSTILE_RATE,
+          hostile: true,
+        }));
       if (BASIC_SKILLS.has(e.skillId))
         return basicAttackCue(ctx?.basicAttackSound?.(e.casterId) ?? null, e.targetPos);
       return [{ ids: skillSoundIds(e.skillId), pos: e.targetPos }];
+    }
     case 'heal':
       return e.amount > 0 ? [{ ids: ['heal'], volume: 0.6 }] : [];
     case 'levelUp':
@@ -149,9 +176,13 @@ export function planCues(events: readonly GameEvent[], perIdCap = 4, ctx?: CueCo
     }
   }
   const out: Cue[] = [];
+  let hostile = 0;
   for (const g of groups.values()) {
     const scale = g.length <= 1 ? 1 : Math.max(0.4, 1.3 / Math.sqrt(g.length));
-    for (const c of g.slice(0, perIdCap)) out.push({ ...c, volume: (c.volume ?? 1) * Math.min(1, scale) });
+    for (const c of g.slice(0, perIdCap)) {
+      if (c.hostile && ++hostile > HOSTILE_CAP) continue;
+      out.push({ ...c, volume: (c.volume ?? 1) * Math.min(1, scale) });
+    }
   }
   return out;
 }
