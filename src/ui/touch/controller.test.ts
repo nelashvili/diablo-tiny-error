@@ -29,7 +29,11 @@ function setup(movement: 'joystick' | 'tapToMove' = 'joystick') {
   return { c, out };
 }
 
-const at = (x: number, y: number, pointerId = 1) => [{ pointerId, clientX: x, clientY: y }, { x, y }] as const;
+const at = (x: number, y: number, pointerId = 1) =>
+  [
+    { pointerId, clientX: x, clientY: y },
+    { x, y },
+  ] as const;
 
 describe('TouchController movement', () => {
   it('dragging the left side drives the joystick', () => {

@@ -56,9 +56,18 @@ export interface ModelEntry {
   /** Tint/glow color for litesaber blades, droyd eyes, etc. */
   accent?: number;
   /** Palette swaps applied to the model's materials (see toon.recolorMaterial). */
-  recolor?: { hue: [number, number]; minSat?: number; maxSat?: number; color: number }[];
+  recolor?: {
+    hue: [number, number];
+    minSat?: number;
+    maxSat?: number;
+    minVal?: number;
+    flat?: number;
+    color: number;
+  }[];
   /** Mesh nodes to hide (e.g. a wizard hat). */
   hide?: string[];
+  /** Per-bone scale held over the animation (e.g. a stretched droid head), as [x, y, z]. */
+  boneScale?: Record<string, [number, number, number]>;
 }
 
 /** VFX toolkit keys referenced from SkillDef.vfx / MissileDef.vfx. */

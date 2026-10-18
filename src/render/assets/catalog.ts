@@ -97,6 +97,18 @@ const kay = (
   ...extra,
 });
 
+/** B1-style battle droid: skeleton minion without its cloak, all tan, eyes glowing `eye`. */
+const battleDroid = (id: string, tan: number, eye: number, scale: number): ModelEntry =>
+  kay(id, 'monsters/skeletonMinion', tan, eye, scale, {
+    hide: ['Skeleton_Minion_Cloak', 'Skeleton_Minion_Jaw'],
+    boneScale: { head: [0.72, 0.85, 1.55], chest: [0.8, 1, 0.8] },
+    recolor: [
+      { hue: [0, 360], minSat: 0.6, minVal: 0.75, color: eye, flat: 1 },
+      { hue: [0, 360], minSat: 0, minVal: 0.45, color: tan, flat: 0.65 },
+      { hue: [0, 360], minSat: 0, color: 0x4a3a28, flat: 0.5 },
+    ],
+  });
+
 const stat = (
   id: string,
   file: string | null,
@@ -174,16 +186,10 @@ const ACTORS: ModelEntry[] = [
   }),
 
   // Act I monsters (mesh re-use + suggested tint in `accent`)
+  // Classic tan battle droids: the skinny skeleton rig, cloak off, painted sand-tan (rusty for scrap).
+  battleDroid('mon.scrapDroyd', 0xb88a56, 0xff6a1a, 0.74),
   {
-    id: 'mon.scrapDroyd',
-    url: M('monsters/robot'),
-    scale: 0.32,
-    clips: { ...ROBOT_CLIPS },
-    bones: { ...ROBOT_BONES },
-    placeholder: ph('box', 0x8a8f94, 1.3, 0.4),
-    accent: 0xff6a1a, // eye glow; tint body rusty
-  },
-  {
+    // Black probe droid with a red eye.
     id: 'mon.probeDroyd',
     url: M('monsters/robot'),
     scale: 0.2,
@@ -191,6 +197,10 @@ const ACTORS: ModelEntry[] = [
     bones: { ...ROBOT_BONES },
     placeholder: ph('sphere', 0x2c2f36, 0.9, 0.3),
     accent: 0xff2222,
+    recolor: [
+      { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: 0xff2a2a, flat: 1 },
+      { hue: [0, 360], minSat: 0, color: 0x3a3e46 },
+    ],
   },
   kay('mon.jawwa', 'monsters/rogueHooded', 0x7a5a36, 0xffd23f, 0.6),
   kay('mon.tuskinRaider', 'monsters/barbarian', 0xc2a878, undefined, 0.78),
@@ -209,15 +219,7 @@ const ACTORS: ModelEntry[] = [
   // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery) — larger, dark crimson, red litesaber
   kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95),
   // Player summons
-  {
-    id: 'mon.battleDroyd',
-    url: M('monsters/robot'),
-    scale: 0.42,
-    clips: { ...ROBOT_CLIPS },
-    bones: { ...ROBOT_BONES },
-    placeholder: ph('box', 0xc9d2dc, 1.6, 0.45),
-    accent: 0x4fc3ff,
-  },
+  battleDroid('mon.battleDroyd', 0xd8bc84, 0x4fc3ff, 0.78),
   // Holo-Decoy: a blue hologram of the Bounty Huntur.
   kay('mon.holoDecoy', 'heroes/knight', 0x4fc3ff, 0x4fc3ff, 0.75, {
     recolor: [{ hue: [0, 360], minSat: 0, color: 0x6ad0ff }],

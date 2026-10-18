@@ -1198,7 +1198,7 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
         pts[i * 3 + 2] = fx.z + Math.sin(a) * R;
       }
       ribbon(pts, n, w, w * 0.2, 0.95 * fadeOut * fx.fade, 0.05, d.color);
-      glow(pts[0] as number, fx.y, pts[2] as number, w * 3, d.color2 ?? d.color, 0.7 * fadeOut);
+      glow(pts[0] as number, fx.y, pts[2] as number, w * 1.3, d.color2 ?? d.color, 0.45 * fadeOut);
       return;
     }
     // attached: follow the target's world position

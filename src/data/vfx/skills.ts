@@ -48,6 +48,15 @@ export default [
     durationSec: 0.28,
   },
   {
+    // Basic litesaber attacks: wider, deeper blue so the arc reads on bright ground.
+    id: 'vfx.saber.attack',
+    primitive: 'saberTrail',
+    color: 0x1e6cff,
+    color2: 0xbfe4ff,
+    size: 0.42,
+    durationSec: 0.3,
+  },
+  {
     id: 'vfx.saber.swingGreen',
     primitive: 'saberTrail',
     color: 0x4aff7a,

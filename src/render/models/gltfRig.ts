@@ -54,6 +54,10 @@ export class GltfRig implements Rig {
       this.actions.set(mode, a ?? null);
     }
     this.procedural = byClip.size === 0;
+    for (const [name, sc] of Object.entries(entry.boneScale ?? {})) {
+      const bone = this.model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(name));
+      if (bone) this.scaledBones.push([bone, new THREE.Vector3(...sc)]);
+    }
 
     const h = asset.height * entry.scale;
     // GLTFLoader sanitizes node names ('handslot.r' -> 'handslotr'), so try both spellings.
@@ -113,7 +117,10 @@ export class GltfRig implements Rig {
 
   update(dt: number): void {
     if (!this.procedural) this.mixer.update(dt);
+    for (const [bone, sc] of this.scaledBones) bone.scale.copy(sc);
   }
+
+  private readonly scaledBones: [THREE.Object3D, THREE.Vector3][] = [];
 
   socket(slot: AttachSlot): THREE.Object3D {
     return this.sockets[slot];

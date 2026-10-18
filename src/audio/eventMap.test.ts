@@ -161,6 +161,8 @@ describe('enemy attack sounds', () => {
   });
 
   it('heroes are unaffected', () => {
-    expect(cuesForEvent(cast(1, 'attack'), { ...ctx, basicAttackSound: () => 'blastur' })[0]?.volume).toBe(0.8);
+    expect(cuesForEvent(cast(1, 'attack'), { ...ctx, basicAttackSound: () => 'blastur' })[0]?.volume).toBe(
+      0.8,
+    );
   });
 });

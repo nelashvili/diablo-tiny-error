@@ -31,6 +31,34 @@ function wieldsSaber(view: WorldView, id: EntityId): boolean {
   return wc !== undefined && SABER_CLASSES.has(wc);
 }
 
+const SABER_SWING = 'vfx.saber.attack';
+
+/** Melee attacks with a litesaber leave a glowing arc in front of the wielder (both ends for doubles). */
+function saberSwingArcs(
+  view: WorldView,
+  casterId: EntityId,
+  skillId: string,
+  targetPos: { x: number; y: number } | undefined,
+): { pos: { x: number; y: number }; dir: number }[] {
+  if (DB.skills.get(skillId)?.kind !== 'meleeAttack' || !wieldsSaber(view, casterId)) return [];
+  const e = view.get(casterId);
+  if (!e) return [];
+  const dir =
+    targetPos && Math.hypot(targetPos.x - e.pos.x, targetPos.y - e.pos.y) > 0.05
+      ? Math.atan2(targetPos.y - e.pos.y, targetPos.x - e.pos.x)
+      : 'facing' in e && typeof e.facing === 'number'
+        ? e.facing
+        : 0;
+  const base = 'equipment' in e ? e.equipment.mainHand?.base : undefined;
+  const double = base ? DB.items.get(base)?.weaponClass === 'doubleLitesaber' : false;
+  return double
+    ? [
+        { pos: e.pos, dir },
+        { pos: e.pos, dir: dir + Math.PI },
+      ]
+    : [{ pos: e.pos, dir }];
+}
+
 export const DPR_CAP: Record<QualityLevel, number> = { low: 1, medium: 1.5, high: 2 };
 
 export type PostFactory = (r: THREE.WebGLRenderer, s: THREE.Scene, c: THREE.Camera) => PostFx;
@@ -127,12 +155,23 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     return frameStats;
   };
 
+  const saberSwing = (
+    view: WorldView,
+    casterId: EntityId,
+    skillId: string,
+    targetPos: { x: number; y: number } | undefined,
+  ): void => {
+    for (const arc of saberSwingArcs(view, casterId, skillId, targetPos))
+      vfx.spawn(SABER_SWING, arc.pos, { dir: arc.dir, radius: 1.05, height: 0.85 });
+  };
+
   const scanEvents = (events: readonly GameEvent[], view: WorldView): void => {
     const local = view.localPlayerId;
     for (let i = 0; i < events.length; i++) {
       const e = events[i];
       if (!e) continue;
       if (e.type === 'bossIntro') iso.shake.add(0.55);
+      else if (e.type === 'skillCast') saberSwing(view, e.casterId, e.skillId, e.targetPos);
       else if (e.type === 'attackResult') {
         if (e.outcome === 'hit') {
           sync.onHit(e.targetId, e.attackerId, false);
