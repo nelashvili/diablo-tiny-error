@@ -1418,3 +1418,18 @@
     margin-top: -6px;
   }
 }
+.hud-guide {
+  position: absolute;
+  pointer-events: none;
+  font-size: 36px;
+  line-height: 1;
+  color: #ffd23f;
+  text-shadow:
+    0 0 10px rgba(255, 210, 63, 0.8),
+    0 2px 0 #000;
+  opacity: 0.9;
+}
+.hud-guide--here {
+  transform: translate(-50%, -100%);
+  animation: hud-turnin-bob 1.2s ease-in-out infinite;
+}

@@ -9,7 +9,7 @@ import type { Command } from '../core/sim/commands';
 import type { GameEvent } from '../core/sim/events';
 import type { WorldView } from '../core/sim/world';
 import type { Settings } from '../core/save/types';
-import type { EntityId, Vec2 } from '../core/types';
+import type { DefId, EntityId, Vec2 } from '../core/types';
 
 export type PanelId =
   | 'inventory'
@@ -31,6 +31,8 @@ export interface StoryHud {
   objective: { questKey: string; stepKey: string } | null;
   /** NPCs waiting to thank or reward the hero ("?" over their heads). */
   turnIn: EntityId[];
+  /** Level whose exit leads toward the objective (highlighted on the map, arrow on screen). */
+  guideTo?: DefId | null;
 }
 
 export interface UiStore {

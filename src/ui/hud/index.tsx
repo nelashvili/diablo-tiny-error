@@ -16,7 +16,7 @@ import { HudModel } from './model';
 import { FxModel } from './fx';
 import { Orb } from './Orb';
 import { HotkeyRow, SkillButton, SkillPicker } from './SkillBar';
-import { Objective, TurnInMarkers } from './Story';
+import { GuideArrow, Objective, TurnInMarkers } from './Story';
 import { Belt, MenuButtons, Notifications, StaminaBar, StatusRow, TargetFrame, XpBar } from './Widgets';
 import { FloatLayer } from './FloatLayer';
 import { BigMap, Minimap } from './Maps';
@@ -66,6 +66,7 @@ function HudRoot(): JSX.Element {
         <Objective />
       </div>
       <TurnInMarkers />
+      <GuideArrow />
       <TargetFrame />
       {!mapOpen ? <Minimap /> : null}
       <Notifications />

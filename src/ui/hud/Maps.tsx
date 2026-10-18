@@ -50,6 +50,7 @@ function useMapCanvas(canvasRef: { current: HTMLCanvasElement | null }, mode: 'm
           scale,
           monsterRadius: 24,
           markerScale: Math.min(1.2, W / 180),
+          guideTo: api.store.story?.peek().guideTo ?? null,
         });
       } else {
         const scale = fitScale(map.width, map.height, W * 0.9, H * 0.8);
@@ -61,6 +62,7 @@ function useMapCanvas(canvasRef: { current: HTMLCanvasElement | null }, mode: 'm
           scale,
           monsterRadius: 30,
           markerScale: 1.4,
+          guideTo: api.store.story?.peek().guideTo ?? null,
         });
       }
     };

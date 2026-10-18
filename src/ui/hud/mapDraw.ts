@@ -177,7 +177,11 @@ export interface DrawOpts {
   /** Max distance from the player for monster dots. */
   monsterRadius: number;
   markerScale: number;
+  /** Exit toward the quest objective (by target level): always shown, gold, pinned to the edge. */
+  guideTo?: string | null;
 }
+
+const GUIDE = '#ffd23f';
 
 export function drawMap(ctx: CanvasRenderingContext2D, view: WorldView, pal: MapPalette, o: DrawOpts): void {
   const { width: W, height: H, dpr } = o;
@@ -197,6 +201,10 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: WorldView, pal: Map
   // Static placements: exits and Holo-Beacons.
   for (const pl of view.level?.placements ?? []) {
     if (pl.kind !== 'exit' && pl.kind !== 'waypoint') continue;
+    if (pl.kind === 'exit' && o.guideTo && pl.ref === o.guideTo) {
+      drawGuide(ctx, applyAffine(m, { x: pl.pos.x + 0.5, y: pl.pos.y + 0.5 }), W, H, 7 * ms, pal.outline);
+      continue;
+    }
     if (!explored(pl.pos.x, pl.pos.y)) continue;
     const s = applyAffine(m, { x: pl.pos.x + 0.5, y: pl.pos.y + 0.5 });
     if (pl.kind === 'waypoint') drawDiamond(ctx, s.x, s.y, 6 * ms, pal.waypoint, pal.outline);
@@ -259,6 +267,33 @@ function drawDiamond(
   ctx.lineTo(x - r * 0.75, y);
   ctx.closePath();
   ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = line;
+  ctx.stroke();
+}
+
+/** The objective exit: a gold marker, or a gold arrow on the map's edge pointing at it. */
+function drawGuide(ctx: CanvasRenderingContext2D, p: Vec2, W: number, H: number, r: number, line: string) {
+  const pad = r + 3;
+  if (p.x >= pad && p.y >= pad && p.x <= W - pad && p.y <= H - pad) {
+    drawExit(ctx, p.x, p.y, r, GUIDE, line);
+    return;
+  }
+  const cx = W / 2;
+  const cy = H / 2;
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
+  const x = cx + dx * k;
+  const y = cy + dy * k;
+  const a = Math.atan2(dy, dx);
+  ctx.beginPath();
+  ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+  ctx.lineTo(x + Math.cos(a + 2.4) * r, y + Math.sin(a + 2.4) * r);
+  ctx.lineTo(x + Math.cos(a - 2.4) * r, y + Math.sin(a - 2.4) * r);
+  ctx.closePath();
+  ctx.fillStyle = GUIDE;
   ctx.fill();
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = line;

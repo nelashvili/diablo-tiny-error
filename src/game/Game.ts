@@ -449,7 +449,13 @@ export class Game {
     const npcs: { id: number; defId: string }[] = [];
     for (const e of this.world.entities.values())
       if (e.kind === 'npc' && e.alive) npcs.push({ id: e.id, defId: e.defId });
-    const next = storyHud(this.quests.activeQuests(), this.quests.state, npcs);
+    const level = this.world.levelId;
+    const next = storyHud(
+      this.quests.activeQuests(),
+      this.quests.state,
+      npcs,
+      level ? { level, levels: [...DB.levels.values()] } : undefined,
+    );
     const key = JSON.stringify(next);
     if (key === this.storyKey) return;
     this.storyKey = key;

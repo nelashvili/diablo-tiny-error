@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DB } from '@/data/db';
 import { hasName } from '@/data/names';
-import { QUEST_GIVER, storyHud, storyTalk } from './story';
+import { QUEST_GIVER, nextHop, stepLevel, storyHud, storyTalk } from './story';
 
 const quests = [...DB.quests.values()].filter((q) => q.act === 1);
 
@@ -48,8 +48,30 @@ describe('story dialogue', () => {
     expect(storyHud(quests, {}, npcs)).toEqual({
       objective: { questKey: 'quest.a1q1', stepKey: 'quest.a1q1.enter' },
       turnIn: [],
+      guideTo: null,
     });
     const atReport = { a1q1: { step: 'report', completed: false, rewardClaimed: false } };
     expect(storyHud(quests, atReport, npcs).turnIn).toEqual([1]);
+  });
+
+  it('routes toward the objective level one exit at a time', () => {
+    const levels = [...DB.levels.values()];
+    expect(nextHop('a1.town', 'a1.tuskinDen', levels)).toBe('a1.mossfields');
+    expect(nextHop('a1.mossfields', 'a1.tuskinDen', levels)).toBe('a1.tuskinDen');
+    expect(nextHop('a1.tuskinDen', 'a1.town', levels)).toBe('a1.mossfields');
+    expect(nextHop('a1.town', 'a1.undercroft2', levels)).toBe('a1.mossfields');
+    expect(nextHop('a1.town', 'a1.town', levels)).toBeNull();
+    expect(stepLevel({ event: 'killBoss', boss: 'countDooky' }, levels, 1)).toBe('a1.undercroft2');
+    expect(stepLevel({ event: 'talkTo', npc: 'medicAkarra' }, levels, 1)).toBe('a1.town');
+  });
+
+  it('every Act I objective level can be reached from camp', () => {
+    const levels = [...DB.levels.values()];
+    for (const q of quests)
+      for (const s of q.steps) {
+        const target = stepLevel(s.on, levels, q.act);
+        if (target && target !== 'a1.town')
+          expect(nextHop('a1.town', target, levels), `${q.id}.${s.id}`).not.toBeNull();
+      }
   });
 });

@@ -2,7 +2,7 @@
  * Quest-aware NPC dialogue. Each quest has a giver who briefs the hero on the current step;
  * once the quest is done, its giver (or the NPC it is reported to) thanks the hero exactly once.
  */
-import type { QuestDef } from '@/data/schema';
+import type { LevelDef, QuestDef } from '@/data/schema';
 import type { DefId, EntityId } from '@/core/types';
 import type { StoryHud } from '@/ui/types';
 import type { QuestStateMap } from '@/core/quests/engine';
@@ -58,13 +58,19 @@ export function storyHud(
   quests: readonly QuestDef[],
   state: QuestStateMap,
   npcs: readonly { id: EntityId; defId: DefId }[],
+  where?: { level: DefId; levels: readonly LevelDef[] },
 ): StoryHud {
   let objective: StoryHud['objective'] = null;
+  let guideTo: DefId | null = null;
   for (const q of quests) {
     const p = state[q.id];
     if (p?.completed) continue;
     const step = q.steps.find((s) => s.id === (p?.step ?? q.steps[0]?.id));
-    if (step) objective = { questKey: q.name, stepKey: step.text };
+    if (step) {
+      objective = { questKey: q.name, stepKey: step.text };
+      const target = where ? stepLevel(step.on, where.levels, q.act) : null;
+      if (where && target) guideTo = nextHop(where.level, target, where.levels);
+    }
     break;
   }
   const turnIn = npcs
@@ -78,5 +84,47 @@ export function storyHud(
         }),
     )
     .map((n) => n.id);
-  return { objective, turnIn };
+  return { objective, turnIn, guideTo };
+}
+
+/** Level an objective step happens in (null when it can be done anywhere). */
+export function stepLevel(
+  on: QuestDef['steps'][number]['on'],
+  levels: readonly LevelDef[],
+  act: number,
+): DefId | null {
+  switch (on.event) {
+    case 'enterLevel':
+    case 'clearLevel':
+      return on.level;
+    case 'killBoss':
+      return levels.find((l) => l.bosses?.includes(on.boss))?.id ?? null;
+    case 'talkTo':
+      return levels.find((l) => l.isTown && l.act === act)?.id ?? null;
+    default:
+      return null;
+  }
+}
+
+/** Next level to head for on the way from `from` to `to` (breadth-first over level links). */
+export function nextHop(from: DefId, to: DefId, levels: readonly LevelDef[]): DefId | null {
+  if (from === to) return null;
+  const byId = new Map(levels.map((l) => [l.id, l]));
+  const first = new Map<DefId, DefId>();
+  const queue: DefId[] = [];
+  for (const link of byId.get(from)?.links ?? []) {
+    if (first.has(link.to)) continue;
+    first.set(link.to, link.to);
+    queue.push(link.to);
+  }
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (id === to) return first.get(id) ?? null;
+    for (const link of byId.get(id)?.links ?? []) {
+      if (link.to === from || first.has(link.to)) continue;
+      first.set(link.to, first.get(id)!);
+      queue.push(link.to);
+    }
+  }
+  return null;
 }
