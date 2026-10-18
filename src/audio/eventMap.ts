@@ -34,8 +34,21 @@ const SKILL_SOUND: Record<SkillSound, string> = {
   magic: 'forse',
 };
 
+/** Recorded clips (with their own variants) to prefer over the procedural sound, per family. */
+const SKILL_FILE: Partial<Record<SkillSound, string>> = {
+  saber: 'sfx.saberSwing',
+  blastur: 'sfx.blasturShot',
+};
+
 export function soundForSkill(skillId: string): string {
   return SKILL_SOUND[elementForSkill(skillId)];
+}
+
+/** Candidate ids for a skill's cast sound: its own clip, the family's recordings, then procedural. */
+export function skillSoundIds(skillId: string): string[] {
+  const fam = elementForSkill(skillId);
+  const file = SKILL_FILE[fam];
+  return [`skill.${skillId}`, ...(file ? [file] : []), SKILL_SOUND[fam]];
 }
 
 function hitCue(dtype: DamageType, crit: boolean, pos: { x: number; y: number }): Cue {
@@ -43,7 +56,7 @@ function hitCue(dtype: DamageType, crit: boolean, pos: { x: number; y: number })
   const r = crit ? 0.85 : 1;
   switch (dtype) {
     case 'physical':
-      return { ids: ['hit'], volume: v, rate: r, pos };
+      return { ids: ['hit.physical', 'hit'], volume: v, rate: r, pos };
     case 'plasma':
       return { ids: ['hit.plasma', 'plasma'], volume: v * 0.5, rate: 1.3 * r, pos };
     case 'cryo':
@@ -65,8 +78,25 @@ export function itemDropIds(quality: string): string[] {
   return q === proc ? [`itemDrop.${q}`] : [`itemDrop.${q}`, `itemDrop.${proc}`];
 }
 
+/** What a basic attack (`attack` / `throw`) sounds like for a caster; null = silent (the hit covers it). */
+export type BasicAttackSound = SkillSound | 'swing' | null;
+
+export interface CueContext {
+  basicAttackSound?(casterId: number): BasicAttackSound;
+}
+
+const BASIC_SKILLS = new Set(['attack', 'throw']);
+
+function basicAttackCue(sound: BasicAttackSound, pos?: { x: number; y: number }): Cue[] {
+  if (!sound) return [];
+  // Plain weapon swings reuse the saber whoosh, lower and quieter.
+  if (sound === 'swing') return [{ ids: ['sfx.saberSwing', 'saberSwing'], volume: 0.45, rate: 0.7, pos }];
+  const file = SKILL_FILE[sound];
+  return [{ ids: [...(file ? [file] : []), SKILL_SOUND[sound]], volume: sound === 'saber' ? 1 : 0.8, pos }];
+}
+
 /** Map one event to zero or more cues. */
-export function cuesForEvent(e: GameEvent): Cue[] {
+export function cuesForEvent(e: GameEvent, ctx?: CueContext): Cue[] {
   switch (e.type) {
     case 'damage':
       return e.amount > 0 ? [hitCue(e.dtype, e.crit, e.pos)] : [];
@@ -75,15 +105,19 @@ export function cuesForEvent(e: GameEvent): Cue[] {
         ? [{ ids: ['death.droyd', 'droydDeath'], pos: e.pos }]
         : [{ ids: ['death.organic', 'smoke'], volume: 0.8, pos: e.pos }];
     case 'skillCast':
-      return [{ ids: [`skill.${e.skillId}`, soundForSkill(e.skillId)], pos: e.targetPos }];
+      if (BASIC_SKILLS.has(e.skillId))
+        return basicAttackCue(ctx?.basicAttackSound?.(e.casterId) ?? null, e.targetPos);
+      return [{ ids: skillSoundIds(e.skillId), pos: e.targetPos }];
     case 'heal':
       return e.amount > 0 ? [{ ids: ['heal'], volume: 0.6 }] : [];
     case 'levelUp':
-      return [{ ids: ['levelUp'] }];
+      return [{ ids: ['sfx.levelUp', 'levelUp'] }];
     case 'itemDropped':
       return [{ ids: itemDropIds(e.quality), pos: e.pos }];
     case 'itemPickedUp':
-      return [{ ids: e.creditz ? ['creditz'] : ['itemPickup', 'uiClick'] }];
+      return [
+        { ids: e.creditz ? ['sfx.creditsPickup', 'creditz'] : ['sfx.itemPickup', 'itemPickup', 'uiClick'] },
+      ];
     case 'bossIntro':
       return [{ ids: ['bossIntro'] }];
     case 'dialogue':
@@ -91,7 +125,7 @@ export function cuesForEvent(e: GameEvent): Cue[] {
     case 'shrineUsed':
       return [{ ids: ['shrine'] }];
     case 'waypointActivated':
-      return [{ ids: ['waypoint'] }];
+      return [{ ids: ['sfx.waypoint', 'waypoint'] }];
     case 'playerDefeated':
       return [{ ids: ['droydDeath'], volume: 0.8, rate: 0.7 }];
     case 'objectUsed':
@@ -104,10 +138,10 @@ export function cuesForEvent(e: GameEvent): Cue[] {
 }
 
 /** Collapse crowds within one event batch: cap per primary sound and soften volume by crowd size. */
-export function planCues(events: readonly GameEvent[], perIdCap = 4): Cue[] {
+export function planCues(events: readonly GameEvent[], perIdCap = 4, ctx?: CueContext): Cue[] {
   const groups = new Map<string, Cue[]>();
   for (const e of events) {
-    for (const c of cuesForEvent(e)) {
+    for (const c of cuesForEvent(e, ctx)) {
       const key = c.ids[c.ids.length - 1] ?? '';
       const g = groups.get(key);
       if (g) g.push(c);

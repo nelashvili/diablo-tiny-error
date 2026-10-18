@@ -19,6 +19,9 @@ import { createRenderer, type RenderController } from '@/render/renderer';
 import { createItemIcons, type ItemIconSource } from '@/render/icons/itemIcons';
 import { createAudioSystem, type FullAudioSystem } from '@/audio';
 import { AUDIO_CATALOG } from '@/render/assets/audio';
+import { elementForSkill, type BasicAttackSound, type CueContext } from '@/audio/eventMap';
+import { basicMissileFor } from '@/core/skills/behaviors';
+import { getEquippedWeapon } from '@/core/player/weapon';
 import { createInputManager, detectTouch, type InputManager } from '@/ui/input';
 import type { InputContext } from '@/ui/input/types';
 import {
@@ -105,7 +108,7 @@ export class Game {
     window.addEventListener('resize', () => this.resize());
 
     this.audio = createAudioSystem({ catalog: AUDIO_CATALOG });
-    this.audio.setVolumes({ master: s.masterVolume, music: s.musicVolume, sfx: s.sfxVolume });
+    this.audio.setVolumes({ master: masterVolume(s), music: s.musicVolume, sfx: s.sfxVolume });
 
     const ctx: InputContext = {
       dispatch: (cmd) => this.dispatch(cmd),
@@ -142,6 +145,7 @@ export class Game {
 
   inputCtx!: InputContext;
   readonly quests: QuestTracker;
+  private readonly cueCtx: CueContext = { basicAttackSound: (id) => basicAttackSound(this.world, id) };
 
   questView(): QuestLogView {
     return this.quests.view((this.levels.current?.act ?? 1) as ActId);
@@ -316,7 +320,7 @@ export class Game {
     if (!this.loading) this.renderer.render(w, events, alpha, realDt);
     const p = this.player;
     if (p) this.audio.setListener?.(p.pos);
-    this.audio.handleEvents(events);
+    this.audio.handleEvents(events, this.cueCtx);
     this.ui.api.store.view.value = w;
     this.ui.publish(events);
 
@@ -379,7 +383,7 @@ export class Game {
   }
 
   private applySettings(s: Settings): void {
-    this.audio?.setVolumes({ master: s.masterVolume, music: s.musicVolume, sfx: s.sfxVolume });
+    this.audio?.setVolumes({ master: masterVolume(s), music: s.musicVolume, sfx: s.sfxVolume });
     this.renderer?.setScreenShake(s.screenShake);
     if (s.quality !== 'auto') this.renderer?.setQuality(s.quality);
   }
@@ -565,4 +569,28 @@ export class Game {
       openPanel(this.ui.api, 'dialogue');
     });
   }
+}
+
+/** `?mute` in the URL silences all audio without touching saved settings (automated testing). */
+const MUTED = typeof location !== 'undefined' && new URLSearchParams(location.search).has('mute');
+
+function masterVolume(s: Settings): number {
+  return MUTED ? 0 : s.masterVolume;
+}
+
+const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
+
+/** Basic-attack sound by what the attacker wields: sabers hum, blasturs fire, monster missiles by element. */
+function basicAttackSound(world: SimWorld, id: number): BasicAttackSound {
+  const a = world.get(id);
+  if (!a || (a.kind !== 'player' && a.kind !== 'merc' && a.kind !== 'monster')) return null;
+  const missile = basicMissileFor(a);
+  if (missile) {
+    if (missile === 'javelin' || missile === 'disc') return 'swing';
+    const fam = elementForSkill(missile.replace(/^m_/, ''));
+    return fam === 'magic' || fam === 'saber' ? 'swing' : fam;
+  }
+  const wc = getEquippedWeapon(a)?.weaponClass;
+  if (wc && SABER_CLASSES.has(wc)) return 'saber';
+  return 'swing';
 }

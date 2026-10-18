@@ -82,10 +82,28 @@ interface Rec {
   hitDz: number;
 }
 
+/** Missile vfx ids drawn as solid laser bolts: [body color, halo color]. */
+const BLASTUR_BOLTS: Record<string, [number, number]> = {
+  'vfx.bolt.blastur': [0xff2414, 0xff5030],
+  'vfx.bolt.blasturBlue': [0x2a7cff, 0x4a9cff],
+};
+
 /** Shared tiny resources for beams / glows (created lazily, disposed with the sync). */
 class Shared {
   beamGeo = new THREE.CylinderGeometry(0.06, 0.16, 6, 8, 1, true);
   glowGeo = new THREE.SphereGeometry(0.22, 10, 8);
+  /** Blastur bolt body: a capsule lying along +X (rotated to the flight direction per missile). */
+  boltGeo = new THREE.CapsuleGeometry(0.075, 1.0, 4, 8).rotateZ(Math.PI / 2);
+  private solid = new Map<number, THREE.MeshBasicMaterial>();
+  /** Opaque, untonemapped color so laser bolts stay saturated over bright ground. */
+  solidMat(color: number): THREE.MeshBasicMaterial {
+    let m = this.solid.get(color);
+    if (!m) {
+      m = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+      this.solid.set(color, m);
+    }
+    return m;
+  }
   private mats = new Map<number, THREE.MeshBasicMaterial>();
   mat(color: number, opacity: number): THREE.MeshBasicMaterial {
     const key = color * 16 + Math.round(opacity * 10);
@@ -106,7 +124,10 @@ class Shared {
   dispose(): void {
     this.beamGeo.dispose();
     this.glowGeo.dispose();
+    this.boltGeo.dispose();
     for (const m of this.mats.values()) m.dispose();
+    for (const m of this.solid.values()) m.dispose();
+    this.solid.clear();
     this.mats.clear();
   }
 }
@@ -281,6 +302,17 @@ export class EntitySync {
           this.missileVfx.set(e.defId, id);
         }
         root.position.y = 0.9;
+        const bolt = BLASTUR_BOLTS[id];
+        if (bolt) {
+          // Solid laser body with a soft halo, aimed along the flight direction.
+          const body = new THREE.Group();
+          body.add(new THREE.Mesh(this.shared.boltGeo, this.shared.solidMat(bolt[0])));
+          const halo = new THREE.Mesh(this.shared.boltGeo, this.shared.mat(bolt[1], 0.2));
+          halo.scale.set(1.1, 1.8, 1.8);
+          body.add(halo);
+          body.rotation.y = -Math.atan2(e.velocity.y, e.velocity.x);
+          root.add(body);
+        }
         handle = this.vfx.attach(id, root, { radius: e.radius });
         break;
       }

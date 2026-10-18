@@ -6,14 +6,18 @@ import { Howl, Howler } from 'howler';
 import type { AudioSystem } from './types';
 import type { GameEvent } from '../core/sim/events';
 import { moodFor, startPad, type PadHandle } from './ambient';
-import { planCues, type Cue } from './eventMap';
-import { finalGain, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
-import { PROCEDURAL_IDS, ProceduralSfx, RECIPES } from './synth';
+import { planCues, type Cue, type CueContext } from './eventMap';
+import { finalGain, pickTake, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
+import { PROCEDURAL_IDS, PROCEDURAL_TAKES, ProceduralSfx, RECIPES } from './synth';
 
 export interface CatalogEntry {
   urls: string[];
   volume?: number;
   loop?: boolean;
+  /** Random playback-rate range for this take. */
+  rate?: [number, number];
+  /** Other catalog ids that sound alike; one is picked at random per play. */
+  variants?: string[];
 }
 export type AudioCatalog = Record<string, CatalogEntry>;
 
@@ -164,16 +168,19 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     if (!handle) return;
 
     const variation = procId ? (getRecipePitchVar(procId) ?? pitchVar) : pitchVar;
-    const rate = (o.rate ?? 1) * rand(variation);
+    let rate = (o.rate ?? 1) * rand(variation);
     const vol = gain * (1 - Math.random() * volVar);
 
     if (fileId) {
-      const h = howlFor(fileId);
+      // Alternate between the clip's recorded takes, each at its own pitch range.
+      const take = pickTake(fileId, catalog, Math.random(), Math.random());
+      rate *= take.rate;
+      const h = howlFor(take.id);
       if (!h) {
         limiter.release(handle);
         return;
       }
-      const base = catalog[fileId]?.volume ?? 1;
+      const base = catalog[take.id]?.volume ?? 1;
       const sid = h.play();
       h.volume(sfxFileVolume(base * vol), sid);
       h.rate(rate, sid);
@@ -194,7 +201,7 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
       limiter.release(handle);
       return;
     }
-    const ab = proc.get(procId);
+    const ab = proc.get(procId, Math.floor(Math.random() * PROCEDURAL_TAKES));
     if (!ab) {
       limiter.release(handle);
       return;
@@ -353,10 +360,10 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     playSfxAt(id, pos, o) {
       playResolved([id], { ...o, pos });
     },
-    handleEvents(events: readonly GameEvent[]) {
+    handleEvents(events: readonly GameEvent[], cueCtx?: CueContext) {
       if (disposed || events.length === 0) return;
       throttle.beginBatch();
-      for (const c of planCues(events)) playCue(c);
+      for (const c of planCues(events, 4, cueCtx)) playCue(c);
     },
     setVolumes(v) {
       volumes = { master: v.master, music: v.music, sfx: v.sfx };

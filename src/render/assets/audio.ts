@@ -52,12 +52,18 @@ const RAW: Record<string, Omit<AudioEntry, 'id'>> = {
   'sfx.saberClash': sfx('saber_clash_1', 0.7, { variants: ['sfx.saberClash.2'] }),
   'sfx.saberClash.2': sfx('saber_clash_2', 0.7),
   // --- hits by damage type (audio system: hit.<dtype>) ---
-  'hit.physical': sfx('hit_1', 0.8, { variants: ['hit.physical.2', 'hit.physical.3'], rate: [0.9, 1.1] }),
+  'hit.physical': sfx('hit_1', 0.8, {
+    variants: ['hit.physical.2', 'hit.physical.3', 'hit.physical.4'],
+    rate: [0.9, 1.1],
+  }),
   'hit.physical.2': sfx('hit_2', 0.8, { rate: [0.9, 1.1] }),
   'hit.physical.3': sfx('hit_3', 0.8, { rate: [0.9, 1.1] }),
-  'hit.plasma': sfx('droyd_sparks_1', 0.45, { rate: [0.9, 1.2] }),
+  'hit.physical.4': sfx('hit_metal_1', 0.45, { rate: [0.8, 0.95] }),
+  'hit.plasma': sfx('droyd_sparks_1', 0.45, { rate: [0.9, 1.2], variants: ['hit.plasma.2'] }),
+  'hit.plasma.2': sfx('droyd_sparks_2', 0.4, { rate: [0.8, 1.05] }),
   'hit.cryo': sfx('hit_metal_2', 0.5, { rate: [1.2, 1.5] }),
-  'hit.storm': sfx('droyd_sparks_2', 0.45, { rate: [1, 1.2] }),
+  'hit.storm': sfx('droyd_sparks_2', 0.45, { rate: [1, 1.2], variants: ['hit.storm.2'] }),
+  'hit.storm.2': sfx('droyd_sparks_1', 0.4, { rate: [1.15, 1.35] }),
   'hit.toxin': sfx('smoke_poof_2', 0.6, { rate: [0.7, 0.9] }),
   'hit.magic': sfx('forse_cast', 0.4, { rate: [1.1, 1.4] }),
   'hit.metal': sfx('hit_metal_1', 0.7, { variants: ['hit.metal.2'] }),
@@ -65,8 +71,8 @@ const RAW: Record<string, Omit<AudioEntry, 'id'>> = {
   // --- deaths (audio system: death.droyd / death.organic) ---
   'death.droyd': sfx('droyd_death_1', 0.6, { variants: ['death.droyd.2'], rate: [0.95, 1.1] }),
   'death.droyd.2': sfx('droyd_death_2', 0.6, { rate: [0.95, 1.1] }),
-  'death.organic': sfx('smoke_poof_1', 0.7, { variants: ['death.organic.2'] }),
-  'death.organic.2': sfx('smoke_poof_2', 0.7),
+  'death.organic': sfx('smoke_poof_1', 0.7, { variants: ['death.organic.2'], rate: [0.85, 1.1] }),
+  'death.organic.2': sfx('smoke_poof_2', 0.7, { rate: [0.85, 1.1] }),
   'sfx.sparks': sfx('droyd_sparks_1', 0.5),
   'sfx.smokePoof': sfx('smoke_poof_1', 0.7),
   // --- skills (audio system: skill.<skillId>; ids unknown here so only generic fallbacks) ---

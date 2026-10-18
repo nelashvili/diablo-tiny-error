@@ -495,11 +495,14 @@ export const RECIPES: Record<string, SynthRecipe> = {
 /** Ids that are procedurally available. */
 export const PROCEDURAL_IDS: readonly string[] = Object.keys(RECIPES);
 
-/** Render a recipe to samples (deterministic per id). */
-export function renderSamples(id: string, sr: number): Float32Array | null {
+/** Distinct renders kept per one-shot recipe (different noise seeds), picked at random per play. */
+export const PROCEDURAL_TAKES = 3;
+
+/** Render a recipe to samples (deterministic per id and take). */
+export function renderSamples(id: string, sr: number, take = 0): Float32Array | null {
   const r = RECIPES[id];
   if (!r) return null;
-  return r.render(sr, mulberry32(hashStr(id)));
+  return r.render(sr, mulberry32(hashStr(id) + take * 7919));
 }
 
 /** Resolve unknown variant ids like `itemDrop.superior` to a base procedural id, if any. */
@@ -525,14 +528,16 @@ export class ProceduralSfx {
     return RECIPES[id];
   }
 
-  get(id: string): AudioBuffer | null {
-    const hit = this.cache.get(id);
+  get(id: string, take = 0): AudioBuffer | null {
+    const t = RECIPES[id]?.loop ? 0 : take;
+    const key = `${id}#${t}`;
+    const hit = this.cache.get(key);
     if (hit) return hit;
-    const samples = renderSamples(id, this.sampleRate);
+    const samples = renderSamples(id, this.sampleRate, t);
     if (!samples) return null;
     const ab = this.ctx.createBuffer(1, samples.length, this.sampleRate);
     ab.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
-    this.cache.set(id, ab);
+    this.cache.set(key, ab);
     return ab;
   }
 }

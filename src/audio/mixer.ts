@@ -116,3 +116,27 @@ export class SfxThrottle {
     return true;
   }
 }
+
+/** Catalog fields that drive per-play variety. */
+export interface TakeInfo {
+  variants?: string[];
+  rate?: [number, number];
+}
+
+/**
+ * Choose which recorded take to play and its pitch: the entry or one of its variants (uniformly),
+ * at a playback rate drawn from the chosen take's `rate` range. `r1`, `r2` in [0,1).
+ */
+export function pickTake(
+  id: string,
+  catalog: Readonly<Record<string, TakeInfo | undefined>>,
+  r1: number,
+  r2: number,
+): { id: string; rate: number } {
+  const e = catalog[id];
+  const all = [id, ...(e?.variants ?? []).filter((v) => catalog[v] !== undefined)];
+  const pick = all[Math.min(all.length - 1, Math.floor(r1 * all.length))] ?? id;
+  const range = catalog[pick]?.rate;
+  const rate = range ? range[0] + (range[1] - range[0]) * r2 : 1;
+  return { id: pick, rate };
+}

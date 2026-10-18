@@ -35,6 +35,8 @@ Files marked `CONTRACT FILE` and `STUB (Wave 0)` belong to someone specific:
 - D2 knowledge is the spec: when unsure about a formula/rule, use Diablo II (LoD 1.14 / D2R) behavior,
   except: continuous speed scaling (no breakpoints), no corpses (remnants), auto-identify.
 - Tone (PLAN §2): no blood/gore/corpses. Organic enemies → dark smoke; droyds → sparks & scrap.
+- Testing in a browser (Playwright etc.): always open the game muted with `?mute`
+  (`http://localhost:5173/?mute`); it zeroes master volume for that page only, saved settings untouched.
 - Formatting: Prettier (single quotes, width 110). Run `npm run format` before committing.
 
 ## Definition of done (every task)

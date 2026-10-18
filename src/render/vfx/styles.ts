@@ -17,6 +17,9 @@ export type VfxStyle =
 
 const TABLE: Record<string, VfxStyle> = {
   'vfx.bolt.blastur': 'blastur',
+  'vfx.bolt.blasturBlue': 'blastur',
+  'vfx.bolt.javelin': 'blastur',
+  'vfx.bolt.quill': 'blastur',
   'vfx.bolt.plasmaOrb': 'orb',
   'vfx.bolt.cryo': 'orb',
   'vfx.bolt.storm': 'orb',

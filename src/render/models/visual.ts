@@ -28,6 +28,14 @@ export const HELD_WEAPON_POSE = new THREE.Euler(-0.4, 0, 1.0);
  */
 export const AIMED_WEAPON_POSE = new THREE.Euler(0, Math.PI / 2, 0);
 
+/**
+ * Gun orientation in the body frame (model faces +Z): the attachment's barrel (+Y in the hand pose)
+ * points forward and its handle (+Z) points down.
+ */
+const AIM_LOCAL = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
+const AIM_Q = new THREE.Quaternion();
+const AIM_PARENT = new THREE.Quaternion();
+
 interface AttachState {
   modelId: string;
   accent: number | undefined;
@@ -150,7 +158,26 @@ export class Visual implements EntityVisual {
   update(dt: number): void {
     this.time += dt;
     this.rig.update(dt);
-    for (const slot of SLOTS) this.attached.get(slot)?.att.update(this.time);
+    for (const slot of SLOTS) {
+      const a = this.attached.get(slot);
+      if (!a) continue;
+      if (a.att.grip === 'aimed' && this.rig.handTilt === 0 && (slot === 'mainHand' || slot === 'offHand'))
+        this.aim(slot, a.att);
+      a.att.update(this.time);
+    }
+  }
+
+  /**
+   * Keep guns level and pointed where the hero faces: the clips (built for crossbows) swing the
+   * hand up and down, so the hand only moves the gun and never turns it.
+   */
+  private aim(slot: AttachSlot, att: Attachment): void {
+    const sock = this.rig.socket(slot);
+    sock.updateWorldMatrix(true, false);
+    this.object.getWorldQuaternion(AIM_Q);
+    AIM_Q.multiply(AIM_LOCAL);
+    sock.getWorldQuaternion(AIM_PARENT).invert();
+    att.object.quaternion.copy(AIM_PARENT.multiply(AIM_Q));
   }
 
   dispose(): void {

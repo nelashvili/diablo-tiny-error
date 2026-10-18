@@ -3,6 +3,7 @@ import {
   busGains,
   clamp01,
   distanceGain,
+  pickTake,
   finalGain,
   panFor,
   positional,
@@ -93,5 +94,22 @@ describe('SfxThrottle', () => {
     expect(t.allow('a', 1.05)).toBe(false);
     expect(t.allow('a', 1.2)).toBe(true);
     expect(t.allow('b', 1.0)).toBe(true);
+  });
+});
+
+describe('pickTake', () => {
+  const cat = {
+    a: { variants: ['a.2', 'missing'], rate: [1, 1] as [number, number] },
+    'a.2': { rate: [0.5, 1.5] as [number, number] },
+    plain: {},
+  };
+  it('alternates between the entry and its existing variants', () => {
+    expect(pickTake('a', cat, 0, 0).id).toBe('a');
+    expect(pickTake('a', cat, 0.99, 0).id).toBe('a.2');
+  });
+  it("draws the rate from the chosen take's range", () => {
+    expect(pickTake('a', cat, 0.99, 0.5).rate).toBeCloseTo(1);
+    expect(pickTake('a', cat, 0.99, 0).rate).toBeCloseTo(0.5);
+    expect(pickTake('plain', cat, 0.3, 0.7)).toEqual({ id: 'plain', rate: 1 });
   });
 });

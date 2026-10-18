@@ -4,6 +4,7 @@
 import type { DamageType, Vec2 } from '../../core/types';
 import type { GameEvent } from '../../core/sim/events';
 import type { WorldView } from '../../core/sim/world';
+import { DB } from '../../data/db';
 
 export interface SpawnOpts {
   radius?: number;
@@ -37,6 +38,17 @@ export const LOOT_BEAM_IDS: Record<string, string> = {
 
 const HIT_HEIGHT = 0.9;
 
+/** Muzzle flash per missile vfx: blastur bolts flash at the barrel when fired. */
+const MUZZLE_IDS: Record<string, string> = {
+  'vfx.bolt.blastur': 'vfx.muzzle.blastur',
+  'vfx.bolt.blasturBlue': 'vfx.muzzle.blasturBlue',
+};
+
+export function muzzleId(missileDefId: string): string | undefined {
+  const vfx = DB.missiles.get(missileDefId)?.vfx;
+  return vfx ? MUZZLE_IDS[vfx] : undefined;
+}
+
 export function impactId(dtype: DamageType): string {
   return IMPACT_IDS[dtype] ?? IMPACT_IDS.physical;
 }
@@ -57,6 +69,13 @@ export function mapEvents(events: readonly GameEvent[], view: WorldView, sink: E
   for (let i = 0; i < events.length; i++) {
     const e = events[i] as GameEvent;
     switch (e.type) {
+      case 'spawned': {
+        const m = view.get(e.id);
+        if (m?.kind !== 'missile') break;
+        const id = muzzleId(m.defId);
+        if (id) sink.spawn(id, m.pos, { height: HIT_HEIGHT, dir: Math.atan2(m.velocity.y, m.velocity.x) });
+        break;
+      }
       case 'damage':
         sink.spawn(impactId(e.dtype), e.pos, { radius: e.crit ? 1.7 : 1, height: HIT_HEIGHT });
         break;
@@ -66,12 +85,16 @@ export function mapEvents(events: readonly GameEvent[], view: WorldView, sink: E
       case 'skillImpact':
         sink.spawn(e.vfx, e.pos, { radius: e.radius });
         break;
-      case 'missileHit':
-        sink.spawn(impactId(missileDamageType(view, e.missileId)), e.pos, {
+      case 'missileHit': {
+        const m = view.get(e.missileId);
+        const flash = m?.kind === 'missile' ? muzzleId(m.defId) : undefined;
+        // Blastur bolts burst into their own colored sparks; everything else uses the damage-type impact.
+        sink.spawn(flash ?? impactId(missileDamageType(view, e.missileId)), e.pos, {
           radius: e.targetId === undefined ? 0.9 : 0.6,
           height: HIT_HEIGHT,
         });
         break;
+      }
       case 'levelUp': {
         const ent = view.get(e.id);
         if (ent) sink.spawn('vfx.levelup', ent.pos);

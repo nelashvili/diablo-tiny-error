@@ -86,3 +86,34 @@ describe('planCues', () => {
     expect(cues[0]?.volume).toBe(1);
   });
 });
+
+describe('basic attack sounds', () => {
+  const cast = { type: 'skillCast', casterId: 7, skillId: 'attack' } as const;
+  it('follow the weapon the caster wields', () => {
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'blastur' })[0]?.ids).toEqual([
+      'sfx.blasturShot',
+      'blastur',
+    ]);
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'saber' })[0]?.ids).toEqual([
+      'sfx.saberSwing',
+      'saberSwing',
+    ]);
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'swing' })[0]?.rate).toBeLessThan(1);
+  });
+  it('stay silent without a weapon sound instead of playing a spell chime', () => {
+    expect(cuesForEvent(cast)).toEqual([]);
+    expect(cuesForEvent(cast, { basicAttackSound: () => null })).toEqual([]);
+  });
+  it('prefer recorded hit takes before the synth', () => {
+    const hit = cuesForEvent({
+      type: 'damage',
+      targetId: 1,
+      sourceId: 2,
+      amount: 5,
+      dtype: 'physical',
+      crit: false,
+      pos: { x: 0, y: 0 },
+    } as never);
+    expect(hit[0]?.ids).toEqual(['hit.physical', 'hit']);
+  });
+});

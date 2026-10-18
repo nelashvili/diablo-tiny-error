@@ -132,6 +132,46 @@ const ACTORS: ModelEntry[] = [
     ],
   }),
   kay('npc.default', 'monsters/barbarian', 0xb89c6a, undefined, 0.72),
+  // Camp NPCs: each gets its own body and palette so the camp doesn't look cloned.
+  // Medic Akarra: white medical robes with teal trim, no hat.
+  kay('npc.medicAkarra', 'heroes/mage', 0xe8ecef, undefined, 0.72, {
+    hide: ['Mage_Hat'],
+    recolor: [
+      { hue: [160, 290], minSat: 0.15, color: 0xeef1f3 },
+      { hue: [300, 345], minSat: 0.4, color: 0x2a9d8f },
+    ],
+  }),
+  // Chief Charzi: the camp mechanic, bald and burly, with orange-trimmed work gear.
+  kay('npc.chiefCharzi', 'monsters/barbarian', 0xc8682a, undefined, 0.76, {
+    hide: ['Barbarian_Hat'],
+    recolor: [{ hue: [190, 230], minSat: 0.25, color: 0xd0702a }],
+  }),
+  // Captain Kasha: rebel pilot in an orange flight suit with a white helmet and harness.
+  kay('npc.captainKasha', 'heroes/knight', 0xd26a2a, undefined, 0.74, {
+    hide: ['Knight_Cape'],
+    recolor: [
+      { hue: [0, 360], maxSat: 0.12, color: 0xd26a2a },
+      { hue: [330, 20], minSat: 0.4, color: 0xeeeeee },
+      { hue: [35, 60], minSat: 0.5, color: 0x3a3a3a },
+    ],
+  }),
+  // Gheedo: a small hooded scrap trader in dark brown robes.
+  kay('npc.gheedo', 'monsters/rogueHooded', 0x4a3420, undefined, 0.55, {
+    recolor: [
+      { hue: [95, 200], color: 0x4a3420 },
+      { hue: [55, 95], minSat: 0.35, color: 0x2e2216 },
+    ],
+  }),
+  // Master Yoduh: tiny, green-skinned, in a pale hermit's robe.
+  kay('npc.masterYoduh', 'heroes/mage', 0x8fae5a, undefined, 0.5, {
+    hide: ['Mage_Hat'],
+    recolor: [
+      { hue: [15, 40], minSat: 0.2, color: 0x93b25e },
+      { hue: [300, 345], minSat: 0.4, color: 0xcab68e },
+      { hue: [160, 290], minSat: 0.15, color: 0x7a5a3a },
+      { hue: [0, 360], maxSat: 0.15, color: 0xdcdcd2 },
+    ],
+  }),
 
   // Act I monsters (mesh re-use + suggested tint in `accent`)
   {

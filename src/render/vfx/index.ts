@@ -51,6 +51,9 @@ const hg = (c: number): number => ((c >> 8) & 255) / 255;
 const hb = (c: number): number => (c & 255) / 255;
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+/** Blastur bolts whose body is drawn as a solid mesh by entitySync. */
+const LASER_IDS = new Set(['vfx.bolt.blastur', 'vfx.bolt.blasturBlue']);
+
 const FALLBACK: VfxDef = {
   id: 'vfx.fallback',
   primitive: 'impact',
@@ -799,7 +802,7 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
       hz = fx.sz + Math.sin(fx.dir) * dist * u;
     }
     const hy = fx.y;
-    const maxN = blastur ? 8 : 14;
+    const maxN = blastur ? 6 : 14;
     fx.histAcc += dt;
     if (fx.n === 0 || fx.histAcc >= 0.012) {
       fx.hist.copyWithin(3, 0, (R_PTS - 1) * 3);
@@ -810,10 +813,18 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
     fx.hist[1] = hy;
     fx.hist[2] = hz;
     const f = fx.fade;
-    ribbon(fx.hist, fx.n, size * (blastur ? 1.5 : 1.8), 0, 0.95 * f, 0, d.color);
-    glow(hx, hy, hz, size * (blastur ? 3.5 : 6), d.color, 0.8 * f);
-    glow(hx, hy, hz, size * 2.2, d.color2 ?? 0xffffff, 0.95 * f);
-    gq(hx, 0.04, hz, size * 4.5, 1, 1, 0, d.color, 0.28 * f);
+    if (blastur) {
+      // Streak. Laser bolts get a solid body mesh on the missile (entitySync) instead of a ribbon:
+      // ribbons blend to white at the center, which washes the bolt's color out.
+      if (!LASER_IDS.has(d.id)) ribbon(fx.hist, fx.n, size * 1.5, 0, 0.95 * f, 0, d.color);
+      glow(hx, hy, hz, size * 3, d.color, 0.55 * f);
+      gq(hx, 0.04, hz, size * 3.5, 1, 1, 0, d.color, 0.22 * f);
+    } else {
+      ribbon(fx.hist, fx.n, size * 1.8, 0, 0.95 * f, 0, d.color);
+      glow(hx, hy, hz, size * 6, d.color, 0.8 * f);
+      glow(hx, hy, hz, size * 2.2, d.color2 ?? 0xffffff, 0.95 * f);
+      gq(hx, 0.04, hz, size * 4.5, 1, 1, 0, d.color, 0.28 * f);
+    }
     if (!blastur) {
       fx.acc += (d.particles ?? 40) * qm * dt;
       while (fx.acc >= 1) {
