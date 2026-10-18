@@ -168,6 +168,21 @@ const ACTORS: ModelEntry[] = [
   kay('mon.shadowWraith', 'monsters/skeletonMage', 0x2a2a3a, 0x8866ff, 0.75),
   // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery) — larger, dark crimson, red litesaber
   kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95),
+  // Player summons
+  {
+    id: 'mon.battleDroyd',
+    url: M('monsters/robot'),
+    scale: 0.42,
+    clips: { ...ROBOT_CLIPS },
+    bones: { ...ROBOT_BONES },
+    placeholder: ph('box', 0xc9d2dc, 1.6, 0.45),
+    accent: 0x4fc3ff,
+  },
+  // Holo-Decoy: a blue hologram of the Bounty Huntur.
+  kay('mon.holoDecoy', 'heroes/knight', 0x4fc3ff, 0x4fc3ff, 0.75, {
+    recolor: [{ hue: [0, 360], minSat: 0, color: 0x6ad0ff }],
+  }),
+  stat('mon.blasturTurret', null, 1, ph('cylinder', 0x5a5f66, 0.9, 0.35), 0xff5a3a),
   // generic fallbacks
   {
     id: 'mon.default',

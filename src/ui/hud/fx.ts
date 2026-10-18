@@ -8,6 +8,7 @@ import type { WorldView } from '../../core/sim/world';
 import type { PlayerEntity } from '../../core/sim/entities';
 import type { ItemInstance } from '../../core/items/types';
 import type { Vec2 } from '../../core/types';
+import { DB } from '../../data/db';
 import { t } from '../../data/names';
 import { damageColor, qualityColor } from './colors';
 import { formatCompact, formatInt } from './format';
@@ -159,9 +160,20 @@ export class FxModel {
         case 'waypointActivated':
           this.toast(t('hud.waypoint'), 'var(--dmg-cryo)');
           break;
-        case 'questUpdated':
-          this.toast(t(e.completed ? 'hud.questDone' : 'hud.questUpdated'), 'var(--q-unique)');
+        case 'questUpdated': {
+          const q = DB.quests.get(e.questId);
+          // Progress shows what to do next, completion names the quest.
+          const next = q?.steps[q.steps.findIndex((st) => st.id === e.step) + 1];
+          const text = e.completed
+            ? q
+              ? t('quest.done', { name: t(q.name) })
+              : t('hud.questDone')
+            : next
+              ? t(next.text)
+              : t('hud.questUpdated');
+          this.toast(text, 'var(--q-unique)');
           break;
+        }
         case 'itemPickedUp': {
           if (e.playerId !== pid) break;
           if (e.creditz) {

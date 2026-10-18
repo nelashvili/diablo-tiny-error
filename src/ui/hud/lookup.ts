@@ -51,10 +51,11 @@ function guessElement(id: string): DamageType {
 }
 
 function glyphFor(kind: SkillKind | undefined, element: DamageType, id: string): SkillGlyph {
+  // Shouts (Rally, Battle Orders...) are buffs, but read as roars.
+  if (kind === 'warcry' || /roar|shout|rally|orders|provoke|command|banner/i.test(id)) return 'roar';
   if (kind === 'buff' || /armor|shield|iron|resil/i.test(id)) return 'shield';
   if (kind === 'summon' || /droyd|turret|decoy/i.test(id)) return 'droyd';
   if (kind === 'movement' || /leap|blink|step/i.test(id)) return 'leap';
-  if (kind === 'warcry' || /roar|shout|rally|orders|provoke|command|banner/i.test(id)) return 'roar';
   if (kind === 'passive' || /mastery|precision|dodge|avoid|evade|endurance/i.test(id)) return 'gem';
   if (kind === 'utility' || /scan|salvage|scavenge/i.test(id)) return 'eye';
   if (/jab|thrust|javelin|spear|fend|impale|throw/i.test(id)) return 'spear';

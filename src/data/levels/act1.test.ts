@@ -106,3 +106,15 @@ describe('Act I opening area', () => {
     }
   });
 });
+
+describe('Act I bosses', () => {
+  it('every boss a level lists gets a spawn point', () => {
+    for (const def of act1.filter((l) => (l.bosses ?? []).length > 0)) {
+      for (const seed of [3, 99]) {
+        const g = generateLevel(def, seed);
+        const placed = g.placements.filter((p) => p.kind === 'boss').map((p) => p.ref);
+        expect(placed.sort(), `${def.id} seed ${seed}`).toEqual([...(def.bosses ?? [])].sort());
+      }
+    }
+  });
+});

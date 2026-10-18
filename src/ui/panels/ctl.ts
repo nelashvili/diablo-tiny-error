@@ -170,7 +170,10 @@ export class PanelCtl {
   }
 
   private hoverItem(e: PointerEvent, item: ItemInstance, where: Holder) {
-    if (e.pointerType !== 'mouse' || this.held.value || this.press) return;
+    if (e.pointerType !== 'mouse') return;
+    // A press whose pointerup was lost (released outside the window, alt-tab) would block hover forever.
+    if (this.press && e.buttons === 0) this.cancelPress();
+    if (this.held.value || this.press) return;
     const cur = this.tip.value;
     if (cur?.pinned) return;
     if (cur?.content.kind === 'item' && cur.content.item.uid === item.uid) return;
@@ -233,6 +236,7 @@ export class PanelCtl {
   }
 
   private onMove(e: PointerEvent) {
+    if (this.press?.type === 'mouse' && e.pointerType === 'mouse' && e.buttons === 0) this.cancelPress();
     const p = this.press;
     if (p && p.pointerId === e.pointerId && !this.held.value) {
       const d = Math.hypot(e.clientX - p.x, e.clientY - p.y);

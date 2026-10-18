@@ -42,9 +42,11 @@ const HOVER_COLOR: Partial<Record<EntityKind, number>> = { monster: 0xff4a3a, gr
 
 /** Aim-assist radius (tiles) for clicks that land near, but not on, a monster. */
 const MAGNET_TILES = 1.5;
+// Loot under the cursor beats a monster behind it (D2: item labels sit on top), so hovering a drop
+// mid-fight shows its tooltip; items have a small pick radius, so this needs a deliberate point.
 const PICK_PRIORITY: Partial<Record<EntityKind, number>> = {
+  groundItem: 5,
   monster: 4,
-  groundItem: 3,
   npc: 2,
   object: 1,
 };
@@ -451,7 +453,7 @@ export class EntitySync {
     }
   }
 
-  /** Topmost pickable entity near the pointer. Priority monsters > items > npcs > objects. */
+  /** Topmost pickable entity near the pointer. Priority items > monsters > npcs > objects. */
   pick(px: number, py: number, cam: IsoCamera, touch: boolean): EntityId | null {
     const ppu = cam.pxPerUnit;
     const minPx = touch ? 30 : 20;

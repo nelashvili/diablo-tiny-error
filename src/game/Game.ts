@@ -30,10 +30,11 @@ import {
 } from '@/platform';
 import { LevelManager } from './levels';
 import { createUiBridge, openPanel, type UiBridge } from './ui';
+import { QuestTracker } from './quests';
 import { isVendor, repairCost } from '@/core/player/vendor';
 import { STASH_GRID } from '@/core/player/inventory';
 import { emptyGrid } from '@/core/items/grid';
-import type { StashView, VendorView } from '@/ui/panels/services';
+import type { QuestLogView, StashView, VendorView } from '@/ui/panels/services';
 import type { DialogueView, WaypointView } from '@/ui/panels/services';
 import type { ActId } from '@/core/types';
 
@@ -68,6 +69,7 @@ export class Game {
     const seed = (Math.random() * 0xffffffff) >>> 0;
     this.world = new SimWorld(seed);
     this.levels = new LevelManager(this.world, seed);
+    this.quests = new QuestTracker(this.world, () => this.player);
     const device = detectDevice();
     this.isTouch = detectTouch();
     const quality = settings.quality === 'auto' ? autoQuality(device) : settings.quality;
@@ -139,6 +141,11 @@ export class Game {
   }
 
   inputCtx!: InputContext;
+  readonly quests: QuestTracker;
+
+  questView(): QuestLogView {
+    return this.quests.view((this.levels.current?.act ?? 1) as ActId);
+  }
 
   // ------------------------------------------------------------------ start / save
 
@@ -203,6 +210,7 @@ export class Game {
     if (this.player) this.resetWorld();
     const save = newCharacterSave(classId, name, { now: Date.now() });
     this.save = save;
+    this.quests.load({}, save.progress[save.currentDifficulty]?.actsUnlocked ?? [1]);
     const town = this.levels.townOf(1);
     this.levels.enter(town);
     createPlayer(this.world, classId, name, { local: true });
@@ -221,6 +229,8 @@ export class Game {
     const init = saveToPlayerInit(save);
     const town = this.levels.townOf(save.progress[save.currentDifficulty]?.currentAct ?? 1);
     this.world.difficulty = save.currentDifficulty;
+    const prog = save.progress[save.currentDifficulty];
+    this.quests.load(prog?.quests, prog?.actsUnlocked ?? [1]);
     this.levels.enter(town);
     const p = createPlayer(this.world, init.classId, init.name, { local: true, startingItems: [] });
     Object.assign(p, {
@@ -262,6 +272,7 @@ export class Game {
       progress[diff] = {
         ...cur,
         waypoints: [...this.levels.waypoints],
+        quests: structuredClone(this.quests.state),
         currentAct: (this.levels.current?.act ?? cur.currentAct) as typeof cur.currentAct,
       };
     }

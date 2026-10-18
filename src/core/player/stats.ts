@@ -43,9 +43,12 @@ export function gatherModifiers(p: PlayerEntity): Modifier[] {
       bonus.bySkill[m.param ?? ''] = (bonus.bySkill[m.param ?? ''] ?? 0) + m.value;
   }
   const ids = new Set([...Object.keys(p.skills), ...Object.keys(bonus.bySkill)]);
+  const wielded = getEquippedWeapon(p)?.weaponClass;
   for (const id of ids) {
     const def = DB.skills.get(id);
     if (!def || def.kind !== 'passive' || !def.mods) continue;
+    // Weapon masteries only count while wielding one of their weapons.
+    if (def.weaponReq?.length && (!wielded || !def.weaponReq.includes(wielded))) continue;
     const lvl = levelFromParts(def, p.skills[id] ?? 0, bonus);
     if (lvl <= 0) continue;
     for (const m of def.mods)

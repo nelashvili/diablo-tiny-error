@@ -33,6 +33,7 @@ export function App({ game }: { game: Game }): JSX.Element {
       waypoints: () => game.waypointView(),
       dialogue: () => game.dialogueView(),
       vendor: () => game.vendorView(),
+      quests: () => game.questView(),
       stash: () => game.stashView(),
     }),
     [game],
