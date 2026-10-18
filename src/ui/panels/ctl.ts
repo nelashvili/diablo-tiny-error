@@ -3,6 +3,8 @@
  * tooltips (hover on mouse, long-press/tap on touch) and item quick actions.
  * One instance per <Panels>.
  */
+import { canEquip as coreCanEquip } from '../../core/items/helpers';
+import { upgradeVerdict, type UpgradeVerdict } from '../../core/items/upgrade';
 import { signal } from '@preact/signals';
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
@@ -104,6 +106,25 @@ export class PanelCtl {
 
   canEquip(item: ItemInstance, slot: EquipSlot): boolean {
     return this.slotsFor(item).includes(slot);
+  }
+
+  /**
+   * Upgrade badge for a carried/sold item: compared with what the player wears in its slot(s).
+   * Null when it isn't comparable or can't be worn by this hero (class / requirements; pass
+   * `anyReqs` to judge it anyway, e.g. for the tooltip of an item they will grow into).
+   */
+  upgradeOf(item: ItemInstance, anyReqs = false): UpgradeVerdict | null {
+    const p = this.player;
+    if (!p) return null;
+    const slots = this.slotsFor(item);
+    if (!slots.length || slots.some((s) => p.equipment[s]?.uid === item.uid)) return null;
+    const st = { level: p.level, strength: p.stats.strength, dexterity: p.stats.dexterity };
+    if (!anyReqs && !coreCanEquip(item, slots[0]!, p.classId, st)) return null;
+    const cmp = slots === RING_SLOTS ? slots : slots.slice(0, 1);
+    return upgradeVerdict(
+      item,
+      cmp.map((s) => p.equipment[s]),
+    );
   }
 
   /** Best slot to auto-equip into (empty ring slot first). */

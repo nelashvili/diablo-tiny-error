@@ -90,3 +90,19 @@ describe('act1 levels', () => {
     expect(town.placements.some((p) => p.kind === 'monsterPack')).toBe(false);
   });
 });
+
+describe('Act I opening area', () => {
+  it('keeps monster packs away from where the player arrives', () => {
+    const def = act1.find((l) => l.id === 'a1.mossfields')!;
+    for (const seed of [1, 7, 42, 1234, 99991]) {
+      const g = generateLevel(def, seed);
+      const arrivals = g.placements.filter((p) => p.kind === 'playerStart' || p.kind === 'exit');
+      for (const pack of g.placements.filter((p) => p.kind === 'monsterPack')) {
+        for (const a of arrivals) {
+          const d = Math.hypot(pack.pos.x - a.pos.x, pack.pos.y - a.pos.y);
+          expect(d, `seed ${seed} pack near ${a.kind}`).toBeGreaterThanOrEqual(16);
+        }
+      }
+    }
+  });
+});

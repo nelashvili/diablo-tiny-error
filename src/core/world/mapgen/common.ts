@@ -311,8 +311,9 @@ export function finalize(spec: LevelSpec, layout: Layout, rng: Rng, seed: number
   const cands = openCands();
   const walkCount = cands.length;
 
-  const keyPoints: { p: Vec2; r: number }[] = [{ p: layout.start, r: 12 }];
-  for (const e of layout.exits) keyPoints.push({ p: e.pos, r: 8 });
+  // Packs keep clear of where the player arrives (start + every entrance) so a level opens calmly.
+  const keyPoints: { p: Vec2; r: number }[] = [{ p: layout.start, r: 20 }];
+  for (const e of layout.exits) keyPoints.push({ p: e.pos, r: 16 });
   if (layout.waypoint) keyPoints.push({ p: layout.waypoint, r: 10 });
 
   const taken: Vec2[] = layout.fixed.map((f) => f.pos);
@@ -359,8 +360,8 @@ export function finalize(spec: LevelSpec, layout: Layout, rng: Rng, seed: number
       layout.start,
       {
         count: want,
-        minStart: 14,
-        spacing: 7,
+        minStart: 22,
+        spacing: 9,
         avoid: keyPoints,
       },
       [...taken, ...layout.packSpots],
@@ -381,7 +382,7 @@ export function finalize(spec: LevelSpec, layout: Layout, rng: Rng, seed: number
       layout.start,
       {
         count: nChamp + nUniq,
-        minStart: 18,
+        minStart: 30,
         spacing: 9,
         avoid: keyPoints,
       },

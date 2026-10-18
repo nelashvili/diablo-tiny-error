@@ -3,6 +3,8 @@
  * Desktop/iPad: D2 layout (left + right docks, centered dialogs). Phone/narrow: full-screen
  * sheet with tabs. Owns the held-item ghost, tooltips and Esc handling.
  */
+import { compareItems, type ItemLine } from '../../core/items/describe';
+import { itemScore, type UpgradeVerdict } from '../../core/items/upgrade';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { PlayerEntity } from '../../core/sim/entities';
@@ -225,12 +227,18 @@ function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }
   if (c.kind === 'item') {
     const desc = services.describeItem(c.item);
     let compare;
+    let verdict: UpgradeVerdict | null = null;
+    let deltas: ItemLine[] | undefined;
     if (c.where.kind === 'grid') {
       const slots = ctl.slotsFor(c.item);
       const eq = (slots === RING_SLOTS ? RING_SLOTS : slots.slice(0, 1))
         .map((s) => player.equipment[s])
         .filter((i) => !!i && i.uid !== c.item.uid);
       compare = eq.map((i) => services.describeItem(i!));
+      verdict = ctl.upgradeOf(c.item, true);
+      // Against the weaker ring, matching the verdict; an empty slot shows the item's own stats.
+      const worst = eq.length > 1 ? eq.reduce((a, b) => (itemScore(a!) <= itemScore(b!) ? a : b)) : eq[0];
+      if (verdict) deltas = compareItems(c.item, worst ?? undefined);
     }
     let footer: string | undefined;
     let footerTone: 'ok' | 'bad' | undefined;
@@ -247,7 +255,7 @@ function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }
         <ItemCompareTooltip
           colorblind={colorblind}
           compare={compare}
-          main={{ desc, footer, footerTone, actions, colorblind }}
+          main={{ desc, footer, footerTone, actions, colorblind, verdict, deltas }}
         />
       </TooltipLayer>
     );

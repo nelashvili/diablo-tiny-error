@@ -13,7 +13,8 @@ export type KeyAction =
   | { kind: 'recall' }
   | { kind: 'showItems' } // hold
   | { kind: 'closePanels' }
-  | { kind: 'standStill' }; // hold (Shift)
+  | { kind: 'standStill' } // hold (Shift)
+  | { kind: 'move'; dx: number; dy: number }; // hold: WASD / arrows, screen-space direction
 
 export type KeyBindings = Readonly<Record<string, KeyAction>>;
 
@@ -38,14 +39,22 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
   KeyI: { kind: 'panel', id: 'inventory' },
   KeyB: { kind: 'panel', id: 'inventory' },
   KeyC: { kind: 'panel', id: 'character' },
-  KeyA: { kind: 'panel', id: 'character' },
-  KeyS: { kind: 'panel', id: 'skills' },
+  KeyK: { kind: 'panel', id: 'skills' },
   KeyT: { kind: 'recall' },
   KeyQ: { kind: 'panel', id: 'quests' },
   KeyO: { kind: 'panel', id: 'options' },
   Escape: { kind: 'panel', id: 'menu' },
   KeyR: { kind: 'toggleRun' },
-  KeyW: { kind: 'swapWeapons' },
+  KeyX: { kind: 'swapWeapons' },
+  // WASD / arrow movement (screen directions: up the screen, left, down, right).
+  KeyW: { kind: 'move', dx: 0, dy: -1 },
+  KeyA: { kind: 'move', dx: -1, dy: 0 },
+  KeyS: { kind: 'move', dx: 0, dy: 1 },
+  KeyD: { kind: 'move', dx: 1, dy: 0 },
+  ArrowUp: { kind: 'move', dx: 0, dy: -1 },
+  ArrowLeft: { kind: 'move', dx: -1, dy: 0 },
+  ArrowDown: { kind: 'move', dx: 0, dy: 1 },
+  ArrowRight: { kind: 'move', dx: 1, dy: 0 },
   AltLeft: { kind: 'showItems' },
   AltRight: { kind: 'showItems' },
   Space: { kind: 'closePanels' },

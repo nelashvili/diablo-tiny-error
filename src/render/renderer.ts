@@ -20,6 +20,17 @@ import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
 import { makeRect, type GroundRect } from './culling/viewRect';
 
+const SABER_SPARKS = 'vfx.saber.sparks';
+const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
+
+/** Is the attacker swinging a litesaber? (its hits throw sparks) */
+function wieldsSaber(view: WorldView, id: EntityId): boolean {
+  const e = view.get(id);
+  const base = e && 'equipment' in e ? e.equipment.mainHand?.base : undefined;
+  const wc = base ? DB.items.get(base)?.weaponClass : undefined;
+  return wc !== undefined && SABER_CLASSES.has(wc);
+}
+
 export const DPR_CAP: Record<QualityLevel, number> = { low: 1, medium: 1.5, high: 2 };
 
 export type PostFactory = (r: THREE.WebGLRenderer, s: THREE.Scene, c: THREE.Camera) => PostFx;
@@ -123,7 +134,12 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       if (!e) continue;
       if (e.type === 'bossIntro') iso.shake.add(0.55);
       else if (e.type === 'attackResult') {
-        if (e.outcome === 'hit') sync.onHit(e.targetId, e.attackerId, false);
+        if (e.outcome === 'hit') {
+          sync.onHit(e.targetId, e.attackerId, false);
+          const target = view.get(e.targetId);
+          if (target && wieldsSaber(view, e.attackerId))
+            vfx.spawn(SABER_SPARKS, target.pos, { height: 0.9, radius: 1 });
+        }
       } else if (e.type === 'damage') {
         if (e.crit) sync.onHit(e.targetId, e.sourceId, true);
         if (e.targetId === local) {

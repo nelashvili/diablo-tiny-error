@@ -22,8 +22,11 @@ export const HELD_WEAPON_SCALE = 1.35;
  * which pointed blades at the floor; this raises them forward and up.
  */
 export const HELD_WEAPON_POSE = new THREE.Euler(-0.4, 0, 1.0);
-/** Guns: barrel level and pointing where the hero faces (the hand slot's +Y is already forward). */
-export const AIMED_WEAPON_POSE = new THREE.Euler(0, 0, 0);
+/**
+ * Guns: the hand slot's +Y already points where the hero faces, but its +Z points sideways; a
+ * quarter turn about the barrel drops the handle (attachment +Z) into the palm, pointing down.
+ */
+export const AIMED_WEAPON_POSE = new THREE.Euler(0, Math.PI / 2, 0);
 
 interface AttachState {
   modelId: string;

@@ -4,14 +4,15 @@
  *   (every `repeatSec`), holding on a monster keeps attacking it with the left skill.
  * - Shift + left -> left skill in place (standStill).
  * - Right click -> right skill at the cursor entity/position; hold repeats.
- * - F1-F8 select the right skill from hotkeys, 1-4 belt, Tab map, I/C/S/Q/Esc panels,
- *   R run/walk, W weapon swap, T recall, Alt (hold) item labels, Space closes panels.
+ * - WASD / arrow keys walk in that screen direction while held (mouse clicks still work).
+ * - F1-F8 select the right skill from hotkeys, 1-4 belt, Tab map, I/C/K/Q/Esc panels,
+ *   R run/walk, X weapon swap, T recall, Alt (hold) item labels, Space closes panels.
  */
 import type { Command } from '../../core/sim/commands';
 import type { EntityId, Vec2 } from '../../core/types';
 import type { InputContext, InputDevice } from './types';
 import { DEFAULT_KEYBINDINGS, resolveKey, shouldPreventDefault, type KeyBindings } from './keybindings';
-import { RepeatTimer } from './math';
+import { RepeatTimer, screenDirToSim } from './math';
 
 export interface MouseKeyboardOptions {
   bindings?: KeyBindings;
@@ -48,6 +49,9 @@ export class MouseKeyboardDevice implements InputDevice {
   private readonly leftTimer: RepeatTimer;
   private readonly rightTimer: RepeatTimer;
   private readonly bindings: KeyBindings;
+  /** Held movement keys (code -> screen direction). */
+  private readonly moveKeys = new Map<string, { dx: number; dy: number }>();
+  private keyMoving = false;
 
   constructor(private readonly opts: MouseKeyboardOptions = {}) {
     this.bindings = opts.bindings ?? DEFAULT_KEYBINDINGS;
@@ -139,6 +143,10 @@ export class MouseKeyboardDevice implements InputDevice {
   };
 
   private readonly onBlur = (): void => {
+    if (this.moveKeys.size) {
+      this.moveKeys.clear();
+      this.updateKeyMove();
+    }
     this.leftHold = { kind: 'none' };
     this.leftTimer.stop();
     this.rightHeld = false;
@@ -219,6 +227,13 @@ export class MouseKeyboardDevice implements InputDevice {
     const action = resolveKey(e.code, this.bindings);
     if (!action) return;
     if (shouldPreventDefault(action)) e.preventDefault();
+    if (action.kind === 'move') {
+      if (!this.moveKeys.has(e.code)) {
+        this.moveKeys.set(e.code, { dx: action.dx, dy: action.dy });
+        this.updateKeyMove();
+      }
+      return;
+    }
     if (e.repeat && action.kind !== 'standStill') return;
     switch (action.kind) {
       case 'hotkey': {
@@ -260,6 +275,10 @@ export class MouseKeyboardDevice implements InputDevice {
   private readonly onKeyUp = (e: KeyboardEvent): void => {
     const action = resolveKey(e.code, this.bindings);
     if (!action) return;
+    if (action.kind === 'move') {
+      if (this.moveKeys.delete(e.code)) this.updateKeyMove();
+      return;
+    }
     if (action.kind === 'showItems' && this.alt) {
       e.preventDefault();
       this.alt = false;
@@ -268,6 +287,28 @@ export class MouseKeyboardDevice implements InputDevice {
       this.shift = false;
     }
   };
+
+  /** Send the combined WASD direction (screen space -> sim), or stop when the last key lifts. */
+  private updateKeyMove(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    let sx = 0;
+    let sy = 0;
+    for (const d of this.moveKeys.values()) {
+      sx += d.dx;
+      sy += d.dy;
+    }
+    if (sx === 0 && sy === 0) {
+      if (this.keyMoving) this.send({ type: 'stop' });
+      this.keyMoving = false;
+      return;
+    }
+    const r = this.target?.getBoundingClientRect();
+    // Element-local, like the cursor; the camera keeps the hero at the center.
+    const center = r ? { x: r.width / 2, y: r.height / 2 } : { x: 0, y: 0 };
+    this.keyMoving = true;
+    this.send({ type: 'moveDir', dir: screenDirToSim(ctx, center, sx, sy) });
+  }
 
   /** Current run/walk state as toggled by R (integration may seed it from the player). */
   get isRunning(): boolean {

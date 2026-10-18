@@ -24,6 +24,8 @@ export interface PanelServices {
   xpForLevel?(level: number): number;
   /** Vendor price for buying an item from a vendor / selling one to it. */
   price(item: ItemInstance, mode: 'buy' | 'sell'): number;
+  /** Rendered item art (image URL), or null to use the SVG glyph; `onReady` fires once it exists. */
+  itemIcon?(baseId: DefId, onReady: () => void): string | null;
 }
 
 const QUALITY_PRICE: Record<ItemQuality, number> = {

@@ -117,7 +117,7 @@ describe('MouseKeyboardDevice', () => {
     key('keydown', 'Tab');
     key('keydown', 'Escape');
     key('keydown', 'KeyR');
-    key('keydown', 'KeyW');
+    key('keydown', 'KeyX');
     key('keydown', 'KeyT');
     key('keydown', 'AltLeft');
     key('keyup', 'AltLeft');
@@ -132,6 +132,26 @@ describe('MouseKeyboardDevice', () => {
     expect(panels).toEqual(['inventory', 'map', 'menu']);
     expect(labels).toEqual([true, false]);
     expect(closed()).toBe(1);
+  });
+});
+
+describe('WASD movement', () => {
+  it('walks in the held screen direction, combines diagonals and stops on release', () => {
+    const { out, key } = setup();
+    key('keydown', 'KeyD');
+    key('keydown', 'KeyD'); // auto-repeat: no duplicate
+    key('keydown', 'KeyW');
+    key('keyup', 'KeyD');
+    key('keyup', 'KeyW');
+    const dirs = out
+      .filter((c) => c.type === 'moveDir')
+      .map((c) => (c as { dir: { x: number; y: number } }).dir);
+    expect(dirs).toHaveLength(3);
+    expect(dirs[0]!.x).toBeCloseTo(1); // right
+    expect(dirs[1]!.x).toBeCloseTo(Math.SQRT1_2); // up-right
+    expect(dirs[1]!.y).toBeCloseTo(-Math.SQRT1_2);
+    expect(dirs[2]!.y).toBeCloseTo(-1); // up
+    expect(out[out.length - 1]).toEqual({ type: 'stop' });
   });
 });
 

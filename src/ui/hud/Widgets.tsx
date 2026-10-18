@@ -35,7 +35,7 @@ export function Belt(): JSX.Element {
 const MENU: { id: PanelId; icon: MenuIconName; key: string; hint: string }[] = [
   { id: 'character', icon: 'character', key: 'hud.menu.character', hint: 'C' },
   { id: 'inventory', icon: 'inventory', key: 'hud.menu.inventory', hint: 'I' },
-  { id: 'skills', icon: 'skills', key: 'hud.menu.skills', hint: 'S' },
+  { id: 'skills', icon: 'skills', key: 'hud.menu.skills', hint: 'K' },
   { id: 'quests', icon: 'quests', key: 'hud.menu.quests', hint: 'Q' },
   { id: 'map', icon: 'map', key: 'hud.menu.map', hint: 'Tab' },
   { id: 'menu', icon: 'menu', key: 'hud.menu.menu', hint: 'Esc' },

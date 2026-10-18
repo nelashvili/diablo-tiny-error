@@ -244,7 +244,7 @@ function setTarget(ctx: Ctx, m: MonsterEntity, t: Actor): Actor {
     if (
       (o.leaderId === group || o.id === group) &&
       typeof o.ai.targetId !== 'number' &&
-      dist(o.pos, m.pos) < 14
+      dist(o.pos, m.pos) < 10
     ) {
       o.ai.targetId = t.id;
       o.targetId = t.id;

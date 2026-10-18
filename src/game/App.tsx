@@ -35,6 +35,8 @@ export function App({ game }: { game: Game }): JSX.Element {
     [game],
   );
 
+  const services = useMemo(() => ({ itemIcon: game.itemIcons.get }), [game]);
+
   const run = async (fn: () => Promise<unknown>) => {
     setPhase('loading');
     await fn();
@@ -49,6 +51,7 @@ export function App({ game }: { game: Game }): JSX.Element {
         <Panels
           api={api}
           data={data}
+          services={services}
           onQuitToMenu={() => {
             void game.quitToMenu().then(() => {
               refresh();

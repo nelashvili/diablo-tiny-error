@@ -1,0 +1,109 @@
+/**
+ * "Is this better than what I'm wearing?" — a single rough power score per item so the UI can flag
+ * upgrades (green ▲) and downgrades (red ▼). Deliberately simple: weapon damage per second,
+ * defense, and a weight per modifier point. Pure; no class/skill simulation.
+ */
+import type { StatId } from '../stats/types';
+import { baseOf, isGear } from './lookup';
+import { itemDefense, itemModifiers, weaponInfo } from './helpers';
+import type { ItemInstance } from './types';
+
+/** Score per point of each stat (flat op). Unlisted stats count DEFAULT_WEIGHT. */
+const WEIGHTS: Partial<Record<StatId, number>> = {
+  strength: 1,
+  dexterity: 1,
+  vitality: 1.2,
+  energy: 0.8,
+  lifeMax: 0.5,
+  manaMax: 0.35,
+  lifeRegen: 1,
+  lifePerKill: 1,
+  manaPerKill: 0.8,
+  attackRating: 0.04,
+  minDamage: 1.5,
+  maxDamage: 1.5,
+  plasmaMin: 0.5,
+  plasmaMax: 0.5,
+  cryoMin: 0.5,
+  cryoMax: 0.5,
+  stormMin: 0.4,
+  stormMax: 0.4,
+  toxinMin: 0.2,
+  toxinMax: 0.2,
+  magicMin: 0.5,
+  magicMax: 0.5,
+  ias: 0.3,
+  fcr: 0.3,
+  lifeSteal: 1.5,
+  manaSteal: 1,
+  crushingBlow: 0.8,
+  deadlyStrike: 0.8,
+  defense: 0.12,
+  blockChance: 0.5,
+  fhr: 0.2,
+  frw: 0.25,
+  resPlasma: 0.35,
+  resCryo: 0.35,
+  resStorm: 0.35,
+  resToxin: 0.35,
+  damageReduced: 1,
+  damageReducedPct: 2,
+  magicFind: 0.15,
+  goldFind: 0.05,
+  allSkills: 25,
+  classSkills: 18,
+  treeSkills: 10,
+  singleSkill: 5,
+};
+const DEFAULT_WEIGHT = 0.3;
+/** Weapon damage-per-second points are worth this much score each. */
+const DPS_WEIGHT = 3;
+/** Scores within this fraction of each other count as a side-grade. */
+const SAME_BAND = 0.03;
+
+const RANGED = new Set<string>(['blasturPistol', 'blasturRifle', 'javelin', 'throwingDisc']);
+const isRanged = (item: ItemInstance): boolean => RANGED.has(baseOf(item)?.weaponClass ?? '');
+
+/** Rough power of an item on its own. */
+export function itemScore(item: ItemInstance): number {
+  let score = 0;
+  const w = weaponInfo(item);
+  if (w) {
+    const flat = item.mods.reduce(
+      (s, m) => (m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage') ? s + m.value / 2 : s),
+      0,
+    );
+    score += ((w.min + w.max) / 2 + flat) * w.speed * DPS_WEIGHT;
+  }
+  for (const m of itemModifiers(item)) {
+    if (m.stat === 'defense' && m.op === 'flat') continue; // counted from itemDefense below
+    if (w && m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage')) continue;
+    score += m.value * (WEIGHTS[m.stat] ?? DEFAULT_WEIGHT);
+  }
+  score += itemDefense(item) * (WEIGHTS.defense ?? 0);
+  return score;
+}
+
+export type UpgradeVerdict = 'up' | 'down' | 'same';
+
+/**
+ * Compare `candidate` with what is equipped in the slot(s) it would go into. With several slots
+ * (rings) it is measured against the weaker one; an empty slot is always an upgrade.
+ * Returns null for things that are not gear.
+ */
+export function upgradeVerdict(
+  candidate: ItemInstance,
+  equipped: readonly (ItemInstance | null | undefined)[],
+): UpgradeVerdict | null {
+  const base = baseOf(candidate);
+  if (!base || !isGear(base)) return null;
+  if (equipped.length === 0 || equipped.some((e) => !e)) return 'up';
+  // A blaster vs a litesaber is a change of playstyle, not an upgrade: don't judge it.
+  if (equipped.some((e) => isRanged(e!) !== isRanged(candidate))) return null;
+  const cur = Math.min(...equipped.map((e) => itemScore(e!)));
+  const mine = itemScore(candidate);
+  const band = Math.max(1, Math.abs(cur) * SAME_BAND);
+  if (mine > cur + band) return 'up';
+  if (mine < cur - band) return 'down';
+  return 'same';
+}

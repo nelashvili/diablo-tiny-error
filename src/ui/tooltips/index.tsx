@@ -4,7 +4,8 @@
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../../data/names';
-import type { ItemDescription } from '../../core/items/describe';
+import type { ItemDescription, ItemLine } from '../../core/items/describe';
+import type { UpgradeVerdict } from '../../core/items/upgrade';
 import type { DefId } from '../../core/types';
 import type { SkillDef } from '../../data/schema';
 import { placeTooltip, type Rect, type Side } from './position';
@@ -89,6 +90,9 @@ export function ItemTooltip(props: {
   footerTone?: 'ok' | 'bad';
   actions?: TipAction[];
   colorblind?: boolean;
+  /** Upgrade verdict vs the equipped item, with the stat changes it brings. */
+  verdict?: UpgradeVerdict | null;
+  deltas?: ItemLine[];
 }) {
   const d = props.desc;
   return (
@@ -108,6 +112,17 @@ export function ItemTooltip(props: {
           </div>
         ))}
       </div>
+      {props.verdict && (
+        <div class={`dte-tip-verdict v-${props.verdict}`}>
+          <div class="dte-tip-verdict-title">{t(`ui.tip.verdict.${props.verdict}`)}</div>
+          {props.deltas?.map((l, i) => (
+            <div key={i} class={`dte-tip-line s-${l.style}`}>
+              {l.style === 'better' ? '▲ ' : l.style === 'worse' ? '▼ ' : ''}
+              {l.text}
+            </div>
+          ))}
+        </div>
+      )}
       {props.footer && <div class={`dte-tip-footer ${props.footerTone ?? ''}`}>{props.footer}</div>}
       <Actions actions={props.actions} />
     </div>

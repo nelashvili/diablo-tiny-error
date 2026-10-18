@@ -109,6 +109,9 @@ const WEAPON_COLORS: Partial<Record<ItemKind, [number, number]>> = {
 const ASSET_WEAPON_LENGTH: Partial<Record<ItemKind, number>> = { blaster: 0.7, rifle: 1.25 };
 /** Fraction of the gun's length, from the back, where the hand grips it. */
 const GRIP_AT = 0.3;
+const FLIP_Z = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI);
+/** How far down the gun (barrel top = 0, handle bottom = 1) the palm sits. */
+const HANDLE_DEPTH = 0.62;
 const box = new THREE.Box3();
 
 /** Clone a loaded item model for attachment (shares geometries/materials). */
@@ -119,9 +122,12 @@ function fromAsset(asset: LoadedAsset, entry: ModelEntry, kind: ItemKind): Attac
   const wrap = new THREE.Group();
   wrap.add(obj);
   if (weapon) {
-    // Blaster-kit guns point their barrel along +Z; turn it to +Y like the procedural weapons,
-    // size them consistently (the kit mixes scales) and put the grip, not the stock end, in the hand.
+    // Blaster-kit guns point their barrel along -Z (the loop on the rifles is a skeletal stock).
+    // Turn the barrel to +Y like the procedural weapons, keeping the handle down along +Z: tip the
+    // gun back (+Z -> +Y), then spin it end over end about Z. Then size it consistently (the kit
+    // mixes scales) and put the grip, not the stock, in the hand.
     obj.rotation.x = -Math.PI / 2;
+    obj.quaternion.premultiply(FLIP_Z);
     wrap.updateMatrixWorld(true);
     box.setFromObject(obj);
     const len = box.max.y - box.min.y;
@@ -131,6 +137,8 @@ function fromAsset(asset: LoadedAsset, entry: ModelEntry, kind: ItemKind): Attac
       obj.scale.multiplyScalar(k);
       obj.position.y = -(box.min.y + len * GRIP_AT) * k;
       obj.position.x = -((box.min.x + box.max.x) / 2) * k;
+      // After the turn the gun's underside faces +Z: put the handle, not the barrel, in the palm.
+      obj.position.z = -(box.min.z + (box.max.z - box.min.z) * HANDLE_DEPTH) * k;
     }
   }
   return {

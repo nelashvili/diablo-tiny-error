@@ -40,6 +40,8 @@ export const QUALITY_COLORS: Record<string, number> = {
 
 const HOVER_COLOR: Partial<Record<EntityKind, number>> = { monster: 0xff4a3a, groundItem: 0xffffff };
 
+/** Aim-assist radius (tiles) for clicks that land near, but not on, a monster. */
+const MAGNET_TILES = 1.5;
 const PICK_PRIORITY: Partial<Record<EntityKind, number>> = {
   monster: 4,
   groundItem: 3,
@@ -453,27 +455,35 @@ export class EntitySync {
   pick(px: number, py: number, cam: IsoCamera, touch: boolean): EntityId | null {
     const ppu = cam.pxPerUnit;
     const minPx = touch ? 30 : 20;
+    // Aim assist: a click that misses everything still snaps to a monster this close to the cursor.
+    const magnet = Math.max(touch ? 64 : 48, MAGNET_TILES * ppu);
     let bestId: EntityId | null = null;
     let bestPrio = -1;
     let bestD = Infinity;
+    let nearMonster: EntityId | null = null;
+    let nearD = magnet * magnet;
     const a = { x: 0, y: 0 };
     const b = { x: 0, y: 0 };
     for (const r of this.records.values()) {
       if (!r.pickable || !r.root.visible) continue;
-      const prio = PICK_PRIORITY[r.kind] ?? 0;
-      if (prio < bestPrio) continue;
       if (r.kind === 'monster' && r.mode === 'dying') continue;
+      const prio = PICK_PRIORITY[r.kind] ?? 0;
+      if (prio < bestPrio && r.kind !== 'monster') continue;
       cam.worldToScreen(r.x, 0, r.z, a);
       cam.worldToScreen(r.x, r.pickH, r.z, b);
       const rad = Math.max(minPx, r.pickR * ppu * (touch ? 1.4 : 1));
       const d = distSqToSegment(px, py, a.x, a.y, b.x, b.y);
-      if (d > rad * rad) continue;
+      if (r.kind === 'monster' && d < nearD) {
+        nearD = d;
+        nearMonster = r.id;
+      }
+      if (prio < bestPrio || d > rad * rad) continue;
       if (prio > bestPrio || d < bestD) {
         bestPrio = prio;
         bestD = d;
         bestId = r.id;
       }
     }
-    return bestId;
+    return bestId ?? nearMonster;
   }
 }

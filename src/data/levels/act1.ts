@@ -36,7 +36,8 @@ const levels: LevelDef[] = [
     tileset: 'endoor.forest',
     monsterLevel: ml(1, 36, 67),
     monsters: ['mossBeast', 'scrapDroyd', 'tuskinRaider'],
-    density: 0.7,
+    // First combat area: sparse so a fresh hero meets one pack at a time.
+    density: 0.35,
     champions: { min: 1, max: 2 },
     uniques: { min: 0, max: 1 },
     waypoint: false,

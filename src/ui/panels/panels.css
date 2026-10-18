@@ -460,6 +460,32 @@
   width: min(80%, calc(var(--cell) * 0.85));
   height: 80%;
 }
+.dte-upg {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 900;
+  pointer-events: none;
+  text-shadow:
+    0 0 3px rgba(0, 0, 0, 0.9),
+    0 1px 1px #000;
+}
+.dte-upg.up {
+  color: #4fe07a;
+}
+.dte-upg.down {
+  color: #ff6b6b;
+  opacity: 0.85;
+}
+.dte-item-art {
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.75));
+}
 .dte-blade {
   fill: #7fe3ff;
   stroke: none;

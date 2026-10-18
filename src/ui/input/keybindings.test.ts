@@ -10,11 +10,14 @@ describe('keybindings', () => {
     expect(resolveKey('Tab')).toEqual({ kind: 'panel', id: 'map' });
     expect(resolveKey('KeyI')).toEqual({ kind: 'panel', id: 'inventory' });
     expect(resolveKey('KeyC')).toEqual({ kind: 'panel', id: 'character' });
-    expect(resolveKey('KeyS')).toEqual({ kind: 'panel', id: 'skills' });
+    expect(resolveKey('KeyK')).toEqual({ kind: 'panel', id: 'skills' });
     expect(resolveKey('KeyQ')).toEqual({ kind: 'panel', id: 'quests' });
     expect(resolveKey('Escape')).toEqual({ kind: 'panel', id: 'menu' });
     expect(resolveKey('KeyR')).toEqual({ kind: 'toggleRun' });
-    expect(resolveKey('KeyW')).toEqual({ kind: 'swapWeapons' });
+    expect(resolveKey('KeyX')).toEqual({ kind: 'swapWeapons' });
+    expect(resolveKey('KeyW')).toEqual({ kind: 'move', dx: 0, dy: -1 });
+    expect(resolveKey('KeyD')).toEqual({ kind: 'move', dx: 1, dy: 0 });
+    expect(resolveKey('ArrowLeft')).toEqual({ kind: 'move', dx: -1, dy: 0 });
     expect(resolveKey('KeyT')).toEqual({ kind: 'recall' });
     expect(resolveKey('AltLeft')).toEqual({ kind: 'showItems' });
     expect(resolveKey('Space')).toEqual({ kind: 'closePanels' });

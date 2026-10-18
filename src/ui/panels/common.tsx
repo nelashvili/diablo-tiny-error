@@ -1,6 +1,6 @@
 /** Shared panel building blocks: frame chrome, tabs, item visuals, grids and equip slots. */
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { ContainerRef } from '../../core/sim/commands';
 import type { GridContainer, ItemInstance } from '../../core/items/types';
@@ -65,16 +65,23 @@ export function Tabs<T extends string | number>(props: {
 
 /** The visual of an item (icon, quality frame, sockets, quantity), sized by its parent. */
 export function ItemVisual({ item, compact }: { item: ItemInstance; compact?: boolean }) {
-  const { services, colorblind } = useItemEnv();
+  const { services, colorblind, ctl } = useItemEnv();
   const base = services.itemBase(item.base);
   const glyph = itemGlyph(base, item.base);
+  const [, iconReady] = useState(0);
+  const art = services.itemIcon?.(item.base, () => iconReady((n) => n + 1)) ?? null;
+  const verdict = compact ? null : ctl.upgradeOf(item);
   const broken = item.durability && item.durability.cur <= 0;
   const low = item.durability && item.durability.cur / Math.max(1, item.durability.max) < 0.2;
   return (
     <div
       class={`dte-item q-${item.quality} ${item.ethereal ? 'eth' : ''} ${broken ? 'broken' : low ? 'low' : ''}`}
     >
-      <Icon name={glyph} size="70%" cls="dte-item-icon" />
+      {art ? (
+        <img class="dte-item-art" src={art} alt="" draggable={false} />
+      ) : (
+        <Icon name={glyph} size="70%" cls="dte-item-icon" />
+      )}
       {item.sockets > 0 && !compact && (
         <div class="dte-sockets">
           {Array.from({ length: item.sockets }, (_, i) => (
@@ -83,6 +90,11 @@ export function ItemVisual({ item, compact }: { item: ItemInstance; compact?: bo
         </div>
       )}
       {(item.quantity ?? 0) > 1 && <span class="dte-qty">{item.quantity}</span>}
+      {(verdict === 'up' || verdict === 'down') && (
+        <span class={`dte-upg ${verdict}`} title={t(`ui.tip.verdict.${verdict}`)}>
+          {verdict === 'up' ? '▲' : '▼'}
+        </span>
+      )}
       {colorblind && ['magic', 'rare', 'set', 'unique', 'crafted'].includes(item.quality) && (
         <span class="dte-qmark">{t(`ui.quality.${item.quality}`).charAt(0)}</span>
       )}
@@ -94,7 +106,7 @@ function useItemEnv() {
   const env = usePanelEnv();
   const ctl = useCtl();
   const cb = ctl.api?.store.settings.value.colorblind ?? 'none';
-  return { services: env.services, colorblind: cb !== 'none' };
+  return { services: env.services, colorblind: cb !== 'none', ctl };
 }
 
 /** D2 inventory-style grid for any container. Registers itself as a drop zone. */

@@ -137,6 +137,15 @@ export default [
     durationSec: 1.2,
     particles: 26,
   },
+  // --- litesaber hits: a spray of hot white-orange sparks off the target
+  {
+    id: 'vfx.saber.sparks',
+    primitive: 'impact',
+    color: 0xffc94a,
+    color2: 0xff6a10,
+    size: 1.35,
+    particles: 30,
+  },
   // --- progression / world
   {
     id: 'vfx.levelup',

@@ -16,6 +16,7 @@ import { spawnGroundItem } from '@/core/player';
 import { playerToSave, saveToPlayerInit, newCharacterSave, defaultSettings } from '@/core/save';
 import type { CharacterSave, Settings } from '@/core/save/types';
 import { createRenderer, type RenderController } from '@/render/renderer';
+import { createItemIcons, type ItemIconSource } from '@/render/icons/itemIcons';
 import { createAudioSystem, type FullAudioSystem } from '@/audio';
 import { AUDIO_CATALOG } from '@/render/assets/audio';
 import { createInputManager, detectTouch, type InputManager } from '@/ui/input';
@@ -39,6 +40,8 @@ export class Game {
   readonly levels: LevelManager;
   readonly ui: UiBridge;
   renderer!: RenderController;
+  /** Rendered inventory item art (lazy; its own small WebGL context). */
+  readonly itemIcons: ItemIconSource = createItemIcons();
   audio!: FullAudioSystem;
   input!: InputManager;
   private loop: FixedLoop;
