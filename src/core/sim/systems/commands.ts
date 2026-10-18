@@ -16,6 +16,7 @@ import {
   useItem,
   type MoveContainer,
 } from '../../player/inventory';
+import { buyItem, repairAll, sellItem } from '../../player/vendor';
 import { getSkillLevel } from '../../skills/runtime';
 import { isActor, type PlayerEntity } from '../entities';
 import type { Command } from '../commands';
@@ -27,9 +28,6 @@ import { getLocalPlayer, isHostile, isTargetable } from './util';
 const toast = (world: SimWorld, textKey: string): void => world.emit({ type: 'toast', textKey });
 
 const MODULE_COMMANDS: ReadonlySet<Command['type']> = new Set([
-  'buyItem',
-  'sellItem',
-  'repairAll',
   'hireMerc',
   'castRecall',
   'useWaypoint',
@@ -37,6 +35,11 @@ const MODULE_COMMANDS: ReadonlySet<Command['type']> = new Set([
   'talk',
   'cubeTransmute',
 ]);
+
+/** The stash chest only exists in camp (D2). */
+function inTown(world: SimWorld): boolean {
+  return world.levelId !== null && DB.levels.get(world.levelId)?.isTown === true;
+}
 
 function skillKnown(p: PlayerEntity, id: string): boolean {
   const def = DB.skills.get(id);
@@ -160,16 +163,27 @@ function applyCommand(world: SimWorld, p: PlayerEntity, cmd: Command): void {
       swapWeapons(world, p);
       return;
     case 'sortInventory':
-      if (cmd.container === 'inventory') sortInventory(world, p);
-      else toast(world, 'toast.notAvailable');
+      if (cmd.container === 'stash' && !inTown(world)) return toast(world, 'toast.stashTownOnly');
+      sortInventory(world, p, cmd.container);
       return;
     case 'moveItem': {
-      const ok: MoveContainer[] = ['inventory', 'belt', 'ground', 'cursor'];
-      if (ok.includes(cmd.to as MoveContainer) && ok.includes(cmd.from as MoveContainer))
-        moveItem(world, p, cmd.uid, cmd.to as MoveContainer, cmd.x, cmd.y);
-      else toast(world, 'toast.notAvailable');
+      const ok: MoveContainer[] = ['inventory', 'stash', 'belt', 'ground', 'cursor'];
+      if (!ok.includes(cmd.to as MoveContainer) || !ok.includes(cmd.from as MoveContainer))
+        return toast(world, 'toast.notAvailable');
+      if ((cmd.to === 'stash' || cmd.from === 'stash') && !inTown(world))
+        return toast(world, 'toast.stashTownOnly');
+      moveItem(world, p, cmd.uid, cmd.to as MoveContainer, cmd.x, cmd.y);
       return;
     }
+    case 'buyItem':
+      buyItem(world, p, cmd.vendorId, cmd.uid, world.lootRng);
+      return;
+    case 'sellItem':
+      sellItem(world, p, cmd.vendorId, cmd.uid);
+      return;
+    case 'repairAll':
+      repairAll(world, p, cmd.vendorId);
+      return;
     default:
       if (MODULE_COMMANDS.has(cmd.type)) toast(world, 'toast.notAvailable');
   }

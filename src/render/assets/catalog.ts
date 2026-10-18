@@ -107,9 +107,30 @@ const stat = (
 
 // ---- heroes, npcs & monsters -----------------------------------------------------------------------
 const ACTORS: ModelEntry[] = [
-  kay('hero.yediKnight', 'heroes/knight', 0xd9c8a0, 0x4fc3ff),
-  kay('hero.bountyHuntur', 'heroes/rogue', 0x6b7d5c, 0xff8a3d),
-  kay('hero.forseAdept', 'heroes/mage', 0x7b5ea7, 0xb36bff),
+  // Heroes, dressed Star Wars style via palette swaps on the KayKit meshes:
+  // Yedi Knight: hooded robe in Jedi browns (the rogue's greens/teals become robe cloth).
+  kay('hero.yediKnight', 'monsters/rogueHooded', 0x8a6a48, 0x4fc3ff, 0.75, {
+    recolor: [
+      { hue: [95, 200], color: 0x6e4a2c },
+      { hue: [55, 95], minSat: 0.35, color: 0xcdb48a },
+    ],
+  }),
+  // Bounty Huntur: visored helmet and armor in bounty-hunter green, crimson trim, worn brown cape.
+  kay('hero.bountyHuntur', 'heroes/knight', 0x5d6b4a, 0xff8a3d, 0.75, {
+    recolor: [
+      { hue: [0, 360], maxSat: 0.12, color: 0x7a8a5c },
+      { hue: [330, 20], minSat: 0.4, color: 0x6a5238 },
+      { hue: [35, 60], minSat: 0.5, color: 0x9a3a2a },
+    ],
+  }),
+  // Forse Adept: no wizard hat; farm-boy-to-hero cream tunic with a brown belt and boots.
+  kay('hero.forseAdept', 'heroes/mage', 0xd8ccb0, 0xb36bff, 0.75, {
+    hide: ['Mage_Hat'],
+    recolor: [
+      { hue: [220, 285], minSat: 0.15, color: 0xe2d6bc },
+      { hue: [300, 345], minSat: 0.4, color: 0x6b4a2e },
+    ],
+  }),
   kay('npc.default', 'monsters/barbarian', 0xb89c6a, undefined, 0.72),
 
   // Act I monsters (mesh re-use + suggested tint in `accent`)

@@ -122,6 +122,8 @@ export interface PlayerEntity extends ActorBase {
   /** Weapon swap (D2 'W'). */
   swap?: Equipment;
   inventory: GridContainer;
+  /** Personal stash page (opened from the stash chest in camp). */
+  stash?: GridContainer;
   belt: Belt;
   mercId?: EntityId;
   /** Free respecs remaining per difficulty. */
@@ -156,6 +158,8 @@ export interface MercEntity extends ActorBase {
 
 export interface NpcEntity extends ActorBase {
   kind: 'npc';
+  /** Vendor wares (restocked on each town visit; see core/player/vendor). */
+  stock?: GridContainer;
 }
 
 export interface MissileEntity extends EntityBase {

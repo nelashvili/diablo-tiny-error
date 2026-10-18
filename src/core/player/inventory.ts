@@ -4,7 +4,7 @@
  */
 import { DB } from '../../data/db';
 import type { ItemBaseDef } from '../../data/schema';
-import { autoSort, placeItem, removeItem } from '../items/grid';
+import { autoSort, emptyGrid, placeItem, removeItem } from '../items/grid';
 import type { ItemInstance, ItemUid } from '../items/types';
 import { addHealOverTime, removeEffects } from '../sim/systems/effects';
 import { healActor } from '../sim/systems/damage';
@@ -12,6 +12,9 @@ import { isBeltItemBase } from '../sim/systems/util';
 import type { GroundItemEntity, PlayerEntity } from '../sim/entities';
 import type { SimWorld } from '../sim/world';
 import type { EquipSlot } from '../types';
+
+/** Personal stash page size (matches the save format). */
+export const STASH_GRID = { w: 10, h: 10 } as const;
 
 const cursors = new WeakMap<PlayerEntity, ItemInstance>();
 
@@ -23,6 +26,7 @@ const changed = (world: SimWorld, p: PlayerEntity): void =>
 
 export type ItemLocation =
   | { where: 'inventory' }
+  | { where: 'stash' }
   | { where: 'belt'; index: number }
   | { where: 'equipment'; slot: EquipSlot }
   | { where: 'cursor' };
@@ -30,6 +34,8 @@ export type ItemLocation =
 export function locateItem(p: PlayerEntity, uid: ItemUid): { item: ItemInstance; loc: ItemLocation } | null {
   const inv = p.inventory.items.find((e) => e.item.uid === uid);
   if (inv) return { item: inv.item, loc: { where: 'inventory' } };
+  const st = p.stash?.items.find((e) => e.item.uid === uid);
+  if (st) return { item: st.item, loc: { where: 'stash' } };
   const bi = p.belt.slots.findIndex((s) => s?.uid === uid);
   if (bi >= 0) return { item: p.belt.slots[bi] as ItemInstance, loc: { where: 'belt', index: bi } };
   for (const [slot, item] of Object.entries(p.equipment) as [EquipSlot, ItemInstance | undefined][])
@@ -45,6 +51,8 @@ function detach(p: PlayerEntity, uid: ItemUid): ItemInstance | null {
   switch (f.loc.where) {
     case 'inventory':
       return removeItem(p.inventory, uid);
+    case 'stash':
+      return removeItem(p.stash!, uid);
     case 'belt':
       p.belt.slots[f.loc.index] = null;
       return f.item;
@@ -56,6 +64,14 @@ function detach(p: PlayerEntity, uid: ItemUid): ItemInstance | null {
       cursors.delete(p);
       return f.item;
   }
+}
+
+/** Remove an item from wherever the player holds it (sold, consumed...). */
+export function takeItem(p: PlayerEntity, uid: ItemUid): ItemInstance | null {
+  const f = locateItem(p, uid);
+  const item = detach(p, uid);
+  if (item && f?.loc.where === 'belt') shiftBeltColumn(p, f.loc.index % 4);
+  return item;
 }
 
 /** D2 belt: after the bottom-row item of a column is used, the column shifts down. */
@@ -281,9 +297,9 @@ export function useBeltSlot(world: SimWorld, p: PlayerEntity, index: number): bo
   return it ? useItem(world, p, it.uid) : false;
 }
 
-export type MoveContainer = 'inventory' | 'belt' | 'ground' | 'cursor';
+export type MoveContainer = 'inventory' | 'stash' | 'belt' | 'ground' | 'cursor';
 
-/** Move an item between inventory / belt / cursor / ground. Returns false if unsupported or no room. */
+/** Move an item between inventory / stash / belt / cursor / ground. False if unsupported or no room. */
 export function moveItem(
   world: SimWorld,
   p: PlayerEntity,
@@ -312,12 +328,16 @@ export function moveItem(
       p.belt.slots[i] = item;
       ok = true;
     }
+  } else if (to === 'stash') {
+    p.stash ??= emptyGrid(STASH_GRID.w, STASH_GRID.h);
+    ok = placeItem(p.stash, item, x, y);
   } else ok = placeItem(p.inventory, item, x, y);
   if (!ok) {
     // restore
     if (f.loc.where === 'cursor') cursors.set(p, item);
     else if (f.loc.where === 'belt') p.belt.slots[f.loc.index] = item;
     else if (f.loc.where === 'equipment') p.equipment[f.loc.slot] = item;
+    else if (f.loc.where === 'stash') placeItem(p.stash!, item);
     else placeItem(p.inventory, item);
     toast(world, 'toast.inventoryFull');
     return false;
@@ -326,7 +346,13 @@ export function moveItem(
   return true;
 }
 
-export function sortInventory(world: SimWorld, p: PlayerEntity): void {
-  autoSort(p.inventory);
+export function sortInventory(
+  world: SimWorld,
+  p: PlayerEntity,
+  container: 'inventory' | 'stash' = 'inventory',
+): void {
+  if (container === 'stash') {
+    if (p.stash) autoSort(p.stash);
+  } else autoSort(p.inventory);
   changed(world, p);
 }

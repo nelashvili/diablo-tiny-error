@@ -66,6 +66,7 @@ export function Tabs<T extends string | number>(props: {
 /** The visual of an item (icon, quality frame, sockets, quantity), sized by its parent. */
 export function ItemVisual({ item, compact }: { item: ItemInstance; compact?: boolean }) {
   const { services, colorblind, ctl } = useItemEnv();
+  void ctl.api?.store.frame.value; // quantity, durability and upgrade badges change in place
   const base = services.itemBase(item.base);
   const glyph = itemGlyph(base, item.base);
   const [, iconReady] = useState(0);
@@ -113,6 +114,8 @@ function useItemEnv() {
 export function ItemGrid(props: { container: ContainerRef; grid: GridContainer; class?: string }) {
   const ctl = useCtl();
   const { container, grid } = props;
+  // The sim mutates containers in place, so props alone never change: follow the frame tick.
+  void ctl.api?.store.frame.value;
   ctl.grids.set(container, grid);
   useEffect(() => () => void ctl.grids.delete(container), [container]);
   const held = ctl.held.value;

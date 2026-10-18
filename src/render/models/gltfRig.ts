@@ -6,6 +6,7 @@ import type { ModelEntry } from '../types';
 import { ALL_MODES, computePose, makePose, modeLoops, resolveClip } from './helpers';
 import type { LoadedAsset } from './loader';
 import type { AttachSlot, Rig } from './rig';
+import { recolorMaterial } from './toon';
 
 const FADE = 0.15;
 
@@ -26,8 +27,14 @@ export class GltfRig implements Rig {
     this.model = SkeletonUtils.clone(asset.scene);
     this.model.scale.multiplyScalar(entry.scale);
     this.root.add(this.model);
+    const hidden = new Set((entry.hide ?? []).map((n) => THREE.PropertyBinding.sanitizeNodeName(n)));
     this.model.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) this.bodyMeshes.push(o as THREE.Mesh);
+      if (hidden.has(THREE.PropertyBinding.sanitizeNodeName(o.name))) o.visible = false;
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      if (entry.recolor?.length && !Array.isArray(mesh.material))
+        mesh.material = recolorMaterial(mesh.material, entry.recolor, entry.id);
+      this.bodyMeshes.push(mesh);
     });
     this.mixer = new THREE.AnimationMixer(this.model);
     const byClip = new Map<string, THREE.AnimationAction>();

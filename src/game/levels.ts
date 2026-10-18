@@ -13,6 +13,7 @@ import type { GeneratedLevel, Placement } from '@/core/world/types';
 import { generateLevel } from '@/core/world/mapgen';
 import { nearestWalkable } from '@/core/world/collision';
 import { spawnLevelMonsters } from '@/core/monsters';
+import { isVendor, restockVendor } from '@/core/player/vendor';
 import { computeStats } from '@/core/stats/compute';
 import { invalidateActorGrid } from '@/core/sim/systems';
 
@@ -117,6 +118,12 @@ export class LevelManager {
       }
     }
     invalidateActorGrid(w);
+    // D2: vendors restock on every visit to camp, scaled to the hero's level.
+    if (def.isTown && player) {
+      for (const e of w.entities.values())
+        if (e.kind === 'npc' && isVendor(e))
+          restockVendor(e, player.level, w.lootRng.fork(`vendor:${e.defId}:${w.tick}`));
+    }
     if (def.waypoint) this.waypoints.add(levelId);
     w.emit({ type: 'levelEntered', levelId, firstVisit });
     return { firstVisit };

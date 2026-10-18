@@ -55,6 +55,10 @@ export interface ModelEntry {
   };
   /** Tint/glow color for litesaber blades, droyd eyes, etc. */
   accent?: number;
+  /** Palette swaps applied to the model's materials (see toon.recolorMaterial). */
+  recolor?: { hue: [number, number]; minSat?: number; maxSat?: number; color: number }[];
+  /** Mesh nodes to hide (e.g. a wizard hat). */
+  hide?: string[];
 }
 
 /** VFX toolkit keys referenced from SkillDef.vfx / MissileDef.vfx. */

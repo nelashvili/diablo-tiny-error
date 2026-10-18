@@ -16,4 +16,6 @@ export default {
   'toast.skillNotAvailable': "You haven't learned that skill.",
   'toast.cannotAllocate': "You can't spend a point there.",
   'toast.noRespec': 'No free respec left.',
+  'toast.notEnoughCreditz': "You don't have enough Creditz.",
+  'toast.stashTownOnly': 'Your stash is back in camp.',
 } satisfies Record<string, string>;

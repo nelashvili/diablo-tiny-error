@@ -56,6 +56,7 @@ export default {
   'ui.price.buy': 'Costs {price} Creditz',
   'ui.price.cantAfford': 'Not enough Creditz',
   'ui.tip.compare': 'Wearing now',
+  'ui.dlg.trade': 'Trade',
   'ui.tip.verdict.up': '▲ Upgrade',
   'ui.tip.verdict.down': '▼ Downgrade',
   'ui.tip.verdict.same': '≈ About the same',

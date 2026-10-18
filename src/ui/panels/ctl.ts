@@ -154,10 +154,9 @@ export class PanelCtl {
 
   itemHandlers(item: ItemInstance, where: Holder) {
     return {
-      onPointerEnter: (e: PointerEvent) => {
-        if (e.pointerType === 'mouse' && !this.held.value && !this.tip.value?.pinned)
-          this.showTip({ kind: 'item', item, where }, e.currentTarget as Element, false);
-      },
+      onPointerEnter: (e: PointerEvent) => this.hoverItem(e, item, where),
+      // Also on move: after placing an item the cursor is already over it (no enter event).
+      onPointerMove: (e: PointerEvent) => this.hoverItem(e, item, where),
       onPointerLeave: (e: PointerEvent) => {
         if (e.pointerType === 'mouse' && !this.tip.value?.pinned) this.hideTip();
       },
@@ -168,6 +167,14 @@ export class PanelCtl {
         this.quickAction(item, where, e.ctrlKey);
       },
     };
+  }
+
+  private hoverItem(e: PointerEvent, item: ItemInstance, where: Holder) {
+    if (e.pointerType !== 'mouse' || this.held.value || this.press) return;
+    const cur = this.tip.value;
+    if (cur?.pinned) return;
+    if (cur?.content.kind === 'item' && cur.content.item.uid === item.uid) return;
+    this.showTip({ kind: 'item', item, where }, e.currentTarget as Element, false);
   }
 
   private onItemDown(e: PointerEvent, item: ItemInstance, where: Holder) {

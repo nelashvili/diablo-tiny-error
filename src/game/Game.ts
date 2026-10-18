@@ -30,6 +30,10 @@ import {
 } from '@/platform';
 import { LevelManager } from './levels';
 import { createUiBridge, openPanel, type UiBridge } from './ui';
+import { isVendor, repairCost } from '@/core/player/vendor';
+import { STASH_GRID } from '@/core/player/inventory';
+import { emptyGrid } from '@/core/items/grid';
+import type { StashView, VendorView } from '@/ui/panels/services';
 import type { DialogueView, WaypointView } from '@/ui/panels/services';
 import type { ActId } from '@/core/types';
 
@@ -234,6 +238,7 @@ export class Game {
       inventory: init.inventory,
       belt: init.belt,
       respecs: init.respecs,
+      stash: init.extra.stash,
       ...(init.swap ? { swap: init.swap } : {}),
     });
     for (const wp of save.progress[save.currentDifficulty]?.waypoints ?? []) this.levels.waypoints.add(wp);
@@ -262,6 +267,7 @@ export class Game {
     }
     this.save = playerToSave(p, {
       ...init.extra,
+      ...(p.stash ? { stash: p.stash } : {}),
       progress,
       updatedAt: Date.now(),
       playTimeSec: Math.round(this.playTime),
@@ -324,7 +330,41 @@ export class Game {
   }
 
   private dispatch(cmd: Command): void {
+    // Dialogue choices are UI flow, not simulation: "Trade" opens the shop next to the bag.
+    if (cmd.type === 'talk' && cmd.option === 'trade') {
+      const npc = this.world.get(cmd.npcId);
+      if (npc?.kind === 'npc' && isVendor(npc)) {
+        this.vendorNpcId = npc.id;
+        const api = this.ui.api;
+        api.store.openPanels.value = api.store.openPanels.value.filter((id) => id !== 'dialogue');
+        openPanel(api, 'vendor');
+        openPanel(api, 'inventory');
+      }
+      return;
+    }
     this.world.commands.push(cmd);
+  }
+
+  /** Shop shown in the vendor panel (the NPC last traded with). */
+  private vendorNpcId: number | null = null;
+  vendorView(): VendorView | null {
+    const p = this.player;
+    const npc = this.vendorNpcId !== null ? this.world.get(this.vendorNpcId) : undefined;
+    if (!p || !npc || npc.kind !== 'npc' || !npc.stock) return null;
+    const def = DB.npcs.get(npc.defId);
+    return {
+      npcId: npc.id,
+      nameKey: def?.name ?? npc.defId,
+      stock: npc.stock,
+      ...(def?.roles.includes('smith') ? { repairCost: repairCost(p) } : {}),
+    };
+  }
+
+  stashView(): StashView | null {
+    const p = this.player;
+    if (!p) return null;
+    p.stash ??= emptyGrid(STASH_GRID.w, STASH_GRID.h);
+    return { personal: p.stash, shared: [] };
   }
 
   private applySettings(s: Settings): void {
@@ -495,6 +535,7 @@ export class Game {
         }
         case 'stash':
           openPanel(this.ui.api, 'stash');
+          openPanel(this.ui.api, 'inventory');
           break;
       }
     });
@@ -507,7 +548,7 @@ export class Game {
         npcId: npc.id,
         nameKey: def?.name ?? npc.defId,
         lines: def?.dialogue ?? [e.lineKey],
-        options: [],
+        options: isVendor(npc) ? [{ id: 'trade', labelKey: 'ui.dlg.trade' }] : [],
       };
       this.ui.api.store.interactNpc.value = npc.id;
       openPanel(this.ui.api, 'dialogue');

@@ -9,6 +9,7 @@ import { Panels } from '@/ui/panels';
 import { MainMenu, type CharacterSummary } from '@/ui/menus';
 import { TouchControls } from '@/ui/touch';
 import type { PanelDataSource } from '@/ui/panels/services';
+import { itemValue } from '@/core/items/helpers';
 import type { Game } from './Game';
 import './app.css';
 
@@ -31,11 +32,13 @@ export function App({ game }: { game: Game }): JSX.Element {
     () => ({
       waypoints: () => game.waypointView(),
       dialogue: () => game.dialogueView(),
+      vendor: () => game.vendorView(),
+      stash: () => game.stashView(),
     }),
     [game],
   );
 
-  const services = useMemo(() => ({ itemIcon: game.itemIcons.get }), [game]);
+  const services = useMemo(() => ({ itemIcon: game.itemIcons.get, price: itemValue }), [game]);
 
   const run = async (fn: () => Promise<unknown>) => {
     setPhase('loading');

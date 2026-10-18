@@ -88,11 +88,11 @@ function townA1(): string[] {
   c.hline(1, 38, 13, '=').hline(1, 38, 14, '=').vline(19, 8, 22, '=').vline(20, 8, 22, '=');
   // plaza
   c.rect(14, 10, 12, 7, '=');
-  // houses: top-left healer, top-right smith, bottom-left captain, bottom-right gambler
+  // houses: top-left healer, top-right smith, bottom-left captain (the trader works the plaza)
   c.box(4, 3, 8, 5).set(8, 7, 'D').set(5, 4, '0').set(10, 4, 'L');
   c.box(28, 3, 8, 5).set(32, 7, 'D').set(29, 4, '1').set(34, 4, 'L');
   c.box(4, 20, 8, 5).set(8, 20, 'D').set(5, 23, '2').set(10, 23, 'L');
-  c.box(28, 20, 8, 5).set(32, 20, 'D').set(29, 23, '3').set(34, 23, 'L');
+  c.box(28, 20, 8, 5).set(32, 20, 'D').set(34, 23, 'L');
   // paths from doors to the street
   c.vline(8, 8, 12, '=').vline(32, 8, 12, '=').vline(8, 15, 19, '=').vline(32, 15, 19, '=');
   // pond
@@ -103,6 +103,7 @@ function townA1(): string[] {
   c.set(22, 15, 'T'); // stash
   c.set(19, 15, 'S'); // start
   c.set(16, 12, '4'); // Master Yoduh
+  c.set(23, 12, '3'); // Gheedo's trading stall, right by the stash so selling is quick
   c.set(15, 10, 'L').set(24, 10, 'L').set(15, 16, 'L').set(24, 16, 'L');
   c.set(12, 11, 'P').set(27, 11, 'P').set(12, 16, 'P').set(27, 16, 'P');
   // east gate
