@@ -15,13 +15,26 @@ import './app.css';
 
 type Phase = 'menu' | 'loading' | 'playing';
 
+/** Beating this quest (Count Dooky) ends Act I with the closing crawl. */
+const ACT1_FINALE = 'a1q5';
+const FINALE_DELAY_MS = 2500;
+
 export function App({ game }: { game: Game }): JSX.Element {
   const [phase, setPhase] = useState<Phase>('menu');
   const [chars, setChars] = useState<CharacterSummary[]>([]);
   const [lastId, setLastId] = useState<string | undefined>();
-  /** The story crawl plays once over the camp when a new hero starts. */
-  const [crawl, setCrawl] = useState(false);
+  /** Story crawl on screen: the intro for a new hero, the ending when Act I is won. */
+  const [crawl, setCrawl] = useState<string | null>(null);
   const api = game.ui.api;
+  useEffect(
+    () =>
+      api.onEvents((events) => {
+        for (const e of events)
+          if (e.type === 'questUpdated' && e.completed && e.questId === ACT1_FINALE)
+            setTimeout(() => setCrawl('act1End'), FINALE_DELAY_MS); // let the boss kill land first
+      }),
+    [api],
+  );
 
   const refresh = () =>
     void game.listCharacters().then((list) => {
@@ -75,14 +88,14 @@ export function App({ game }: { game: Game }): JSX.Element {
           {...(lastId ? { lastCharacterId: lastId } : {})}
           onPlay={(id) => void run(() => game.loadCharacter(id))}
           onCreate={({ name, classId }) =>
-            void run(() => game.newCharacter(classId, name)).then(() => setCrawl(true))
+            void run(() => game.newCharacter(classId, name)).then(() => setCrawl('crawl'))
           }
           onDelete={(id) => void game.deleteCharacter(id).then(refresh)}
           onUpdateSettings={(patch) => api.updateSettings(patch)}
           version="0.1"
         />
       )}
-      {phase === 'playing' && crawl && <OpeningCrawl onDone={() => setCrawl(false)} />}
+      {phase === 'playing' && crawl && <OpeningCrawl story={crawl} onDone={() => setCrawl(null)} />}
       {phase === 'loading' && <div class="g-loading">{t('game.start.loading')}</div>}
     </>
   );

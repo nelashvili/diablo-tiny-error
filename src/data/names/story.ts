@@ -15,6 +15,17 @@ export default {
     'Now droyds march across the misty moon of Endoor, Tuskins raid the Mossfields, and the dark Count Dooky gathers his strength beneath the Old Yedi Temple. At a small outpost of the Rebel Allowance, a new hero arrives...',
   'story.crawl.skip': 'Tap or press any key to skip',
 
+  // Closing crawl after Count Dooky falls (end of Act I).
+  'story.act1End.intro': 'Meanwhile, in a galaxy still slightly misspelled...',
+  'story.act1End.episode': 'Act I complete',
+  'story.act1End.title': 'THE COUNT IS DOWN',
+  'story.act1End.p1':
+    'Count Dooky has fallen in the Undercroft. His red saber hisses out, and the Mossfields of Endoor are quiet again. Even the Ewokz are cautiously optimistic.',
+  'story.act1End.p2':
+    'But the crack in the Kybur Heart keeps growing. Master Yoduh can feel The Error moving on, toward the desert world of Tatoonie, where the second dark champion is waiting.',
+  'story.act1End.p3':
+    'The Rebel Allowance packs up its little outpost. Somewhere, a droyd beeps nervously. The adventure is only getting started...',
+
   // a1q1, Medic Akarra: the Tuskin Den.
   'story.a1q1.enter':
     "Tuskin Raiders have dug a den in the Mossfields, just past our fence. They keep stealing our power couplings. Clear them out and I'll teach you something worth knowing.",
