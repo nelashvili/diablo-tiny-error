@@ -6,6 +6,7 @@ import { Howl, Howler } from 'howler';
 import type { AudioSystem } from './types';
 import type { GameEvent } from '../core/sim/events';
 import { moodFor, startPad, type PadHandle } from './ambient';
+import { createWeatherAmbience, type WeatherAmbience, type WeatherSound } from './weather';
 import { planCues, type Cue, type CueContext } from './eventMap';
 import { finalGain, nextTake, pickTake, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
 import { PROCEDURAL_IDS, PROCEDURAL_TAKES, ProceduralSfx, RECIPES } from './synth';
@@ -57,6 +58,8 @@ export interface FullAudioSystem extends AudioSystem {
   /** Whether a catalog file exists for the id. */
   hasFile(id: string): boolean;
   getVolumes(): Volumes;
+  /** Rain / wind / thunder ambience for the renderer's current weather. */
+  setWeather(kind: WeatherSound, intensity: number, flash: number): void;
   dispose(): void;
 }
 
@@ -97,6 +100,7 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
   let sfxBus: GainNode | null = null;
   let musicBus: GainNode | null = null;
   let proc: ProceduralSfx | null = null;
+  let weatherAmb: WeatherAmbience | null = null;
 
   function ensureCtx(): Ctx | null {
     if (ctx) return ctx;
@@ -445,6 +449,13 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
       speech?.volume(voiceFileVolume());
     },
     getVolumes: () => ({ ...volumes }),
+    setWeather(kind, intensity, flash) {
+      if (disposed || (!weatherAmb && intensity <= 0)) return;
+      const c = ensureCtx();
+      if (!c || !sfxBus || c.state !== 'running') return;
+      weatherAmb ??= createWeatherAmbience(c, sfxBus);
+      weatherAmb.set(kind, intensity, flash);
+    },
     setListener(pos) {
       listener = pos;
     },
@@ -493,6 +504,8 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     hasFile: (id) => catalog[id] !== undefined,
     dispose() {
       disposed = true;
+      weatherAmb?.dispose();
+      weatherAmb = null;
       removeGestureListeners();
       stopSpeech();
       fadeOutCurrent();

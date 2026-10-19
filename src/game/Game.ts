@@ -386,6 +386,8 @@ export class Game {
     if (!this.loading) {
       this.renderer.setClock(this.playTime);
       this.renderer.render(w, events, alpha, realDt);
+      const wx = this.renderer.getWeather();
+      this.audio.setWeather(wx.kind, wx.intensity, wx.flash);
     }
     const p = this.player;
     if (p) this.audio.setListener?.(p.pos);

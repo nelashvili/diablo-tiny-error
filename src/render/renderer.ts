@@ -96,6 +96,8 @@ export interface RenderController extends Renderer {
   shake(amount: number): void;
   /** Play-time clock (seconds) that drives the day/night cycle. */
   setClock(seconds: number): void;
+  /** Weather on screen this frame (for the weather ambience). */
+  getWeather(): Readonly<WeatherState>;
   /** Toggle the D2-style wall cutaway near the player. */
   setWallCutaway(on: boolean): void;
   getStats(): RenderStats;
@@ -411,6 +413,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
 
     setClock(seconds) {
       clock = seconds;
+    },
+    getWeather() {
+      return weatherState;
     },
 
     setZoom(level) {
