@@ -17,6 +17,7 @@ export interface EquippedWeapon {
   range: number;
   strBonus: number;
   dexBonus: number;
+  eneBonus: number;
 }
 
 export const DEFAULT_WEAPON_SPEED = 1.4;
@@ -61,6 +62,7 @@ export function getEquippedWeapon(actor: Actor): EquippedWeapon | undefined {
     range: info.range || DEFAULT_MELEE_RANGE,
     strBonus: info.strBonus,
     dexBonus: info.dexBonus,
+    eneBonus: info.eneBonus,
   };
 }
 

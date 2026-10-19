@@ -295,16 +295,16 @@ describe('helpers', () => {
   it('requirements, canEquip, two-handed', () => {
     const rifle = createItem('hunturRifle', {}, new Rng(1));
     expect(isTwoHanded(rifle)).toBe(true);
-    expect(itemRequirements(rifle).strength).toBe(40);
-    const stats = { level: 20, strength: 60, dexterity: 30 };
+    expect(itemRequirements(rifle).dexterity).toBe(40);
+    const stats = { level: 20, strength: 30, dexterity: 60 };
     expect(canEquip(rifle, 'mainHand', 'bountyHuntur', stats)).toBe(true);
     expect(canEquip(rifle, 'mainHand', 'yediKnight', stats)).toBe(false);
     expect(canEquip(rifle, 'offHand', 'bountyHuntur', stats)).toBe(false);
-    expect(canEquip(rifle, 'mainHand', 'bountyHuntur', { ...stats, strength: 10 })).toBe(false);
+    expect(canEquip(rifle, 'mainHand', 'bountyHuntur', { ...stats, dexterity: 10 })).toBe(false);
     const ring = createItem('signalRing', {}, new Rng(1));
     expect(canEquip(ring, 'ring2', 'yediKnight', stats)).toBe(true);
     rifle.mods.push({ stat: 'requirementsReduced', op: 'percent', value: 50 });
-    expect(itemRequirements(rifle).strength).toBe(20);
+    expect(itemRequirements(rifle).dexterity).toBe(20);
   });
 
   it('stack and split', () => {

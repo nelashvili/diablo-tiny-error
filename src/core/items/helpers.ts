@@ -32,6 +32,7 @@ export interface WeaponInfo {
   /** D2 weapon class Str/Dex damage bonus (% per 100 points) — matches StatSources.weapon. */
   strBonus: number;
   dexBonus: number;
+  eneBonus: number;
   /** Attacks per second at base. */
   speed: number;
   range: number;
@@ -53,6 +54,7 @@ export function weaponInfo(item: ItemInstance): WeaponInfo | null {
     max,
     strBonus: bonus.str,
     dexBonus: bonus.dex,
+    eneBonus: bonus.ene,
     speed: b.speed ?? 1,
     range: b.range ?? 1.5,
     twoHanded: b.twoHanded === true,

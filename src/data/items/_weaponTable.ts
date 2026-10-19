@@ -87,18 +87,19 @@ export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
 };
 
 /** D2 per-weapon-class Str/Dex damage bonus (% per 100 points). */
-export const WEAPON_STAT_BONUS: Record<WeaponClass, { str: number; dex: number }> = {
-  litesaber: { str: 100, dex: 0 },
-  doubleLitesaber: { str: 100, dex: 0 },
-  vibroAxe: { str: 100, dex: 0 },
-  shockBaton: { str: 100, dex: 0 },
-  vibroPike: { str: 100, dex: 0 },
-  throwingDisc: { str: 75, dex: 75 },
-  javelin: { str: 75, dex: 75 },
-  blasturPistol: { str: 0, dex: 100 },
-  blasturRifle: { str: 100, dex: 0 },
-  forseStaff: { str: 100, dex: 0 },
-  kyburFocus: { str: 100, dex: 0 },
+/** Which attribute powers each weapon class: blades hit with strength, blasters aim with dexterity, Forse weapons channel energy. */
+export const WEAPON_STAT_BONUS: Record<WeaponClass, { str: number; dex: number; ene: number }> = {
+  litesaber: { str: 100, dex: 0, ene: 0 },
+  doubleLitesaber: { str: 100, dex: 0, ene: 0 },
+  vibroAxe: { str: 100, dex: 0, ene: 0 },
+  shockBaton: { str: 100, dex: 0, ene: 0 },
+  vibroPike: { str: 100, dex: 0, ene: 0 },
+  throwingDisc: { str: 75, dex: 75, ene: 0 },
+  javelin: { str: 75, dex: 75, ene: 0 },
+  blasturPistol: { str: 0, dex: 100, ene: 0 },
+  blasturRifle: { str: 0, dex: 100, ene: 0 },
+  forseStaff: { str: 0, dex: 0, ene: 100 },
+  kyburFocus: { str: 0, dex: 0, ene: 100 },
 };
 
 export interface WeaponLine {
@@ -215,7 +216,7 @@ export const WEAPON_LINES: WeaponLine[] = [
     1.0,
     60,
   ),
-  w('blasturRifle', 'Huntur Rifle', 'Huntur Rifle Elite', 'Huntur Rifle Supreme', 8, 20, 40, 0, 12, 0.9, 130),
+  w('blasturRifle', 'Huntur Rifle', 'Huntur Rifle Elite', 'Huntur Rifle Supreme', 8, 20, 0, 40, 12, 0.9, 130),
   w(
     'blasturRifle',
     'Huntur Repeater',

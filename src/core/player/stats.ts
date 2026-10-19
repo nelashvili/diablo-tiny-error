@@ -92,7 +92,14 @@ export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSou
     modifiers: [...gatherModifiers(p), ...meleeMasteryMods(p)],
     difficulty,
     weapon: w
-      ? { min: w.min, max: w.max, strBonus: w.strBonus, dexBonus: w.dexBonus, speed: w.speed }
+      ? {
+          min: w.min,
+          max: w.max,
+          strBonus: w.strBonus,
+          dexBonus: w.dexBonus,
+          eneBonus: w.eneBonus,
+          speed: w.speed,
+        }
       : undefined,
     growth: cls?.growth,
   };

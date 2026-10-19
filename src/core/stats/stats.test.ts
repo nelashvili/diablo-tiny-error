@@ -192,6 +192,21 @@ describe('computeStats', () => {
     );
     expect(p1.physMin).toBe(p0.physMin);
   });
+  it('Forse staffs and Kybur focuses scale with energy, not strength', () => {
+    const staff = { min: 10, max: 20, strBonus: 0, dexBonus: 0, eneBonus: 100, speed: 1 };
+    const alloc = (k: 'strength' | 'energy') => ({
+      strength: 0,
+      dexterity: 0,
+      vitality: 0,
+      energy: 0,
+      [k]: 40,
+    });
+    const base = computeStats(src({ weapon: staff }));
+    const ene = computeStats(src({ weapon: staff, allocated: alloc('energy') }));
+    const str = computeStats(src({ weapon: staff, allocated: alloc('strength') }));
+    expect(ene.physMin - base.physMin).toBeCloseTo(10 * 0.4 + 40 * STAT_FLAT_DAMAGE);
+    expect(str.physMin).toBe(base.physMin);
+  });
   it('dex-based weapon bonus', () => {
     const weapon = { min: 10, max: 10, strBonus: 0, dexBonus: 75, speed: 1 };
     const s = computeStats(src({ weapon, base: { dexterity: 80 } }));

@@ -163,6 +163,8 @@ export interface StatSources {
     /** D2 weapon class stat bonus: e.g. swords strBonus=100 dexBonus=0, bows dexBonus=100. Percent per 100 points. */
     strBonus: number;
     dexBonus: number;
+    /** Energy bonus (Forse staffs, Kybur focuses); optional, defaults to 0. */
+    eneBonus?: number;
     speed: number; // base attacks per second
   };
   /** Per-class life/mana gains (PLAN §4). */

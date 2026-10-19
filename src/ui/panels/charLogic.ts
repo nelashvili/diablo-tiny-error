@@ -30,9 +30,10 @@ export function statTargets(classId: ClassId, level: number): Omit<Attrs, 'vital
       };
     case 'forseAdept':
       return {
-        strength: Math.min(80, Math.round(10 + L * 0.7)),
-        dexterity: Math.min(60, Math.round(25 + L * 0.4)),
-        energy: Math.min(70, Math.round(35 + L * 0.5)),
+        // Staffs and focuses hit harder with energy; strength only for gear requirements.
+        strength: Math.min(60, Math.round(10 + L * 0.5)),
+        dexterity: Math.min(50, Math.round(25 + L * 0.3)),
+        energy: Math.min(220, Math.round(35 + L * 1.8)),
       };
   }
 }
