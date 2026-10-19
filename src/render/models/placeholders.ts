@@ -546,6 +546,39 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.box(), dark, 0.06, 0.12, 0.05, 0, -0.06, 0.17));
       g.add(mk(unit.box(), glow, 0.03, 0.12, 0.03, 0.18, 0.1, 0));
       break;
+    case 'hood': {
+      // Cloth Yedi hood: a soft peaked cowl with a shadowed face opening and a drape.
+      g.add(mk(unit.sphere(), main, 0.4, 0.4, 0.42, 0, 0.02, -0.02));
+      const peak = mk(unit.cone(), main, 0.26, 0.26, 0.26, 0, 0.2, -0.1);
+      peak.rotation.x = -0.6;
+      g.add(peak);
+      g.add(mk(unit.sphere(), dark, 0.26, 0.28, 0.12, 0, -0.01, 0.17));
+      g.add(mk(unit.taper(), main, 0.46, 0.18, 0.4, 0, -0.2, -0.02));
+      break;
+    }
+    case 'mask':
+      // Syth-style mask: a dark helm with a metal face plate and a glowing eye slit.
+      g.add(mk(unit.sphere(), main, 0.38, 0.36, 0.38, 0, 0.03, 0));
+      g.add(mk(unit.box(), metal, 0.26, 0.22, 0.06, 0, -0.04, 0.17));
+      g.add(mk(unit.box(), glow, 0.2, 0.035, 0.04, 0, 0.02, 0.2));
+      g.add(mk(unit.box(), dark, 0.03, 0.14, 0.04, -0.06, -0.08, 0.2));
+      g.add(mk(unit.box(), dark, 0.03, 0.14, 0.04, 0.06, -0.08, 0.2));
+      break;
+    case 'suit': {
+      // Pilot flight suit: a jumpsuit torso with a white chest harness and a life-support box.
+      const strap = toonMaterial(0xeeeeea);
+      g.add(mk(unit.capsule(), main, 0.36, 0.2, 0.26, 0, 0, 0));
+      g.add(mk(unit.cylinder(), main, 0.2, 0.06, 0.2, 0, 0.24, 0));
+      const s1 = mk(unit.box(), strap, 0.06, 0.48, 0.03, -0.06, 0.02, 0.13);
+      s1.rotation.z = 0.45;
+      const s2 = mk(unit.box(), strap, 0.06, 0.48, 0.03, 0.06, 0.02, 0.13);
+      s2.rotation.z = -0.45;
+      g.add(s1, s2);
+      g.add(mk(unit.box(), dark, 0.16, 0.12, 0.06, 0, -0.04, 0.15));
+      g.add(mk(unit.box(), glow, 0.03, 0.03, 0.02, -0.04, -0.03, 0.185));
+      g.add(mk(unit.box(), toonMaterial(0xd04040), 0.03, 0.03, 0.02, 0.03, -0.03, 0.185));
+      break;
+    }
     case 'armor':
       g.add(mk(unit.box(), main, 0.4, 0.4, 0.26, 0, 0, 0));
       g.add(mk(unit.box(), glow, 0.08, 0.16, 0.04, 0, 0.06, 0.14));

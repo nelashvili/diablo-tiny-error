@@ -35,7 +35,7 @@ export default {
   'skill.pikeMastery': 'Pike Mastery',
   'skill.pikeMastery.desc': 'Better damage, aim and lucky hits with vibro-pikes.',
   'skill.endurance': 'Endurance',
-  'skill.endurance.desc': 'Run for much longer before you get tired.',
+  'skill.endurance.desc': 'Hardened by long marches: more maximum life.',
   'skill.ironWill': 'Iron Will',
   'skill.ironWill.desc': 'Tough as a droyd: more defense, always on.',
   'skill.swiftStep': 'Swift Step',

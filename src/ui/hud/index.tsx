@@ -17,7 +17,7 @@ import { FxModel } from './fx';
 import { Orb } from './Orb';
 import { HotkeyRow, SkillButton, SkillPicker } from './SkillBar';
 import { GuideArrow, Objective, TurnInMarkers } from './Story';
-import { Belt, MenuButtons, Notifications, StaminaBar, StatusRow, TargetFrame, XpBar } from './Widgets';
+import { Belt, MenuButtons, Notifications, StatusRow, TargetFrame, XpBar } from './Widgets';
 import { FloatLayer } from './FloatLayer';
 import { BigMap, Minimap } from './Maps';
 import './hud.css';
@@ -86,7 +86,6 @@ function HudRoot(): JSX.Element {
                 <SkillButton hand="left" />
                 <div class="hud-console__mid">
                   <Belt />
-                  <StaminaBar />
                 </div>
                 <div class="hud-console__sep" />
                 <MenuButtons />

@@ -1806,3 +1806,261 @@
     max-height: 22vh;
   }
 }
+
+/* ------------------------------------------------------------------ holo-comm dialogue */
+.dte-panel.dte-dialogue {
+  --holo: #4fc3ff;
+  --holo-soft: rgba(79, 195, 255, 0.16);
+  background: linear-gradient(180deg, rgba(10, 18, 32, 0.9), rgba(6, 10, 20, 0.94));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(79, 195, 255, 0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(79, 195, 255, 0.35);
+  overflow: hidden;
+}
+.dte-panel.dte-dialogue::before {
+  /* thin animated scan line along the top edge */
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--holo), transparent);
+  animation: dte-scan 3.2s linear infinite;
+  opacity: 0.8;
+}
+@keyframes dte-scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.dte-dialogue .dte-corner {
+  display: none;
+}
+.dte-dialogue .dte-panel-head {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  z-index: 1;
+}
+.dte-dialogue .dte-panel-head h2 {
+  display: none;
+}
+.compact .dte-dialogue .dte-panel-head {
+  display: flex;
+}
+.dte-dialogue .dte-close {
+  border-color: rgba(79, 195, 255, 0.3);
+  background: rgba(79, 195, 255, 0.06);
+}
+.dte-dialogue .dte-dlg {
+  gap: 20px;
+  padding: 4px 36px 2px 2px;
+}
+
+/* Hologram portrait: a flickering cyan projection over a glowing emitter. */
+.dte-holo {
+  flex: none;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dte-holo-img {
+  width: 96px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  border-radius: 48px 48px 12px 12px;
+  background:
+    repeating-linear-gradient(0deg, rgba(79, 195, 255, 0.14) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 35%, rgba(79, 195, 255, 0.35), transparent 70%);
+  animation: dte-flicker 4s steps(1) infinite;
+  overflow: hidden;
+}
+.dte-holo-img span {
+  font-family: var(--font-title);
+  font-size: 3.2em;
+  font-weight: 900;
+  color: rgba(190, 235, 255, 0.92);
+  text-shadow:
+    0 0 10px var(--holo),
+    0 0 24px rgba(79, 195, 255, 0.6);
+}
+.dte-holo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+}
+.dte-holo-base {
+  width: 84px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(79, 195, 255, 0.85), rgba(79, 195, 255, 0) 70%);
+  box-shadow: 0 0 18px rgba(79, 195, 255, 0.5);
+}
+@keyframes dte-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 0.82;
+  }
+  48% {
+    opacity: 1;
+  }
+  83% {
+    opacity: 0.9;
+  }
+}
+.dte-dlg-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+.dte-dlg-who b {
+  font-family: var(--font-title);
+  font-size: 0.95em;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+.dte-dlg-who span {
+  font-size: 0.78em;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(200, 220, 240, 0.55);
+}
+.dte-dialogue .dte-dlg-line {
+  min-height: 3em;
+  margin: 0 0 10px;
+  font-size: 1.08em;
+  line-height: 1.55;
+  color: #e8f2ff;
+  cursor: default;
+}
+.dte-dlg-caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--holo);
+  animation: dte-blink 0.8s steps(1) infinite;
+}
+@keyframes dte-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.dte-dlg-pages {
+  display: flex;
+  gap: 5px;
+  margin: -2px 0 12px;
+}
+.dte-dlg-pages i {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(79, 195, 255, 0.2);
+}
+.dte-dlg-pages i.on {
+  background: var(--holo);
+}
+.dte-dialogue .dte-dlg-opts {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.dte-dlg-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid rgba(79, 195, 255, 0.18);
+  border-left: 3px solid rgba(79, 195, 255, 0.45);
+  border-radius: 6px;
+  background: rgba(79, 195, 255, 0.05);
+  color: #dceaff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    transform 0.12s;
+}
+.dte-dlg-opt::before {
+  content: '›';
+  color: var(--holo);
+  font-weight: 700;
+}
+.dte-dlg-opt:hover,
+.dte-dlg-opt:focus-visible {
+  background: var(--holo-soft);
+  border-color: rgba(79, 195, 255, 0.5);
+  transform: translateX(3px);
+  outline: none;
+}
+.dte-dlg-opt.primary,
+.dte-dlg-opt.action {
+  border-left-color: #ffd24a;
+  color: #fff3cf;
+}
+.dte-dlg-opt.primary::before,
+.dte-dlg-opt.action::before {
+  color: #ffd24a;
+}
+.dte-dlg-opt.bye {
+  border-color: transparent;
+  border-left-color: transparent;
+  background: none;
+  color: rgba(200, 220, 240, 0.55);
+}
+.dte-dlg-opt.bye::before {
+  content: '×';
+  color: inherit;
+}
+@media (max-width: 560px) {
+  .dte-holo {
+    width: 64px;
+  }
+  .dte-holo-img {
+    width: 60px;
+    height: 66px;
+  }
+  .dte-holo-img span {
+    font-size: 2.2em;
+  }
+  .dte-holo-base {
+    width: 54px;
+  }
+  .dte-dialogue .dte-dlg {
+    gap: 12px;
+    padding-right: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dte-panel.dte-dialogue::before,
+  .dte-holo-img,
+  .dte-dlg-caret {
+    animation: none;
+  }
+}

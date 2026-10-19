@@ -12,6 +12,7 @@ import { classifyItem, isDoubleSaberId, isLitesaberId, type ItemKind } from '../
 import { parseWeaponStyle, weaponModelId } from '../models/weaponStyle';
 import { AssetLoader } from '../models/loader';
 import { buildItemShape } from '../models/placeholders';
+import { armorLook } from '../models/outfit';
 
 export interface ItemIconSource {
   /** PNG data URL for the base, or null while it is being prepared (`onReady` fires when it is). */
@@ -62,14 +63,26 @@ const USE_GLOW: Record<string, number> = {
 function iconModel(
   base: ItemBaseDef | undefined,
   baseId: string,
-): { id: string; kind: ItemKind; glow?: number } {
+): { id: string; kind: ItemKind; glow?: number; body?: number } {
   if (base?.weaponClass) {
     const id = weaponModelId(baseId);
     return { id, kind: classifyItem(id) };
   }
   if (base?.armorClass && ARMOR_MODEL[base.armorClass]) {
-    const id = ARMOR_MODEL[base.armorClass] as string;
-    return { id, kind: classifyItem(id) };
+    // Helms and chests by line (hood, mask, helmet / flight suit, armor), in the line's colors.
+    const byName = classifyItem(`item.${baseId}`);
+    const kind =
+      base.armorClass === 'helm' && (byName === 'hood' || byName === 'mask')
+        ? byName
+        : base.armorClass === 'chest' && byName === 'suit'
+          ? 'suit'
+          : classifyItem(ARMOR_MODEL[base.armorClass] as string);
+    const look = armorLook(baseId);
+    return {
+      id: `item.${baseId}`,
+      kind,
+      ...(look ? { body: look.primary, glow: look.glow || undefined } : {}),
+    };
   }
   if (base?.use) {
     const k = base.use.kind;
@@ -168,7 +181,7 @@ export function createItemIcons(): ItemIconSource {
   ) => {
     const r = context();
     if (!r) return null;
-    const { id, kind, glow } = iconModel(base, baseId);
+    const { id, kind, glow, body: lineBody } = iconModel(base, baseId);
     const entry = getModelEntry(id);
     let obj: THREE.Object3D;
     if (procedural(id)) asset = null;
@@ -178,7 +191,7 @@ export function createItemIcons(): ItemIconSource {
       obj = createAttachment('mainHand', id, undefined, undefined, null).object;
     } else {
       const [body, accent] = KIND_COLORS[kind] ?? [entry.placeholder.color, entry.accent ?? 0x4fc3ff];
-      obj = buildItemShape(kind, body, glow ?? accent);
+      obj = buildItemShape(kind, lineBody ?? body, glow ?? accent);
     }
     const holder = new THREE.Group();
     holder.add(obj);

@@ -57,8 +57,8 @@ function gems(): TreasureClassDef[] {
 
 const STIM_BANDS: [number, string[]][] = [
   [1, ['baktaStim', 'energyCell', 'recallBeacon']],
-  [8, ['baktaStimLight', 'energyCellLight', 'antidote', 'thaw', 'stamina', 'recallBeacon']],
-  [18, ['baktaStimMedium', 'energyCellMedium', 'rejuvStim', 'antidote', 'thaw', 'stamina']],
+  [8, ['baktaStimLight', 'energyCellLight', 'antidote', 'thaw', 'recallBeacon']],
+  [18, ['baktaStimMedium', 'energyCellMedium', 'rejuvStim', 'antidote', 'thaw']],
   [32, ['baktaStimGreater', 'energyCellGreater', 'rejuvStim', 'baktaStimMedium', 'energyCellMedium']],
   [48, ['baktaStimSuper', 'energyCellSuper', 'rejuvStimFull', 'baktaStimGreater', 'energyCellGreater']],
 ];

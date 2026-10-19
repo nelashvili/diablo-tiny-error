@@ -60,6 +60,13 @@ export default {
   'lore.lastWords.text':
     'As his saber went out, Count Dooky laughed. "You think this is over? I was only the first draft. The Error is already on Tatoonie, where the sand is full of mistakes waiting to be made."\n\nThe crack in the Kybur Heart did not close. But for the first time since it broke, the crystal hummed, very faintly, a single note. Somewhere out there, Padawon Kip Typo might still be alive.',
 
+  // Role lines shown under an NPC's name in conversations.
+  'npc.medicAkarra.role': 'Field medic · Rebel Allowance',
+  'npc.chiefCharzi.role': 'Chief engineer · Smith',
+  'npc.captainKasha.role': 'Outpost commander · Hires guards',
+  'npc.gheedo.role': 'Scrap trader · Mystery boxes',
+  'npc.masterYoduh.role': 'Yedi Master',
+
   // NPC "Ask about" topics.
   'npc.topic.self': 'Who are you?',
   'npc.topic.heart': 'The Kybur Heart?',

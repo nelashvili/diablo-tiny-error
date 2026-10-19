@@ -90,6 +90,8 @@ export interface QuestLogView {
 export interface DialogueView {
   npcId: EntityId;
   nameKey: string;
+  /** Short role line under the name ("Field medic"). */
+  roleKey?: string;
   /** Optional portrait image URL; a stylized placeholder is drawn otherwise. */
   portrait?: string;
   lines: string[];

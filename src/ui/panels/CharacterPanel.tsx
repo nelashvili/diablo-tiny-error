@@ -50,10 +50,7 @@ export function CharacterPanel(props: {
       [t('ui.stat.attackRating'), `${Math.round(st.attackRating)}`],
       [t('ui.stat.defense'), `${Math.round(st.defense)}`],
     ],
-    vitality: [
-      [t('ui.char.life'), `${Math.round(p.life)} / ${Math.round(st.lifeMax)}`],
-      [t('ui.char.stamina'), `${Math.round(p.stamina)} / ${Math.round(st.staminaMax)}`],
-    ],
+    vitality: [[t('ui.char.life'), `${Math.round(p.life)} / ${Math.round(st.lifeMax)}`]],
     energy: [[resource, `${Math.round(p.mana)} / ${Math.round(st.manaMax)}`]],
   };
   const elemental = (['plasma', 'cryo', 'storm', 'toxin', 'magic'] as const).filter(

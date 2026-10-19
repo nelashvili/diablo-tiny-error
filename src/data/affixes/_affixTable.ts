@@ -582,10 +582,11 @@ export const SUFFIX_ROWS: AffixRow[] = [
     'stam',
     ['boots', 'belt', 'chest'],
     [
-      ['of Endurence', 3, 6, 10, 20],
-      ['of Marathons', 20, 3, 21, 40],
+      ['of Endurence', 3, 6, 1, 3],
+      ['of Marathons', 20, 3, 3, 6],
     ],
-    ([lo, hi]) => [m('staminaMax', lo!, hi!)],
+    // Was max stamina; stamina is gone, so these now regenerate life.
+    ([lo, hi]) => [m('lifeRegen', lo!, hi!)],
   ),
   ...fam(
     'suffix',

@@ -53,7 +53,7 @@ export default [
         name: 'setitem.tuskinRaiderBelt',
         base: 'utilitySash',
         reqLevel: 8,
-        mods: [f('lifeMax', 15, 25), f('staminaMax', 20, 30), p('defense', 20, 40)],
+        mods: [f('lifeMax', 15, 25), f('lifeRegen', 2, 4), p('defense', 20, 40)],
       },
       {
         id: 'tuskinRaiderShield',

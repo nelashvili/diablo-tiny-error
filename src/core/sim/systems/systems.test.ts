@@ -67,16 +67,12 @@ describe('movement', () => {
     expect(player.pos.x).toBeLessThan(39); // stopped by the outer wall
   });
 
-  it('drains stamina while running and regenerates when idle', () => {
+  it('runs without tiring (no stamina)', () => {
     const { world, run, player } = setup();
+    player.stamina = 0; // a drained pool (old saves) no longer forces a walk
     world.commands.push({ type: 'moveDir', dir: { x: 0, y: 1 } });
-    run(50);
-    expect(player.stamina).toBeLessThan(player.stats.staminaMax);
-    const low = player.stamina;
-    world.commands.push({ type: 'stop' });
-    world.commands.push({ type: 'moveDir', dir: { x: 0, y: 0 } });
-    run(50);
-    expect(player.stamina).toBeGreaterThan(low);
+    run(20);
+    expect(player.mode).toBe('run');
   });
 
   it('separates overlapping monsters', () => {
@@ -535,7 +531,7 @@ describe('commands & items', () => {
     player.life = 10;
     world.commands.push({ type: 'useBeltSlot', index: 0 });
     run(2);
-    expect(player.life).toBe(40);
+    expect(player.life).toBeCloseTo(40, 0); // + a sliver of out-of-combat regeneration
     expect(player.belt.slots[0]).toBeNull();
 
     // gives a saber via inventory and equips it
@@ -693,5 +689,20 @@ describe('performance smoke', () => {
     const ms = performance.now() - t0;
     expect(spawned).toBe(1000);
     expect(ms).toBeLessThan(4000);
+  });
+});
+
+describe('out-of-combat regeneration', () => {
+  it('heals a hurt hero only after a few seconds without fighting', async () => {
+    const { applyDamage } = await import('./damage');
+    const { OUT_OF_COMBAT_SEC } = await import('./regen');
+    const { world, run, player } = setup();
+    player.life = player.stats.lifeMax;
+    applyDamage(world, player, player.stats.lifeMax / 2, 'physical');
+    const hurt = player.life;
+    run(Math.floor((OUT_OF_COMBAT_SEC / 2) * 25));
+    expect(player.life).toBeLessThan(hurt + 1 + player.stats.lifeRegen * OUT_OF_COMBAT_SEC);
+    run(Math.ceil(OUT_OF_COMBAT_SEC * 25) + 50);
+    expect(player.life).toBeGreaterThan(hurt + player.stats.lifeMax * 0.05);
   });
 });

@@ -281,6 +281,27 @@ function QuestLog({ onClose, switcher }: { onClose?: () => void; switcher: JSX.E
   );
 }
 
+/** Characters revealed per second by the typewriter effect. */
+const TYPE_CPS = 70;
+
+/** Reveal `text` a few characters at a time; `skip()` shows it all at once. */
+function useTypewriter(text: string): { shown: string; done: boolean; skip: () => void } {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    setN(0);
+    const start = performance.now();
+    const id = window.setInterval(() => {
+      const k = Math.floor(((performance.now() - start) / 1000) * TYPE_CPS);
+      setN(k);
+      if (k >= text.length) window.clearInterval(id);
+    }, 30);
+    return () => window.clearInterval(id);
+  }, [text]);
+  const done = n >= text.length;
+  return { shown: done ? text : text.slice(0, n), done, skip: () => setN(text.length) };
+}
+
+/** A holo-comm conversation: hologram portrait, typed-out lines, and a list of replies. */
 export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => void }) {
   const { data } = usePanelEnv();
   const dlg = data.dialogue?.() ?? null;
@@ -292,61 +313,74 @@ export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => vo
     setPage(0);
     setTopic(null);
   }, [convo]);
+  const lines = dlg ? ((topic !== null ? dlg.topics?.[topic]?.lines : undefined) ?? dlg.lines) : [];
+  const text = t(lines[Math.min(page, lines.length - 1)] ?? '');
+  const typed = useTypewriter(text);
   if (!dlg) return null;
   const name = t(dlg.nameKey);
-  const lines = (topic !== null ? dlg.topics?.[topic]?.lines : undefined) ?? dlg.lines;
   const last = page >= lines.length - 1;
+  const openTopic = (i: number | null) => {
+    setTopic(i);
+    setPage(0);
+  };
   return (
     <PanelFrame id="dialogue" title={name} onClose={onClose} class="dte-dialogue">
       <div class="dte-dlg">
-        <div class="dte-portrait">
-          {dlg.portrait ? <img src={dlg.portrait} alt="" /> : <span>{name.charAt(0)}</span>}
+        <div class="dte-holo" aria-hidden="true">
+          <div class="dte-holo-img">
+            {dlg.portrait ? <img src={dlg.portrait} alt="" /> : <span>{name.charAt(0)}</span>}
+          </div>
+          <div class="dte-holo-base" />
         </div>
         <div class="dte-dlg-main">
-          <p class="dte-dlg-line">{t(lines[Math.min(page, lines.length - 1)] ?? '')}</p>
+          <div class="dte-dlg-who">
+            <b>{name}</b>
+            {dlg.roleKey && <span>{t(dlg.roleKey)}</span>}
+          </div>
+          <p class="dte-dlg-line" onClick={typed.skip}>
+            {typed.shown}
+            {!typed.done && <i class="dte-dlg-caret" />}
+          </p>
+          {lines.length > 1 && (
+            <div class="dte-dlg-pages">
+              {lines.map((_, i) => (
+                <i key={i} class={i === page ? 'on' : ''} />
+              ))}
+            </div>
+          )}
           <div class="dte-dlg-opts">
             {!last && (
-              <button class="dte-btn primary" onClick={() => setPage(page + 1)}>
-                {t('ui.dlg.next')} ›
+              <button
+                class="dte-dlg-opt primary"
+                onClick={() => (typed.done ? setPage(page + 1) : typed.skip())}
+              >
+                {t('ui.dlg.next')}
               </button>
             )}
             {last &&
               topic === null &&
               dlg.topics?.map((tp, i) => (
-                <button
-                  key={tp.labelKey}
-                  class="dte-btn dte-dlg-topic"
-                  onClick={() => {
-                    setTopic(i);
-                    setPage(0);
-                  }}
-                >
+                <button key={tp.labelKey} class="dte-dlg-opt" onClick={() => openTopic(i)}>
                   {t(tp.labelKey)}
                 </button>
               ))}
             {last && topic !== null && (
-              <button
-                class="dte-btn"
-                onClick={() => {
-                  setTopic(null);
-                  setPage(0);
-                }}
-              >
-                ‹ {t('ui.dlg.back')}
+              <button class="dte-dlg-opt" onClick={() => openTopic(null)}>
+                {t('ui.dlg.back')}
               </button>
             )}
             {last &&
               dlg.options.map((o) => (
                 <button
                   key={o.id}
-                  class="dte-btn"
+                  class="dte-dlg-opt action"
                   onClick={() => api.dispatch({ type: 'talk', npcId: dlg.npcId, option: o.id })}
                 >
                   {t(o.labelKey)}
                 </button>
               ))}
             {last && (
-              <button class="dte-btn ghost" onClick={onClose}>
+              <button class="dte-dlg-opt bye" onClick={onClose}>
                 {t('ui.dlg.bye')}
               </button>
             )}

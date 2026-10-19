@@ -84,7 +84,7 @@ export default [
     f('lifeMax', 30, 50),
     f('goldFind', 60, 100),
     f('defense', 15, 25),
-    f('staminaMax', 20, 30),
+    f('lifeMax', 10, 20),
   ]),
   u('yoduhsWalkingStick', 'gnarledRod', 20, 15, 3, [
     f('classSkills', 2, 2, 'forseAdept'),

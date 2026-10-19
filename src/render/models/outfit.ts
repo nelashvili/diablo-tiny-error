@@ -23,14 +23,15 @@ export interface ArmorLook {
 /** Palettes per armor line (keyed by the line's normal-tier id), in level order within a slot. */
 const LINE_PALETTES: Record<string, [primary: number, trim: number]> = {
   // helms
-  flightCap: [0x9a8a6a, 0x6e6a60],
+  flightCap: [0xe8e8e4, 0xd26a2a],
   trooperHelm: [0xe6e8ea, 0x2c2c30],
   battleVisor: [0xa2b2c6, 0x9a2a2a],
   yediHood: [0x7a5634, 0xc8b08a],
   yediCowl: [0x3e2a1a, 0xc8b08a],
   yediMask: [0x26262a, 0xb02a2a],
   // chest
-  flightSuit: [0x9a8a6a, 0x6e6a60],
+  // Rebel pilot orange with a white harness.
+  flightSuit: [0xd8682a, 0xeeeeea],
   trooperArmor: [0xe6e8ea, 0x2c2c30],
   meshVest: [0x4a5560, 0xd97a2a],
   battlePlate: [0xa2b2c6, 0x9a2a2a],

@@ -53,7 +53,10 @@ export type ItemKind =
   | 'disc'
   | 'focus'
   | 'helm'
+  | 'hood'
+  | 'mask'
   | 'armor'
+  | 'suit'
   | 'shield'
   | 'boots'
   | 'gloves'
@@ -77,7 +80,10 @@ const ITEM_RULES: [RegExp, ItemKind][] = [
   [/(disc|disk)/i, 'disc'],
   [/focus/i, 'focus'],
   [/(sword|blade|vibro|knife|dagger)/i, 'blade'],
-  [/(helm|hat|hood|cap|mask|crown|circlet)/i, 'helm'],
+  [/(hood|cowl)/i, 'hood'],
+  [/(flight ?suit|exosuit|hypersuit|flightSuit|flightExosuit|flightHypersuit)/i, 'suit'],
+  [/mask/i, 'mask'],
+  [/(helm|hat|cap|crown|circlet|visor)/i, 'helm'],
   [/(shield|buckler|deflector)/i, 'shield'],
   [/(boot|shoe|greave)/i, 'boots'],
   [/(glove|gaunt|mitt|bracer)/i, 'gloves'],

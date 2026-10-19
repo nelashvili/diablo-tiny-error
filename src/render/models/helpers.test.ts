@@ -150,3 +150,14 @@ describe('resolveAssetUrl', () => {
     expect(resolveAssetUrl('https://a/b.glb')).toBe('https://a/b.glb');
   });
 });
+
+describe('worn item kinds', () => {
+  it('tells hoods, masks, helmets and flight suits apart', () => {
+    expect(classifyItem('item.yediHood')).toBe('hood');
+    expect(classifyItem('item.yediMasterCowl')).toBe('hood');
+    expect(classifyItem('item.yediMask')).toBe('mask');
+    expect(classifyItem('item.trooperHelm')).toBe('helm');
+    expect(classifyItem('item.flightSuit')).toBe('suit');
+    expect(classifyItem('item.trooperArmor')).toBe('armor');
+  });
+});

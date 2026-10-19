@@ -58,6 +58,8 @@ interface Press {
 
 const DRAG_PX = { mouse: 6, touch: 10 };
 const LONG_PRESS_MS = 450;
+/** Two clicks/taps on the same item within this window are a double-click. */
+const DOUBLE_TAP_MS = 380;
 
 export const RING_SLOTS: EquipSlot[] = ['ring1', 'ring2'];
 
@@ -263,7 +265,9 @@ export class PanelCtl {
       return;
     }
     if (p.longFired) return;
+    if (p.type !== 'mouse' && this.isDoubleTap(p.item.uid)) return this.doubleAction(p.item, p.where);
     if (p.type === 'mouse') {
+      this.isDoubleTap(p.item.uid);
       this.pickUp(p.item, p.where, false);
       this.pointer.value = { x: e.clientX, y: e.clientY };
       this.hover.value = this.resolveTarget(e.clientX, e.clientY);
@@ -273,8 +277,37 @@ export class PanelCtl {
     }
   }
 
+  /** Last plain click/tap on an item, to spot double-clicks. */
+  private lastTap: { uid: string; t: number } | null = null;
+
+  /** Remember a tap; true when it completes a double-click on the same item. */
+  private isDoubleTap(uid: string): boolean {
+    const now = performance.now();
+    const dbl = this.lastTap?.uid === uid && now - this.lastTap.t < DOUBLE_TAP_MS;
+    this.lastTap = dbl ? null : { uid, t: now };
+    return dbl;
+  }
+
+  /** Double-click: sell to (or buy from) an open vendor, otherwise equip/use. */
+  private doubleAction(item: ItemInstance, where: Holder) {
+    this.cancelHeld();
+    this.hideTip();
+    this.quickAction(item, where, true);
+  }
+
   private onGlobalDown(e: PointerEvent) {
     this.lastPointerType = e.pointerType;
+    const carried = this.held.value;
+    if (carried && !carried.dragging && e.button === 0 && this.lastTap?.uid === carried.item.uid) {
+      // The second click of a double-click lands while the first one is carrying the item.
+      if (this.isDoubleTap(carried.item.uid)) {
+        e.stopPropagation();
+        e.preventDefault();
+        this.doubleAction(carried.item, carried.from);
+        return;
+      }
+      this.lastTap = null; // a slow second click just places the item
+    }
     const target = e.target as Element | null;
     if (this.tip.value?.pinned && !target?.closest?.('[data-tooltip]')) {
       // Tapping elsewhere closes a pinned tooltip; tapping the same item re-opens it on up.

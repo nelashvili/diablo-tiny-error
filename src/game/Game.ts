@@ -4,7 +4,7 @@
  */
 import { DB } from '@/data/db';
 import { loreUnlocked, storyHud, storyTalk } from './story';
-import { t } from '@/data/names';
+import { hasName, t } from '@/data/names';
 import type { ClassId, DefId, Vec2 } from '@/core/types';
 import { SimWorld, type SimSystem } from '@/core/sim/world';
 import { FixedLoop } from '@/core/sim/loop';
@@ -672,6 +672,7 @@ export class Game {
       this.dialogue = {
         npcId: npc.id,
         nameKey: def?.name ?? npc.defId,
+        ...(hasName(`npc.${npc.defId}.role`) ? { roleKey: `npc.${npc.defId}.role` } : {}),
         lines: story?.lines ?? def?.dialogue ?? [e.lineKey],
         options: isVendor(npc) ? [{ id: 'trade', labelKey: 'ui.dlg.trade' }] : [],
         topics: def?.topics?.map((tp) => ({ labelKey: tp.label, lines: tp.lines })) ?? [],

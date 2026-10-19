@@ -7,7 +7,8 @@ import { crushingBlowDamage, leechMultiplier } from '../../combat/damage';
 import { resolveAttack } from '../../combat/resolve';
 import type { AttackResult, AttackSpec, CombatantView } from '../../combat/types';
 import type { DamageType, DefId, EntityId, Vec2 } from '../../types';
-import type { Actor } from '../entities';
+import { isActor, type Actor } from '../entities';
+import { markCombat } from './regen';
 import type { SimWorld } from '../world';
 import { applyEffect, cancelAction } from './effects';
 import { isTargetable, setMode, toCombatant } from './util';
@@ -61,6 +62,11 @@ export function applyDamage(
   pos?: Vec2,
 ): number {
   if (!isTargetable(defender) || amount <= 0) return 0;
+  markCombat(world, defender);
+  if (sourceId !== undefined) {
+    const src = world.get(sourceId);
+    if (src && isActor(src)) markCombat(world, src);
+  }
   const dealt = Math.min(defender.life, amount);
   defender.life -= dealt;
   if (sourceId !== undefined) defender.lastHitBy = sourceId;

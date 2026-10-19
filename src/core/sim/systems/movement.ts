@@ -1,5 +1,5 @@
 /**
- * Movement: joystick steering, path following (findPath on moveTo), walk/run speeds, stamina,
+ * Movement: joystick steering, path following (findPath on moveTo), walk/run speeds,
  * wall collision with sliding, and soft actor separation.
  */
 import { DB } from '../../../data/db';
@@ -15,9 +15,6 @@ import { isTargetable, setMode } from './util';
 
 export const PLAYER_WALK_SPEED = 4.0;
 export const PLAYER_RUN_SPEED = 6.0;
-export const STAMINA_DRAIN_PER_SEC = 4.5;
-export const STAMINA_REGEN_PER_SEC = 5;
-const STAMINA_RECOVER_AT = 5;
 const STUCK_GIVE_UP_SEC = 0.6;
 
 /** Base tiles/second for an actor (before moveSpeedMul and slows). */
@@ -39,12 +36,8 @@ function stepActor(world: SimWorld, a: Actor, dt: number): void {
   const map = world.level?.map;
   const nav = navOf(a);
   const dir = getMoveDir(a);
-  let wantRun = a.running;
-  if (a.kind === 'player') {
-    if (a.stamina <= 0) nav.exhausted = true;
-    else if (a.stamina >= STAMINA_RECOVER_AT) nav.exhausted = false;
-    if (nav.exhausted) wantRun = false;
-  }
+  // No stamina: players run for as long as they like.
+  const wantRun = a.running;
 
   let moved = 0;
   const mul = a.stats.moveSpeedMul * getSlowFactor(a);
@@ -108,10 +101,6 @@ function stepActor(world: SimWorld, a: Actor, dt: number): void {
 
   if (moved > 1e-4) {
     setMode(a, wantRun ? 'run' : 'walk');
-    if (a.kind === 'player' && wantRun) {
-      const reduce = 1 - Math.min(90, a.stats.raw.staminaDrainReduced ?? 0) / 100;
-      a.stamina = Math.max(0, a.stamina - STAMINA_DRAIN_PER_SEC * reduce * dt);
-    }
   } else if (a.mode === 'walk' || a.mode === 'run') {
     setMode(a, 'idle');
   }
@@ -162,9 +151,6 @@ export function createMovementSystem(): SimSystem {
         if (a.kind === 'npc') continue;
         if (!isTargetable(a)) continue;
         if (canMove(a)) stepActor(world, a, dt);
-        // Stamina regenerates whenever the player is not running.
-        if (a.kind === 'player' && a.mode !== 'run')
-          a.stamina = Math.min(a.stats.staminaMax, a.stamina + STAMINA_REGEN_PER_SEC * dt);
       }
       rebuildActorGrid(world);
       separate(world);
