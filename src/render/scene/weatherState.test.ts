@@ -3,6 +3,7 @@ import { DB } from '../../data/db';
 import {
   WEATHER_SLOT,
   applyWeather,
+  stepWetness,
   lightningAt,
   parseWeatherParam,
   slotWeather,
@@ -56,5 +57,15 @@ describe('weather schedule', () => {
     expect(light.sunI).toBeLessThan(swamp.day.sunI);
     expect(light.fog.far).toBeLessThan(swamp.day.fog!.far);
     expect(grade.sat).toBeLessThan(1);
+  });
+
+  it('ground soaks in under rain and dries slowly afterwards', () => {
+    let wet = 0;
+    for (let i = 0; i < 60 * 10; i++) wet = stepWetness(wet, { kind: 'storm', intensity: 1, flash: 0 }, 0.1);
+    expect(wet).toBeGreaterThan(0.9);
+    const soaked = wet;
+    for (let i = 0; i < 20 * 10; i++) wet = stepWetness(wet, { kind: 'clear', intensity: 0, flash: 0 }, 0.1);
+    expect(wet).toBeLessThan(soaked);
+    expect(wet).toBeGreaterThan(0.5); // still damp 20 s later
   });
 });

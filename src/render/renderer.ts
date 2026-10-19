@@ -19,13 +19,20 @@ import { SceneLighting, SUN_DIR, presetFor } from './scene/lighting';
 import { EnvironmentClock, keyLightDir, parseTimeParam } from './scene/environment';
 import { NO_FOG, installWorldFog } from './scene/fog';
 import { WeatherFx } from './scene/weather';
-import { applyWeather, parseWeatherParam, weatherAt, type WeatherState } from './scene/weatherState';
+import {
+  WETTING,
+  applyWeather,
+  parseWeatherParam,
+  stepWetness,
+  weatherAt,
+  type WeatherState,
+} from './scene/weatherState';
 import type { WeatherKind } from '../data/schema';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
 import { makeRect, type GroundRect } from './culling/viewRect';
-import { setTerrainAnisotropy } from './terrain/terrain';
+import { GROUND_WETNESS, setTerrainAnisotropy } from './terrain/terrain';
 
 const SABER_SPARKS = 'vfx.saber.sparks';
 const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
@@ -220,14 +227,20 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   };
 
   /** Light the scene for the current time of day and weather. False when the level has no EnvDef. */
-  const applyEnvironment = (): boolean => {
+  const applyEnvironment = (dt = 0): boolean => {
     const fr = env.eval(clock);
     if (!fr) {
       weather.update(weatherAt(null, clock, null, weatherState), 0, 0, clock);
+      GROUND_WETNESS.value = 0;
       return false;
     }
     weatherAt(env.def, clock, pinnedWeather, weatherState);
     applyWeather(fr.light, fr.grade, weatherState);
+    // A fresh level starts already as wet as its weather; afterwards wetness lags behind it.
+    GROUND_WETNESS.value =
+      dt > 0
+        ? stepWetness(GROUND_WETNESS.value, weatherState, dt)
+        : (WETTING[weatherState.kind] ?? 0) * weatherState.intensity;
     weather.update(weatherState, iso.target.x, iso.target.z, clock);
     lighting.apply(fr.light);
     lighting.setKeyDir(keyLightDir(fr.f, SUN_DIR, keyDir));
@@ -334,7 +347,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         snapCamera = false;
       }
       iso.update(lp.x, lp.z, dt);
-      if (env.def) applyEnvironment();
+      if (env.def) applyEnvironment(dt);
       iso.groundBounds(3.5, rect);
       lighting.follow(iso.target.x, iso.target.z, lp.x, lp.z, dt);
       iso.groundCorners(2, viewCorners);

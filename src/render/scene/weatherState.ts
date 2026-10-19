@@ -91,6 +91,16 @@ export function weatherAt(
   return out;
 }
 
+/** How wet the ground gets under each weather (0 = dry). */
+export const WETTING: Partial<Record<WeatherKind, number>> = { rain: 0.8, storm: 1 };
+
+/** Ease ground wetness toward the weather: soaks in ~20 s, dries over ~60 s. */
+export function stepWetness(wet: number, w: WeatherState, dt: number): number {
+  const target = (WETTING[w.kind] ?? 0) * w.intensity;
+  const tau = target > wet ? 20 : 60;
+  return wet + (target - wet) * Math.min(1, dt / tau);
+}
+
 const KINDS: readonly WeatherKind[] = ['clear', 'rain', 'storm', 'snow', 'ash', 'embers', 'spores', 'sand'];
 
 /** Parse a debug `?weather=` value. */

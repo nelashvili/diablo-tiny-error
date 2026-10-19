@@ -110,6 +110,7 @@ uniform vec3 uTint1;
 uniform vec3 uTint2;
 uniform vec3 uTint3;
 uniform vec3 uVarTint;
+uniform float uWet;
 varying vec2 vGround;
 // Two differently rotated samples blended by noise: hides the texture's repeat.
 vec3 groundLayer(sampler2D t, vec2 uv) {
@@ -145,9 +146,16 @@ const GROUND_FRAG = /* glsl */ `
   g *= 0.86 + 0.28 * mix(macro, fine, 0.4);
   // Pull the saturated CC0 greens toward a softer, painted palette.
   g = mix(vec3(groundLum(g)), g, 0.68);
+  // Rain-soaked ground: darker, with cool sky-tinted puddles in the low spots of the noise.
+  float puddle = smoothstep(0.62, 0.68, 1.0 - (macro * 0.75 + fine * 0.25)) * uWet;
+  g *= 1.0 - 0.28 * uWet;
+  g = mix(g, vec3(0.2, 0.25, 0.32), puddle * 0.45);
   diffuseColor.rgb *= g;
 }
 `;
+
+/** Ground wetness 0..1, shared by every ground material (the renderer drives it from the weather). */
+export const GROUND_WETNESS = { value: 0 };
 
 function linear(hex: number): THREE.Vector3 {
   const c = new THREE.Color(hex);
@@ -184,6 +192,7 @@ function groundMaterial(
     uTint2: { value: linear(L[2].tint) },
     uTint3: { value: linear(L[3].tint) },
     uVarTint: { value: linear(set.variation.tint) },
+    uWet: GROUND_WETNESS,
   };
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
