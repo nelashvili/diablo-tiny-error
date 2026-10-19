@@ -92,7 +92,7 @@ export function buildMonsterStats(
     skillBonus: { all: 0, byClass: {}, byTree: {}, bySkill: {} },
   };
   if (baseRes.physical) stats.raw.damageReducedPct = baseRes.physical;
-  // Skill-borne magic damage scales with the damage curve too (wraith touch etc.).
+  // Skill damage (wraith touch, Syth lightning...) scales via MonsterEntity.spellMul (see createMonster).
   const extras = applyModifiers(stats, mods, { difficulty, rng });
   stats.lifeMax = life;
   return { stats, life, extras };
@@ -102,6 +102,11 @@ export function buildMonsterStats(
 export function monsterXp(def: MonsterDef, level: number, difficulty: Difficulty, rank: MonsterRank): number {
   const m = scaledMultipliers(level, difficulty);
   return Math.max(1, Math.round(def.xp * m.xp * RANK_MULT[rank].xp));
+}
+
+/** Multiplier for a monster's skill damage: the physical damage curve (level x difficulty x rank). */
+export function monsterSpellMul(level: number, difficulty: Difficulty, rank: MonsterRank): number {
+  return scaledMultipliers(level, difficulty).damage * RANK_MULT[rank].damage;
 }
 
 export function createMonster(
@@ -126,6 +131,7 @@ export function createMonster(
   if (rank === 'unique' && !opts.nameKey) nameKey = generateUniqueName(rng).key;
 
   const { stats, life, extras } = buildMonsterStats(def, level, difficulty, rank, mods, rng);
+  const spellMul = monsterSpellMul(level, difficulty, rank);
   const scale = def.scale ?? 1;
   const ai: Record<string, unknown> = {
     state: 'idle',
@@ -166,6 +172,7 @@ export function createMonster(
     ai,
     home: { x: pos.x, y: pos.y },
     revivable: !!def.flags.droyd,
+    spellMul,
   };
   return opts.add === false ? m : world.add(m);
 }

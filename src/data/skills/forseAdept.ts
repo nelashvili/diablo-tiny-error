@@ -209,7 +209,7 @@ export default [
     manaCost: ls(1.5, 0.1),
     damage: { storm: dmg(2, 5, 1, 2) },
     element: 'storm',
-    params: { range: ls(5, 0.1, 0.05, 0.05, 0.05, 0.05), arc: 40, forks: ls(1, 0.2), baseSec: 0.35 },
+    params: { range: ls(5, 0.1, 0.05, 0.05, 0.05, 0.05), arc: ls(40, 1.5), forks: ls(1, 0.2), baseSec: 0.35 },
     leftClickable: true,
     synergies: [
       { from: 'sparkBolts', pctPerLevel: 8, target: 'storm' },

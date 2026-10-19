@@ -229,6 +229,13 @@ describe('Forse Lightning', () => {
     expect(zapped(20)).toBe(5);
   });
 
+  it('its cone widens as it levels, so forks can reach a spread-out pack', async () => {
+    const { evalLevel } = await import('../../data/levelScaled');
+    const arc = DB.skills.get('forseLightning')!.params!.arc!;
+    expect(evalLevel(arc, 1)).toBe(40);
+    expect(evalLevel(arc, 20)).toBeGreaterThan(65);
+  });
+
   it('is a quick repeating cast (hold to keep it flowing) and draws arcs', () => {
     const { world, run } = makeTestSim(9);
     const p = hero(world, 'forseAdept', { sparkBolts: 1, forseLightning: 1 });

@@ -98,24 +98,24 @@ export default [
   { id: 'vfx.windup.sythRed', primitive: 'aura', color: 0xff3a3a, color2: 0xffc0c0, size: 1 },
   // --- deflection spark on a litesaber
   { id: 'vfx.deflect', primitive: 'impact', color: 0xffffff, color2: 0x9ad0ff, size: 1, particles: 16 },
-  // --- thrown sabers: spinning glowing blades
+  // --- thrown sabers: the blade itself is a spinning mesh (render/scene/entitySync); this is its spark trail
   {
     id: 'vfx.bolt.saber',
     primitive: 'bolt',
     color: 0x4aa8ff,
     color2: 0xe0f2ff,
-    size: 0.34,
+    size: 0.12,
     durationSec: 1,
-    particles: 50,
+    particles: 36,
   },
   {
     id: 'vfx.bolt.saberRed',
     primitive: 'bolt',
     color: 0xff2a2a,
     color2: 0xffd8d8,
-    size: 0.34,
+    size: 0.12,
     durationSec: 1,
-    particles: 50,
+    particles: 36,
   },
   // --- jetpak landing: a plasma burst ring
   {

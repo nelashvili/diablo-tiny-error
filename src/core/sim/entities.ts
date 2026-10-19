@@ -149,6 +149,11 @@ export interface MonsterEntity extends ActorBase {
   home: Vec2;
   /** Revivable by Jawwas until this many seconds pass after death. */
   revivable?: boolean;
+  /**
+   * Skill damage multiplier (monster level x difficulty x rank), the same curve as its physical
+   * damage, so Syth lightning and Dooky's nova keep pace on Veteran/Legend. Undefined = 1.
+   */
+  spellMul?: number;
 }
 
 export interface MercEntity extends ActorBase {

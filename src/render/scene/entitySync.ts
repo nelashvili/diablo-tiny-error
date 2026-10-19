@@ -92,6 +92,8 @@ interface Rec {
   hitDz: number;
   /** Smoothed Forse-lift height (tiles). */
   liftY: number;
+  /** Thrown litesaber mesh, spun every frame. */
+  spin: THREE.Object3D | null;
 }
 
 /** How high a gripped actor floats, and how fast it rises / drops. */
@@ -112,12 +114,23 @@ const BLASTUR_BOLTS: Record<string, [number, number]> = {
   'vfx.bolt.blasturBlue': [0x2a7cff, 0x4a9cff],
 };
 
+/** Thrown-litesaber missile vfx ids drawn as a spinning blade: [blade color, halo color]. */
+const THROWN_SABERS: Record<string, [number, number]> = {
+  'vfx.bolt.saber': [0x4aa8ff, 0x2a7cff],
+  'vfx.bolt.saberRed': [0xff2a2a, 0xff3a2a],
+};
+/** Thrown sabers spin this fast (radians/second): about three turns a second. */
+export const SABER_SPIN_RATE = 19;
+
 /** Shared tiny resources for beams / glows (created lazily, disposed with the sync). */
 class Shared {
   beamGeo = new THREE.CylinderGeometry(0.06, 0.16, 6, 8, 1, true);
   glowGeo = new THREE.SphereGeometry(0.22, 10, 8);
   /** Blastur bolt body: a capsule lying along +X (rotated to the flight direction per missile). */
   boltGeo = new THREE.CapsuleGeometry(0.075, 1.0, 4, 8).rotateZ(Math.PI / 2);
+  /** Thrown saber: a blade along +X from the hilt at the origin, so it whirls around the hilt end. */
+  bladeGeo = new THREE.CapsuleGeometry(0.045, 0.85, 4, 8).rotateZ(Math.PI / 2).translate(0.55, 0, 0);
+  hiltGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.26, 8).rotateZ(Math.PI / 2).translate(-0.02, 0, 0);
   private solid = new Map<number, THREE.MeshBasicMaterial>();
   /** Opaque, untonemapped color so laser bolts stay saturated over bright ground. */
   solidMat(color: number): THREE.MeshBasicMaterial {
@@ -150,6 +163,8 @@ class Shared {
     this.beamGeo.dispose();
     this.glowGeo.dispose();
     this.boltGeo.dispose();
+    this.bladeGeo.dispose();
+    this.hiltGeo.dispose();
     for (const m of this.mats.values()) m.dispose();
     for (const m of this.solid.values()) m.dispose();
     this.solid.clear();
@@ -162,6 +177,7 @@ const sample: MotionSample = { x: 0, y: 0, facing: 0 };
 export class EntitySync {
   private readonly records = new Map<EntityId, Rec>();
   private readonly shared = new Shared();
+  private readonly thrownBy = new Set<EntityId>();
   private frame = 0;
   private readonly missileVfx = new Map<string, string>();
   hovered: EntityId | null = null;
@@ -270,6 +286,7 @@ export class EntitySync {
     const model = this.modelFor(e as Entity);
     let visual: EntityVisual | null = null;
     let handle: { stop(): void } | null = null;
+    let spin: THREE.Object3D | null = null;
     let pickH = 1.5;
     let pickable = false;
     const actor = e.kind === 'player' || e.kind === 'monster' || e.kind === 'merc' || e.kind === 'npc';
@@ -327,6 +344,24 @@ export class EntitySync {
           this.missileVfx.set(e.defId, id);
         }
         root.position.y = 0.9;
+        const saber = THROWN_SABERS[id];
+        if (saber) {
+          // A real litesaber: white-hot core, colored glow, dark hilt, whirling flat like a disc.
+          const s = new THREE.Group();
+          s.add(new THREE.Mesh(this.shared.bladeGeo, this.shared.solidMat(0xffffff)));
+          const glow = new THREE.Mesh(this.shared.bladeGeo, this.shared.mat(saber[0], 0.55));
+          glow.scale.set(1, 2.4, 2.4);
+          s.add(glow);
+          const halo = new THREE.Mesh(this.shared.bladeGeo, this.shared.mat(saber[1], 0.22));
+          halo.scale.set(1.05, 4.5, 4.5);
+          s.add(halo);
+          s.add(new THREE.Mesh(this.shared.hiltGeo, this.shared.solidMat(0x2a2a30)));
+          s.rotation.x = 0.25; // a slight tilt so the spin reads in the iso view
+          const pivot = new THREE.Group();
+          pivot.add(s);
+          root.add(pivot);
+          spin = pivot;
+        }
         const bolt = BLASTUR_BOLTS[id];
         if (bolt) {
           // Solid laser body with a soft halo, aimed along the flight direction.
@@ -375,6 +410,7 @@ export class EntitySync {
       alwaysVisible: e.id === localId || e.kind === 'missile' || e.kind === 'area',
       hitT: 0,
       liftY: 0,
+      spin,
       hitPower: 0,
       hitDx: 0,
       hitDz: 0,
@@ -387,6 +423,11 @@ export class EntitySync {
     const localId = view.localPlayerId;
     const tick = view.tick;
     let drawn = 0;
+    // Heroes / Syth whose litesaber is in the air (a boomerang missile they own) show an empty hand.
+    const thrown = this.thrownBy;
+    thrown.clear();
+    for (const e of view.all())
+      if (e.kind === 'missile' && DB.missiles.get(e.defId)?.returns) thrown.add(e.ownerId);
     for (const e of view.all()) {
       let r = this.records.get(e.id);
       if (!r) {
@@ -440,13 +481,22 @@ export class EntitySync {
           }
           r.modeTime = e.modeTime;
           this.applyTint(r, v, e);
-          if (e.kind === 'player' || e.kind === 'merc') this.applyEquipment(r, v, e.equipment);
-          else if (!r.equip0 && e.modelId) this.applyGear(r, v, e.modelId);
+          const empty = thrown.has(e.id);
+          if (e.kind === 'player' || e.kind === 'merc') this.applyEquipment(r, v, e.equipment, empty);
+          else if (empty) {
+            if (r.equip0) {
+              v.setAttachment('mainHand', null);
+              r.equip0 = ''; // applyGear re-arms it once the saber is caught
+            }
+          } else if (!r.equip0 && e.modelId) this.applyGear(r, v, e.modelId);
           break;
         }
         case 'object':
         case 'groundItem':
           v?.setFacing(sample.facing);
+          break;
+        case 'missile':
+          if (r.spin) r.spin.rotation.y -= SABER_SPIN_RATE * dt;
           break;
         default:
           break;
@@ -515,8 +565,9 @@ export class EntitySync {
     r: Rec,
     v: EntityVisual,
     eq: Readonly<Record<string, { base: string; quality?: string }>>,
+    emptyHand = false,
   ): void {
-    const mi = eq['mainHand'];
+    const mi = emptyHand ? undefined : eq['mainHand'];
     const oi = eq['offHand'];
     const m = mi ? itemModelId(mi.base, mi.quality) : '';
     const o = oi ? itemModelId(oi.base, oi.quality) : '';

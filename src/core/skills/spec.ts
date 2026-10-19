@@ -39,10 +39,12 @@ export function buildAttackSpec(
     useWeaponDamage,
     blockable: delivery !== 'spell',
   };
+  const monsterMul = caster.kind === 'monster' ? (caster.spellMul ?? 1) : 1;
   if (skill.damage) {
     const sd: Partial<Record<DamageType, { min: number; max: number }>> = {};
     for (const [type, r] of Object.entries(skill.damage) as [DamageType, { min: never; max: never }][]) {
-      const mul = 1 + (synergyPct(caster, skill, type) + synergyPct(caster, skill, 'damage')) / 100;
+      const mul =
+        (1 + (synergyPct(caster, skill, type) + synergyPct(caster, skill, 'damage')) / 100) * monsterMul;
       const min = evalLevel(r.min, level) * mul;
       const max = Math.max(min, evalLevel(r.max, level) * mul);
       sd[type] = { min, max };
@@ -59,6 +61,10 @@ export function buildAttackSpec(
   const conv = skillParam(caster, skill, 'convertPct', level);
   if (conv > 0 && skill.element) spec.convert = { to: skill.element, pct: conv };
   const fx = paramEffects(caster, skill, level);
+  // Monster damage-over-time (venom claws, toxin) keeps pace with its level like direct damage.
+  if (monsterMul !== 1)
+    for (const e of fx)
+      if ((e.kind === 'toxin' || e.kind === 'burn') && e.magnitude) e.magnitude *= monsterMul;
   if (fx.length) spec.effects = fx;
   return spec;
 }
