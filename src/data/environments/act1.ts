@@ -80,10 +80,7 @@ const UNDERGROUND: EnvLightDef = {
 const envs: EnvDef[] = [
   {
     id: 'outpost',
-    weather: [
-      { kind: 'clear', weight: 7 },
-      { kind: 'rain', weight: 3 },
-    ],
+    weather: [{ kind: 'clear', weight: 1 }],
     grade: 'outpost',
     day: {
       ...FOREST_DAY,
@@ -97,11 +94,7 @@ const envs: EnvDef[] = [
   },
   {
     id: 'mist',
-    weather: [
-      { kind: 'clear', weight: 5 },
-      { kind: 'rain', weight: 3 },
-      { kind: 'storm', weight: 1 },
-    ],
+    weather: [{ kind: 'clear', weight: 5 }],
     grade: 'mist',
     day: {
       ...FOREST_DAY,
@@ -134,7 +127,6 @@ const envs: EnvDef[] = [
     id: 'embers',
     weather: [
       { kind: 'embers', weight: 6 },
-      { kind: 'rain', weight: 2 },
       { kind: 'clear', weight: 2 },
     ],
     grade: 'embers',
@@ -151,8 +143,6 @@ const envs: EnvDef[] = [
     id: 'gloom',
     weather: [
       { kind: 'clear', weight: 4 },
-      { kind: 'rain', weight: 3 },
-      { kind: 'storm', weight: 2 },
       { kind: 'spores', weight: 1 },
     ],
     grade: 'gloom',
@@ -175,7 +165,6 @@ const envs: EnvDef[] = [
     id: 'fog',
     weather: [
       { kind: 'spores', weight: 4 },
-      { kind: 'rain', weight: 4 },
       { kind: 'clear', weight: 2 },
     ],
     grade: 'fog',

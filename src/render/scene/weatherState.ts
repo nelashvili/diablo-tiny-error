@@ -1,6 +1,7 @@
 /**
  * Weather schedule: which weather a level has at a play-time clock, and how strong. Deterministic
  * (hash of the environment id and time slot), so it pauses with the game and every visit agrees.
+ * Rain and storms come from one shared sky, so walking into the next area keeps the same rain.
  */
 import * as THREE from 'three';
 import type { EnvDef, EnvLightDef, WeatherKind } from '../../data/schema';
@@ -26,10 +27,26 @@ export function envSeed(id: string): number {
   return h;
 }
 
-/** The weather rolled for slot `slot`. */
+/** One sky over every outdoor area: rain and storms roll from it, so connected areas always agree. */
+const SKY_SEED = envSeed('sky');
+/** Share of slots that are wet (rain or storm), and the share of wet slots that are storms. */
+export const WET_CHANCE = 0.3;
+export const STORM_SHARE = 0.3;
+/** Weather that falls from the shared sky; an env's own table never lists these. */
+export const SKY_KINDS: readonly WeatherKind[] = ['rain', 'storm'];
+
+/** The shared sky for slot `slot`: rain, storm, or dry ('clear'). */
+export function skyWeather(slot: number): WeatherKind {
+  const r = hash01(SKY_SEED, slot);
+  return r < WET_CHANCE * STORM_SHARE ? 'storm' : r < WET_CHANCE ? 'rain' : 'clear';
+}
+
+/** The weather rolled for slot `slot`: the shared sky's rain, else the env's local dry-spell weather. */
 export function slotWeather(env: EnvDef, slot: number): WeatherKind {
   const table = env.weather;
   if (!table?.length) return 'clear';
+  const sky = skyWeather(slot);
+  if (sky !== 'clear') return sky;
   let total = 0;
   for (const w of table) total += Math.max(0, w.weight);
   if (total <= 0) return 'clear';
@@ -74,7 +91,6 @@ export function weatherAt(
     out.intensity = 0;
     return out;
   }
-  const seed = envSeed(env.id);
   if (pinned) {
     out.kind = pinned;
     out.intensity = pinned === 'clear' ? 0 : 1;
@@ -87,7 +103,7 @@ export function weatherAt(
     out.kind = kind;
     out.intensity = kind === 'clear' ? 0 : Math.min(rampIn, rampOut);
   }
-  if (out.kind === 'storm') out.flash = lightningAt(seed, clock) * out.intensity;
+  if (out.kind === 'storm') out.flash = lightningAt(SKY_SEED, clock) * out.intensity;
   return out;
 }
 

@@ -416,7 +416,11 @@ export interface EnvDef {
   day: EnvLightDef;
   /** Outdoor levels: present = the level follows the day/night clock. */
   cycle?: { dawn: EnvLightDef; dusk: EnvLightDef; night: EnvLightDef };
-  /** Weather that comes and goes over time, by relative weight. Omit for none (indoors). */
+  /**
+   * Outdoors only (omit for none, i.e. indoors). Rain and storms come from a sky shared by every
+   * outdoor area, so connected areas agree; this table is the local weather for dry spells
+   * (clear, ash, embers, spores...) by relative weight, and never lists rain or storm.
+   */
   weather?: { kind: WeatherKind; weight: number }[];
 }
 

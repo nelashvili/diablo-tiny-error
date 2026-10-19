@@ -6,6 +6,8 @@ import {
   stepWetness,
   lightningAt,
   parseWeatherParam,
+  SKY_KINDS,
+  skyWeather,
   slotWeather,
   weatherAt,
 } from './weatherState';
@@ -18,8 +20,39 @@ describe('weather schedule', () => {
     expect(weatherAt(crypt, 100, 'rain')).toMatchObject({ kind: 'clear', intensity: 0 });
   });
 
-  it('is deterministic and only rolls kinds from the table', () => {
-    const kinds = new Set(swamp.weather!.map((w) => w.kind));
+  it('rain and storms are shared by every outdoor area; indoors stays dry', () => {
+    const outdoor = [...DB.environments.values()].filter((e) => e.weather?.length);
+    expect(outdoor.length).toBeGreaterThan(1);
+    let wet = 0;
+    for (let s = 0; s < 200; s++) {
+      const sky = skyWeather(s);
+      if (sky !== 'clear') wet++;
+      for (const e of outdoor) {
+        const k = slotWeather(e, s);
+        if (sky !== 'clear') expect(k).toBe(sky);
+        else expect(SKY_KINDS).not.toContain(k);
+      }
+      expect(slotWeather(crypt, s)).toBe('clear');
+    }
+    expect(wet).toBeGreaterThan(20);
+    expect(wet).toBeLessThan(120);
+    // Same intensity everywhere too, so the rain doesn't jump at a level change.
+    for (let t = 0; t < WEATHER_SLOT * 10; t += 11) {
+      const a = weatherAt(outdoor[0]!, t);
+      for (const e of outdoor) {
+        const b = weatherAt(e, t);
+        if (SKY_KINDS.includes(a.kind) || SKY_KINDS.includes(b.kind)) expect(b).toEqual(a);
+      }
+    }
+  });
+
+  it('env tables only list local dry-spell weather', () => {
+    for (const e of DB.environments.values())
+      for (const w of e.weather ?? []) expect(SKY_KINDS, e.id).not.toContain(w.kind);
+  });
+
+  it('is deterministic and only rolls kinds from the table or the sky', () => {
+    const kinds = new Set([...swamp.weather!.map((w) => w.kind), ...SKY_KINDS]);
     for (let s = 0; s < 50; s++) {
       expect(kinds.has(slotWeather(swamp, s))).toBe(true);
       expect(slotWeather(swamp, s)).toBe(slotWeather(swamp, s));

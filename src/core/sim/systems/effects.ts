@@ -26,6 +26,8 @@ export const BOSS_GRIP_STUN_SEC = 0.4;
 /** Stun when a knockback slams the target into a wall, and the daze after being dropped. */
 export const WALL_SLAM_STUN_SEC = 0.8;
 export const DROP_STUN_SEC = 0.35;
+/** Lift damage lands in pulses this far apart. */
+export const LIFT_PULSE_SEC = 0.3;
 /** Knockbacks at least this strong bowl over others in the path (at BOWL_PCT of the strength). */
 const BOWL_MIN = 2;
 const BOWL_PCT = 0.4;
@@ -211,6 +213,11 @@ function tickDot(world: SimWorld, a: Actor, e: ActiveEffect, dt: number): void {
   const acc = (dotAcc.get(e) ?? 0) + dps * step;
   // On the last tick flush the fractional remainder so the full pool is always dealt.
   const last = e.remainingSec - dt <= 1e-9;
+  // A lift squeezes in a few readable pulses instead of a stream of 1s and 2s.
+  if (kind === 'lifted' && !last && acc < Math.max(1, dps * LIFT_PULSE_SEC)) {
+    dotAcc.set(e, acc);
+    return;
+  }
   const whole = last ? Math.round(acc) : Math.floor(acc);
   dotAcc.set(e, acc - whole);
   if (whole <= 0 || !isTargetable(a)) return;
