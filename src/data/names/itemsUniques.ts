@@ -1,4 +1,10 @@
 export default {
+  'uniq.jawwasScavengerMitts': "Jawwa's Scavenger Mitts",
+  'uniq.padawonsPracticeBlade': "Padawon's Practice Blade",
+  'uniq.greedosSidearm': "Greedo's Sidearm",
+  'uniq.initiatesShard': "Initiate's Shard",
+  'uniq.tuskinTrailWraps': 'Tuskin Trail Wraps',
+  'uniq.rebelPilotsJacket': "Rebel Pilot's Jacket",
   'uniq.skywokkersHeirloom': "Skywokker's Heirloom",
   'uniq.kenobeesPatience': "Kenobee's Patience",
   'uniq.mandalorianRage': 'Mandalorian Rage',

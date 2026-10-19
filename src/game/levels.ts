@@ -122,7 +122,7 @@ export class LevelManager {
     if (def.isTown && player) {
       for (const e of w.entities.values())
         if (e.kind === 'npc' && isVendor(e))
-          restockVendor(e, player.level, w.lootRng.fork(`vendor:${e.defId}:${w.tick}`));
+          restockVendor(e, player.level, w.lootRng.fork(`vendor:${e.defId}:${w.tick}`), player.classId);
     }
     if (def.waypoint) this.waypoints.add(levelId);
     w.emit({ type: 'levelEntered', levelId, firstVisit });

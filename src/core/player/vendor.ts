@@ -9,7 +9,8 @@ import { emptyGrid, placeItem, removeItem } from '../items/grid';
 import { itemValue } from '../items/helpers';
 import { isGear } from '../items/lookup';
 import type { GridContainer, ItemInstance, ItemUid } from '../items/types';
-import type { ItemQuality } from '../types';
+import type { ClassId, ItemQuality } from '../types';
+import { classAffinity } from '../loot';
 import type { Rng } from '../rng';
 import type { NpcEntity, PlayerEntity } from '../sim/entities';
 import type { SimWorld } from '../sim/world';
@@ -39,8 +40,19 @@ function consumables(): ItemBaseDef[] {
 
 /** Gear bases a vendor may roll for a hero of `level`. */
 function gearBases(level: number): ItemBaseDef[] {
-  const cap = Math.max(6, level + 4);
-  return [...DB.items.values()].filter((b) => isGear(b) && b.qlvl <= cap);
+  return [...DB.items.values()].filter((b) => isGear(b) && b.qlvl <= vendorQlvlCap(level));
+}
+
+export const vendorQlvlCap = (level: number): number => Math.max(6, level + 4);
+
+/**
+ * Stock weight of a base (like the banded drop tables): bases within 8 levels of the cap weigh up
+ * to 64x the oldest ones, times the drop class lean, so a level-10 hero mostly sees recent gear
+ * for their own class instead of a shelf of starter items.
+ */
+export function vendorWeight(b: ItemBaseDef, level: number, classId?: ClassId): number {
+  const near = Math.max(1, b.qlvl - (vendorQlvlCap(level) - 8));
+  return near * near * classAffinity(b, classId);
 }
 
 function rollQuality(rng: Rng, magicChance: number): ItemQuality {
@@ -51,7 +63,7 @@ function rollQuality(rng: Rng, magicChance: number): ItemQuality {
  * Restock the vendor for a hero of `level` (D2 refreshes stock on every town visit).
  * Healers: every consumable. Smiths: weapons and armor. Others: a mix of gear and stims.
  */
-export function restockVendor(npc: NpcEntity, level: number, rng: Rng): GridContainer {
+export function restockVendor(npc: NpcEntity, level: number, rng: Rng, classId?: ClassId): GridContainer {
   const grid = emptyGrid(VENDOR_GRID.w, VENDOR_GRID.h);
   const ilvl = Math.max(1, level);
   const put = (baseId: string, quality: ItemQuality = 'normal') => {
@@ -67,7 +79,7 @@ export function restockVendor(npc: NpcEntity, level: number, rng: Rng): GridCont
     const n = isSmith(npc) ? 16 : isHealer(npc) ? 4 : 10;
     const magic = isSmith(npc) ? 0.2 : 0.35;
     // Bigger items first so the grid packs well.
-    const picks = Array.from({ length: n }, () => rng.pick(gear));
+    const picks = Array.from({ length: n }, () => rng.weighted(gear, (b) => vendorWeight(b, level, classId)));
     picks.sort((a, b) => b.size.w * b.size.h - a.size.w * a.size.h);
     for (const b of picks) put(b.id, rollQuality(rng, magic));
   }

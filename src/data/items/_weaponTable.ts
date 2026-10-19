@@ -132,8 +132,10 @@ const w = (
 export const WEAPON_LINES: WeaponLine[] = [
   // litesabers (swords)
   w('litesaber', 'Training Litesaber', 'Duelist Litesaber', 'Masterwork Litesaber', 2, 7, 0, 0, 1, 1, 30),
-  w('litesaber', 'Cadet Saber', 'Knight Saber', 'Grandmaster Saber', 2, 6, 0, 21, 5, 1.15, 40),
-  w('litesaber', 'Guard Blade', 'Templar Blade', 'Paragon Blade', 3, 8, 25, 25, 8, 1.0, 75),
+  w('litesaber', 'Scout Litesaber', 'Ranger Litesaber', 'Vanguard Litesaber', 2, 9, 12, 0, 3, 1.0, 35),
+  w('litesaber', 'Cadet Saber', 'Knight Saber', 'Grandmaster Saber', 3, 8, 0, 21, 5, 1.15, 40),
+  w('litesaber', 'Guard Blade', 'Templar Blade', 'Paragon Blade', 5, 11, 25, 25, 8, 1.0, 75),
+  w('litesaber', 'Sentry Litesaber', 'Warden Litesaber', 'Sentinel Litesaber', 6, 14, 28, 0, 10, 1.0, 90),
   w('litesaber', 'Padawon Falchion', 'Veteran Falchion', 'Warlord Falchion', 9, 17, 33, 0, 12, 0.9, 100),
   // double litesabers (2H swords)
   w(
@@ -167,8 +169,8 @@ export const WEAPON_LINES: WeaponLine[] = [
     'Heavy Dual Saber',
     'Heavy Dual Champion',
     'Heavy Dual Executioner',
-    14,
-    33,
+    16,
+    38,
     55,
     0,
     20,
@@ -178,12 +180,12 @@ export const WEAPON_LINES: WeaponLine[] = [
   // vibro-axes
   w('vibroAxe', 'Vibro Hatchet', 'Vibro Tomahawk', 'Vibro Warhatchet', 3, 6, 0, 0, 1, 1.2, 25),
   w('vibroAxe', 'Vibro Axe', 'Vibro Reaver', 'Vibro Executioner', 4, 11, 32, 0, 4, 1.1, 50),
-  w('vibroAxe', 'Double Vibro Axe', 'Twin Vibro Reaver', 'Twin Vibro Annihilator', 5, 13, 43, 0, 9, 1.0, 85),
-  w('vibroAxe', 'Scrap Cleaver', 'Scrap Hewer', 'Scrap Devastator', 7, 11, 49, 0, 13, 1.0, 110),
+  w('vibroAxe', 'Double Vibro Axe', 'Twin Vibro Reaver', 'Twin Vibro Annihilator', 6, 15, 43, 0, 9, 1.0, 85),
+  w('vibroAxe', 'Scrap Cleaver', 'Scrap Hewer', 'Scrap Devastator', 8, 14, 49, 0, 13, 1.0, 110),
   // shock batons (maces)
   w('shockBaton', 'Shock Stick', 'Shock Truncheon', 'Shock Pacifier', 1, 6, 0, 0, 1, 1.2, 20),
   w('shockBaton', 'Spiked Baton', 'Spiked Enforcer', 'Spiked Disciplinarian', 5, 8, 0, 0, 3, 1.2, 35),
-  w('shockBaton', 'Stun Mace', 'Stun Maul', 'Stun Hammer', 3, 10, 27, 0, 6, 1.1, 60),
+  w('shockBaton', 'Stun Mace', 'Stun Maul', 'Stun Hammer', 5, 12, 27, 0, 6, 1.1, 60),
   w('shockBaton', 'Morning Zapper', 'Evening Zapper', 'Midnight Zapper', 7, 16, 36, 0, 12, 1.0, 100),
   // vibro-pikes (polearms)
   w('vibroPike', 'Vibro Spear', 'Vibro Lance', 'Vibro Dragoon Lance', 3, 15, 20, 0, 3, 0.95, 40),
@@ -199,9 +201,10 @@ export const WEAPON_LINES: WeaponLine[] = [
   w('javelin', 'Harpoon Javelin', 'Harpoon Hunter', 'Harpoon Slayer', 10, 22, 40, 35, 18, 1.0, 110),
   // blastur pistols (bows)
   w('blasturPistol', 'Scout Blastur', 'Ranger Blastur', 'Sentinel Blastur', 2, 6, 0, 0, 1, 1.1, 30),
-  w('blasturPistol', 'Hunting Blastur', 'Hunting Marksman', 'Hunting Sharpshooter', 3, 7, 20, 0, 5, 1.1, 50),
-  w('blasturPistol', 'Long Blastur', 'Long Marksman', 'Long Sharpshooter', 3, 10, 22, 19, 12, 1.0, 90),
-  w('blasturPistol', 'Heavy Blastur', 'Heavy Gunner', 'Heavy Annihilator', 4, 14, 30, 35, 20, 0.9, 130),
+  w('blasturPistol', 'Hunting Blastur', 'Hunting Marksman', 'Hunting Sharpshooter', 3, 9, 20, 0, 5, 1.1, 50),
+  w('blasturPistol', 'Patrol Blastur', 'Patrol Marksman', 'Patrol Sharpshooter', 4, 11, 22, 15, 8, 1.1, 70),
+  w('blasturPistol', 'Long Blastur', 'Long Marksman', 'Long Sharpshooter', 5, 14, 24, 25, 12, 1.0, 90),
+  w('blasturPistol', 'Heavy Blastur', 'Heavy Gunner', 'Heavy Annihilator', 6, 18, 30, 35, 20, 0.9, 130),
   // blastur rifles (Bounty Huntur only)
   w(
     'blasturRifle',
@@ -216,14 +219,27 @@ export const WEAPON_LINES: WeaponLine[] = [
     1.0,
     60,
   ),
+  w(
+    'blasturRifle',
+    'Tracker Rifle',
+    'Tracker Rifle Elite',
+    'Tracker Rifle Supreme',
+    7,
+    15,
+    26,
+    15,
+    8,
+    0.95,
+    95,
+  ),
   w('blasturRifle', 'Huntur Rifle', 'Huntur Rifle Elite', 'Huntur Rifle Supreme', 8, 20, 0, 40, 12, 0.9, 130),
   w(
     'blasturRifle',
     'Huntur Repeater',
     'Huntur Repeater Elite',
     'Huntur Repeater Supreme',
-    6,
-    14,
+    7,
+    17,
     50,
     0,
     18,
@@ -232,10 +248,14 @@ export const WEAPON_LINES: WeaponLine[] = [
   ),
   // forse staffs
   w('forseStaff', 'Apprentice Staff', 'Adept Staff', 'Archmaster Staff', 5, 8, 0, 0, 1, 1.0, 20),
+  w('forseStaff', 'Initiate Staff', 'Disciple Staff', 'Luminary Staff', 6, 10, 0, 0, 3, 1.0, 30),
   w('forseStaff', 'Gnarled Rod', 'Gnarled Scepter', 'Gnarled Eldertwig', 8, 12, 0, 0, 6, 1.0, 45),
+  w('forseStaff', 'Ceremonial Staff', 'Temple Staff', 'Oracle Staff', 10, 18, 15, 0, 11, 1.0, 70),
   w('forseStaff', 'Battle Staff', 'Battle Quarterstaff', 'Battle Warstaff', 12, 28, 25, 0, 16, 0.95, 90),
   // kybur focus crystals (orbs, Forse Adept only)
   w('kyburFocus', 'Kybur Shard', 'Kybur Sparkler', 'Kybur Starshard', 3, 5, 0, 0, 1, 1.1, 40),
+  w('kyburFocus', 'Kybur Prism', 'Kybur Lattice', 'Kybur Starprism', 3, 7, 0, 0, 4, 1.1, 60),
   w('kyburFocus', 'Kybur Sphere', 'Kybur Globe', 'Kybur Cosmosphere', 4, 8, 0, 0, 9, 1.1, 80),
-  w('kyburFocus', 'Kybur Orb', 'Kybur Mega Orb', 'Kybur Giga Orb', 5, 10, 0, 0, 18, 1.1, 150),
+  w('kyburFocus', 'Kybur Lens', 'Kybur Monocle', 'Kybur Farlens', 5, 10, 0, 0, 13, 1.1, 110),
+  w('kyburFocus', 'Kybur Orb', 'Kybur Mega Orb', 'Kybur Giga Orb', 6, 12, 0, 0, 18, 1.1, 150),
 ];

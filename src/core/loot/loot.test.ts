@@ -239,6 +239,30 @@ describe('loot tuning', () => {
     expect(share('bountyHuntur', guns)).toBeGreaterThan(share('forseAdept', guns) * 3);
   });
 
+  it('Act I gear drops are magic about one time in four, with the odd rare', () => {
+    const share = (rank: DropContext['rank'], treasureClass: string) => {
+      const rng = new Rng(13);
+      const q: Record<string, number> = {};
+      let gear = 0;
+      for (let i = 0; i < 6000; i++)
+        for (const it of rollDrops(ctx({ treasureClass, rank, monsterLevel: 6 }), rng).items) {
+          const c = DB.items.get(it.base)?.category;
+          if (c !== 'weapon' && c !== 'armor') continue;
+          gear++;
+          q[it.quality] = (q[it.quality] ?? 0) + 1;
+        }
+      const better = (q.rare ?? 0) + (q.set ?? 0) + (q.unique ?? 0);
+      return { magic: (q.magic ?? 0) / gear, better: better / gear };
+    };
+    const normal = share('normal', 'tc.a1.normal');
+    expect(normal.magic).toBeGreaterThan(0.18);
+    expect(normal.magic).toBeLessThan(0.35);
+    expect(normal.better).toBeGreaterThan(0.01);
+    expect(normal.better).toBeLessThan(0.06);
+    const champ = share('champion', 'tc.a1.champion');
+    expect(champ.magic + champ.better).toBeGreaterThan(normal.magic + normal.better + 0.1);
+  });
+
   it('bosses always drop a rare-or-better and roll higher item levels', () => {
     const rng = new Rng(5);
     for (let i = 0; i < 50; i++) {

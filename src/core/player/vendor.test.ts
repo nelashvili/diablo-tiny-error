@@ -7,7 +7,7 @@ import { Rng } from '../rng';
 import type { NpcEntity } from '../sim/entities';
 import { makeTestSim } from '../sim/systems/testing';
 import { createPlayer } from './create';
-import { buyItem, restockVendor, sellItem, TRADE_RANGE } from './vendor';
+import { buyItem, restockVendor, sellItem, TRADE_RANGE, vendorQlvlCap } from './vendor';
 
 function setup(npcDef = 'gheedo') {
   const sim = makeTestSim(1);
@@ -33,6 +33,29 @@ describe('vendors', () => {
     for (const b of DB.items.values())
       if (b.category === 'consumable' && b.use) expect(bases.has(b.id)).toBe(true);
     expect(setup('chiefCharzi').npc.stock!.items.length).toBeGreaterThan(5);
+  });
+
+  it("a smith's stock keeps up with the hero and leans toward their class", () => {
+    const { npc } = setup('chiefCharzi');
+    const recent = (level: number, classId: 'yediKnight' | 'forseAdept') => {
+      let near = 0;
+      let mine = 0;
+      let n = 0;
+      for (let seed = 0; seed < 40; seed++) {
+        restockVendor(npc, level, new Rng(seed), classId);
+        for (const e of npc.stock!.items) {
+          const b = DB.items.get(e.item.base)!;
+          if (b.category !== 'weapon' && b.category !== 'armor') continue;
+          n++;
+          if (b.qlvl > vendorQlvlCap(level) - 6) near++;
+          if (b.classOnly === classId || b.weaponClass === 'forseStaff' || b.weaponClass === 'kyburFocus')
+            mine++;
+        }
+      }
+      return { near: near / n, staves: mine / n };
+    };
+    expect(recent(10, 'yediKnight').near).toBeGreaterThan(0.6);
+    expect(recent(10, 'forseAdept').staves).toBeGreaterThan(recent(10, 'yediKnight').staves * 2);
   });
 
   it('buy what you can afford, sell for creditz and buy it back', () => {

@@ -24,7 +24,9 @@ export interface ArmorLook {
 const LINE_PALETTES: Record<string, [primary: number, trim: number]> = {
   // helms
   flightCap: [0xe8e8e4, 0xd26a2a],
+  scoutHelm: [0x8a8a6a, 0x4a4a3a],
   trooperHelm: [0xe6e8ea, 0x2c2c30],
+  reconHelm: [0x5a6a5a, 0x2c2c30],
   battleVisor: [0xa2b2c6, 0x9a2a2a],
   yediHood: [0x7a5634, 0xc8b08a],
   yediCowl: [0x3e2a1a, 0xc8b08a],
@@ -32,16 +34,22 @@ const LINE_PALETTES: Record<string, [primary: number, trim: number]> = {
   // chest
   // Rebel pilot orange with a white harness.
   flightSuit: [0xd8682a, 0xeeeeea],
+  paddedVest: [0x8a7a5a, 0x5a4a3a],
   trooperArmor: [0xe6e8ea, 0x2c2c30],
+  flakJacket: [0x5a6a4a, 0x3a3a34],
   meshVest: [0x4a5560, 0xd97a2a],
   battlePlate: [0xa2b2c6, 0x9a2a2a],
   // gloves
   workGloves: [0xa88a60, 0x7a7a72],
+  paddedGloves: [0x7a6a50, 0x7a7a72],
   heavyGloves: [0x4a4440, 0x9aa4ae],
+  gripGloves: [0x3e3a36, 0xb07a3a],
   platedGloves: [0x3a3e46, 0x9aa4ae],
   // boots
   workBoots: [0xa88a60, 0x7a7a72],
+  trailBoots: [0x7a6a50, 0x7a7a72],
   heavyBoots: [0x4a4440, 0x9aa4ae],
+  patrolBoots: [0x3e3a36, 0xb07a3a],
   platedBoots: [0x3a3e46, 0x9aa4ae],
 };
 
@@ -80,7 +88,9 @@ export type HeadgearStyle = 'trooper' | 'mando' | 'hood';
 /** Worn shape of each helm line (keyed by the line's normal-tier id). */
 const LINE_HEADGEAR: Record<string, HeadgearStyle> = {
   flightCap: 'trooper',
+  scoutHelm: 'trooper',
   trooperHelm: 'trooper',
+  reconHelm: 'mando',
   battleVisor: 'mando',
   yediHood: 'hood',
   yediCowl: 'hood',

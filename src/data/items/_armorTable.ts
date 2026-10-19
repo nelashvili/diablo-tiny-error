@@ -33,7 +33,9 @@ const a = (
 export const ARMOR_LINES: ArmorLine[] = [
   // helms
   a('helm', 'Flight Cap', 'Flight Helm', 'Flight Crown', 3, 5, 0, 1, 15, 2, 2),
-  a('helm', 'Trooper Helm', 'Trooper Warhelm', 'Trooper Overhelm', 15, 18, 26, 8, 60, 2, 2),
+  a('helm', 'Scout Helm', 'Scout Warhelm', 'Scout Overhelm', 7, 10, 12, 4, 35, 2, 2),
+  a('helm', 'Trooper Helm', 'Trooper Warhelm', 'Trooper Overhelm', 13, 16, 22, 7, 60, 2, 2),
+  a('helm', 'Recon Helm', 'Recon Warhelm', 'Recon Overhelm', 20, 24, 32, 11, 90, 2, 2),
   a('helm', 'Battle Visor', 'Battle Greatvisor', 'Battle Megavisor', 30, 35, 63, 18, 140, 2, 2),
   a('helm', 'Yedi Hood', 'Yedi Master Hood', 'Yedi Grandmaster Hood', 6, 9, 0, 3, 40, 2, 2, {
     classOnly: 'yediKnight',
@@ -46,26 +48,36 @@ export const ARMOR_LINES: ArmorLine[] = [
   }),
   // chest armor
   a('chest', 'Flight Suit', 'Flight Exosuit', 'Flight Hypersuit', 8, 11, 12, 1, 40, 2, 3),
+  a('chest', 'Padded Vest', 'Padded Guard Vest', 'Padded Battle Vest', 13, 16, 15, 4, 60, 2, 3),
   a('chest', 'Trooper Armor', 'Trooper Hardsuit', 'Trooper Megasuit', 20, 23, 20, 7, 90, 2, 3),
+  a('chest', 'Flak Jacket', 'Flak Armor', 'Flak Warplate', 26, 30, 30, 10, 120, 2, 3),
   a('chest', 'Mesh Vest', 'Mesh Bodyguard', 'Mesh Fortress', 32, 36, 41, 14, 160, 2, 3),
   a('chest', 'Battle Plate', 'Battle Hyperplate', 'Battle Ultraplate', 60, 66, 75, 24, 300, 2, 3),
   // gloves
   a('gloves', 'Work Gloves', 'Work Gauntlets', 'Work Powergloves', 2, 3, 0, 1, 15, 2, 2),
+  a('gloves', 'Padded Gloves', 'Padded Gauntlets', 'Padded Powergloves', 3, 5, 8, 3, 25, 2, 2),
   a('gloves', 'Heavy Gloves', 'Heavy Gauntlets', 'Heavy Powergloves', 5, 7, 16, 6, 40, 2, 2),
+  a('gloves', 'Grip Gloves', 'Grip Gauntlets', 'Grip Powergloves', 7, 9, 22, 9, 60, 2, 2),
   a('gloves', 'Plated Gloves', 'Plated Gauntlets', 'Plated Powergloves', 9, 12, 27, 14, 80, 2, 2),
   // utility belts
   a('belt', 'Utility Sash', 'Utility Cummerbund', 'Utility Girdle', 2, 3, 0, 1, 15, 2, 1),
-  a('belt', 'Utility Belt', 'Utility Powerbelt', 'Utility Megabelt', 6, 8, 20, 8, 50, 2, 1),
+  a('belt', 'Tool Belt', 'Tool Powerbelt', 'Tool Megabelt', 4, 5, 10, 4, 30, 2, 1),
+  a('belt', 'Utility Belt', 'Utility Powerbelt', 'Utility Megabelt', 6, 8, 20, 7, 50, 2, 1),
+  a('belt', 'Combat Belt', 'Combat Powerbelt', 'Combat Megabelt', 9, 11, 28, 11, 75, 2, 1),
   a('belt', 'Plated Belt', 'Plated Powerbelt', 'Plated Megabelt', 12, 14, 38, 16, 100, 2, 2),
   // boots
   a('boots', 'Work Boots', 'Work Greaves', 'Work Powerboots', 2, 3, 0, 1, 15, 2, 2),
+  a('boots', 'Trail Boots', 'Trail Greaves', 'Trail Powerboots', 3, 4, 10, 4, 25, 2, 2),
   a('boots', 'Heavy Boots', 'Heavy Greaves', 'Heavy Powerboots', 5, 6, 18, 7, 40, 2, 2),
+  a('boots', 'Patrol Boots', 'Patrol Greaves', 'Patrol Powerboots', 7, 9, 24, 11, 60, 2, 2),
   a('boots', 'Plated Boots', 'Plated Greaves', 'Plated Powerboots', 9, 11, 30, 15, 85, 2, 2),
   // shields (energy shields, off-hand)
   a('shield', 'Buckler', 'Buckler Mk2', 'Buckler Mk3', 8, 10, 12, 1, 30, 2, 2, { block: 30 }),
+  a('shield', 'Riot Shield', 'Riot Aegis', 'Riot Bulwark', 10, 12, 16, 3, 40, 2, 2, { block: 30 }),
   a('shield', 'Deflector Shield', 'Deflector Aegis', 'Deflector Bulwark', 13, 15, 22, 6, 60, 2, 3, {
     block: 30,
   }),
+  a('shield', 'Guard Shield', 'Guard Aegis', 'Guard Bulwark', 16, 19, 26, 10, 85, 2, 3, { block: 32 }),
   a('shield', 'Barrier Shield', 'Barrier Aegis', 'Barrier Bulwark', 20, 24, 30, 14, 110, 2, 3, { block: 35 }),
   a('shield', 'Fortress Shield', 'Fortress Aegis', 'Fortress Bulwark', 30, 36, 60, 22, 220, 2, 4, {
     block: 45,
