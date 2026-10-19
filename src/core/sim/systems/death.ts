@@ -5,6 +5,7 @@
  *    `deathHooks.respawn` (the world module moves the hero to town) or in place by default.
  */
 import { DB } from '../../../data/db';
+import type { ClassId } from '../../types';
 import { rollDrops } from '../../loot';
 import { createItem } from '../../items/create';
 import type { ItemInstance } from '../../items/types';
@@ -46,6 +47,13 @@ export function revivePlayer(world: SimWorld, p: PlayerEntity, pos?: { x: number
 
 const SPAWN_SPREAD = 0.7;
 
+/** Class whose gear the loot leans toward: the killer if it's a hero, else the local hero (pets, mercs). */
+function lootClass(world: SimWorld, killer: Actor | undefined): { classId?: ClassId } {
+  if (killer && killer.kind === 'player') return { classId: killer.classId };
+  const local = getLocalPlayer(world);
+  return local ? { classId: local.classId } : {};
+}
+
 function dropLoot(world: SimWorld, m: MonsterEntity, killer: Actor | undefined): void {
   const def = monsterDefOf(m);
   if (!def) return;
@@ -63,6 +71,7 @@ function dropLoot(world: SimWorld, m: MonsterEntity, killer: Actor | undefined):
       goldFind: killer?.stats.raw.goldFind ?? 0,
       players: 1,
       rank: m.rank === 'champion' || m.rank === 'unique' || m.rank === 'boss' ? m.rank : 'normal',
+      ...lootClass(world, killer),
     },
     world.lootRng,
   );

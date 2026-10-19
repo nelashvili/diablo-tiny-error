@@ -21,24 +21,26 @@ const RANKS: {
   w: [number, number, number, number];
   q: Q;
 }[] = [
+  // Fewer drops than before (players were wading through junk): a normal monster drops something
+  // about 28% of the time, mostly creditz and stims.
   {
     rank: 'normal',
     picks: 1,
-    noDrop: 60,
-    w: [20, 12, 14, 2],
+    noDrop: 115,
+    w: [20, 10, 12, 2],
     q: { unique: 0, set: 0, rare: 60, magic: 160 },
   },
   {
     rank: 'champion',
     picks: 2,
-    noDrop: 20,
+    noDrop: 45,
     w: [25, 10, 30, 5],
     q: { unique: 100, set: 100, rare: 200, magic: 200 },
   },
   {
     rank: 'unique',
-    picks: 3,
-    noDrop: 5,
+    picks: 2,
+    noDrop: 10,
     w: [25, 10, 40, 8],
     q: { unique: 150, set: 150, rare: 300, magic: 300 },
   },
@@ -49,7 +51,7 @@ function act(n: number): TreasureClassDef[] {
     id: `tc.a${n}.${r.rank}`,
     picks: r.picks,
     // later acts are a little more generous
-    noDrop: Math.max(0, r.noDrop - (n - 1) * (r.rank === 'normal' ? 5 : 2)),
+    noDrop: Math.max(0, r.noDrop - (n - 1) * (r.rank === 'normal' ? 8 : 3)),
     entries: [
       { ref: 'creditz' as const, weight: r.w[0] },
       { ref: 'tc.stim', weight: r.w[1] },
@@ -61,10 +63,11 @@ function act(n: number): TreasureClassDef[] {
 }
 
 const BOSSES = ['countDooky', 'greatSarlack', 'darthMole', 'emperorPalpitate'];
+// Bosses: much better odds of uniques/sets (plus a guaranteed rare and +5 item levels, see core/loot).
 const DIFFS: { d: string; picks: number; q: Q }[] = [
-  { d: 'normal', picks: 5, q: { unique: 300, set: 300, rare: 500, magic: 400 } },
-  { d: 'veteran', picks: 6, q: { unique: 350, set: 350, rare: 550, magic: 450 } },
-  { d: 'legend', picks: 7, q: { unique: 400, set: 400, rare: 600, magic: 500 } },
+  { d: 'normal', picks: 5, q: { unique: 600, set: 550, rare: 750, magic: 600 } },
+  { d: 'veteran', picks: 6, q: { unique: 680, set: 620, rare: 800, magic: 650 } },
+  { d: 'legend', picks: 7, q: { unique: 760, set: 700, rare: 850, magic: 700 } },
 ];
 
 /** Aliases requested by the monsters data: Act I boss + superuniques. */
@@ -77,7 +80,7 @@ const aliases: TreasureClassDef[] = DIFFS.flatMap((x, i): TreasureClassDef[] => 
   },
   {
     id: `tc.a1.superunique.${x.d}`,
-    picks: 3 + i,
+    picks: 2 + i,
     noDrop: 0,
     entries: [
       { ref: 'tc.equip', weight: 55 },
@@ -99,10 +102,10 @@ export default [
       picks: x.picks,
       noDrop: 0,
       entries: [
-        { ref: 'tc.equip', weight: 60 },
-        { ref: 'creditz', weight: 20 },
+        { ref: 'tc.equip', weight: 70 },
+        { ref: 'creditz', weight: 15 },
         { ref: 'tc.gem', weight: 10 },
-        { ref: 'tc.stim', weight: 10 },
+        { ref: 'tc.stim', weight: 5 },
       ],
       quality: x.q,
     })),

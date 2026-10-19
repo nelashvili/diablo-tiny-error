@@ -9,6 +9,7 @@ import {
   canPlace,
   emptyGrid,
   findSpace,
+  growGrid,
   itemSize,
   placeItem,
   placeOrSwap,
@@ -20,9 +21,21 @@ const mk = (base: string) => createItem(base, {}, rng);
 
 describe('grid', () => {
   it('default sizes', () => {
-    expect(INVENTORY_SIZE).toEqual({ w: 10, h: 4 });
+    expect(INVENTORY_SIZE).toEqual({ w: 10, h: 6 });
     expect(STASH_SIZE).toEqual({ w: 10, h: 10 });
     expect(CUBE_SIZE).toEqual({ w: 3, h: 4 });
+  });
+
+  it('growGrid enlarges an old 10x4 backpack in place, keeping items and never shrinking', () => {
+    const g = emptyGrid(10, 4);
+    const it = mk('buckler');
+    placeItem(g, it, 8, 2);
+    growGrid(g, INVENTORY_SIZE);
+    expect([g.w, g.h]).toEqual([10, 6]);
+    expect(g.items[0]).toMatchObject({ x: 8, y: 2 });
+    expect(canPlace(g, mk('buckler'), 8, 4)).toBe(true);
+    const big = growGrid(emptyGrid(12, 8), INVENTORY_SIZE);
+    expect([big.w, big.h]).toEqual([12, 8]);
   });
 
   it('item sizes come from the base', () => {

@@ -1,7 +1,8 @@
 import { baseOf } from './lookup';
 import type { GridContainer, ItemInstance } from './types';
 
-export const INVENTORY_SIZE = { w: 10, h: 4 };
+/** Backpack: 10x6 (D2's 10x4 filled up too fast with the loot this game drops). */
+export const INVENTORY_SIZE = { w: 10, h: 6 };
 export const STASH_SIZE = { w: 10, h: 10 };
 export const CUBE_SIZE = { w: 3, h: 4 };
 
@@ -89,6 +90,13 @@ export function autoSort(c: GridContainer): void {
       return;
     }
   }
+}
+
+/** Grow a container to at least `min` (older saves had smaller backpacks); items keep their cells. */
+export function growGrid<T extends GridContainer>(c: T, min: { w: number; h: number }): T {
+  c.w = Math.max(c.w, min.w);
+  c.h = Math.max(c.h, min.h);
+  return c;
 }
 
 export function emptyGrid(w: number, h: number): GridContainer {

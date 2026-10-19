@@ -10,6 +10,7 @@ import type { AccountSave, CharacterSave, DifficultyProgress, Settings } from '.
 import { SAVE_VERSION } from './types';
 import { defaultAccount, defaultSettings, emptyBelt, emptyGrid, newCharacterSave } from './defaults';
 import { sanityCheckAccount, sanityCheckCharacter } from './validate';
+import { INVENTORY_SIZE } from '../items/grid';
 
 export type MigrateResult<T> =
   { ok: true; value: T; migratedFrom: number; repairs: string[] } | { ok: false; error: string };
@@ -155,7 +156,7 @@ export function migrateCharacter(raw: unknown): MigrateResult<CharacterSave> {
     if (isObj(r['equipment'])) out.equipment = r['equipment'] as CharacterSave['equipment'];
     else repairs.push('equipment reset');
     if (isObj(r['swap'])) out.swap = r['swap'] as CharacterSave['equipment'];
-    out.inventory = repairGrid(r['inventory'], 10, 4, repairs, 'inventory');
+    out.inventory = repairGrid(r['inventory'], INVENTORY_SIZE.w, INVENTORY_SIZE.h, repairs, 'inventory');
     out.cube = repairGrid(r['cube'], 3, 4, repairs, 'cube');
     out.stash = repairGrid(r['stash'], 10, 10, repairs, 'stash');
     const belt = r['belt'];

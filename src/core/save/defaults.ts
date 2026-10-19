@@ -1,6 +1,7 @@
 import type { ClassId, Difficulty } from '../types';
 import { DIFFICULTIES } from '../types';
 import type { Belt, GridContainer } from '../items/types';
+import { INVENTORY_SIZE } from '../items/grid';
 import type { AccountSave, CharacterSave, DifficultyProgress, Settings } from './types';
 import { SAVE_VERSION } from './types';
 
@@ -104,7 +105,7 @@ export function newCharacterSave(
     rightSkill: opts.rightSkill ?? 'attack',
     hotkeys: Array.from({ length: 8 }, () => null),
     equipment: {},
-    inventory: emptyGrid(10, 4),
+    inventory: emptyGrid(INVENTORY_SIZE.w, INVENTORY_SIZE.h),
     belt: emptyBelt(1),
     cube: emptyGrid(3, 4),
     stash: emptyGrid(10, 10),

@@ -205,3 +205,50 @@ describe('level-scaled drops', () => {
     }
   });
 });
+
+describe('loot tuning', () => {
+  it('normal monsters drop something well under half the time', () => {
+    const rng = new Rng(7);
+    let dropped = 0;
+    const n = 4000;
+    for (let i = 0; i < n; i++) {
+      const r = rollDrops(ctx(), rng);
+      if (r.items.length || r.creditz) dropped++;
+    }
+    expect(dropped / n).toBeGreaterThan(0.2);
+    expect(dropped / n).toBeLessThan(0.35);
+  });
+
+  it("weapon drops lean toward the killer's class", () => {
+    const share = (classId: 'yediKnight' | 'bountyHuntur' | 'forseAdept', cls: string[]) => {
+      const rng = new Rng(11);
+      let mine = 0;
+      let weapons = 0;
+      for (let i = 0; i < 3000; i++)
+        for (const it of rollDrops(ctx({ treasureClass: 'tc.weap', monsterLevel: 24, classId }), rng).items) {
+          const wc = DB.items.get(it.base)?.weaponClass;
+          if (!wc) continue;
+          weapons++;
+          if (cls.includes(wc)) mine++;
+        }
+      return mine / weapons;
+    };
+    const sabers = ['litesaber', 'doubleLitesaber'];
+    expect(share('yediKnight', sabers)).toBeGreaterThan(share('bountyHuntur', sabers) * 3);
+    const guns = ['blasturPistol', 'blasturRifle'];
+    expect(share('bountyHuntur', guns)).toBeGreaterThan(share('forseAdept', guns) * 3);
+  });
+
+  it('bosses always drop a rare-or-better and roll higher item levels', () => {
+    const rng = new Rng(5);
+    for (let i = 0; i < 50; i++) {
+      const r = rollDrops(
+        ctx({ treasureClass: 'tc.boss.countDooky.normal', rank: 'boss', monsterLevel: 12 }),
+        rng,
+      );
+      const good = r.items.filter((it) => ['rare', 'set', 'unique'].includes(it.quality));
+      expect(good.length).toBeGreaterThan(0);
+      for (const it of r.items) expect(it.ilvl).toBe(17);
+    }
+  });
+});

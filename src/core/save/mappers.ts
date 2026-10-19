@@ -2,6 +2,7 @@ import type { ClassId, DefId, Difficulty } from '../types';
 import type { PlayerEntity } from '../sim/entities';
 import type { CharacterSave } from './types';
 import { SAVE_VERSION } from './types';
+import { INVENTORY_SIZE, growGrid } from '../items/grid';
 
 /** Fields of CharacterSave that live outside the PlayerEntity. */
 export interface PlayerSaveExtra {
@@ -112,7 +113,7 @@ export function saveToPlayerInit(save: CharacterSave): PlayerInit {
     rightSkill: save.rightSkill,
     hotkeys: [...save.hotkeys],
     equipment: clone(save.equipment),
-    inventory: clone(save.inventory),
+    inventory: growGrid(clone(save.inventory), INVENTORY_SIZE),
     belt: clone(save.belt),
     respecs: clone(save.respecs),
     extra: {

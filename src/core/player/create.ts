@@ -1,7 +1,7 @@
 /** Player creation from a ClassDef. */
 import { DB } from '../../data/db';
 import { createItem } from '../items/create';
-import { emptyGrid, placeItem } from '../items/grid';
+import { INVENTORY_SIZE, emptyGrid, placeItem } from '../items/grid';
 import type { Equipment, ItemInstance } from '../items/types';
 import { Rng, hashString } from '../rng';
 import type { PlayerEntity } from '../sim/entities';
@@ -35,7 +35,7 @@ export function createPlayer(
   const pos = opts.pos ?? start ?? { x: 0, y: 0 };
 
   const equipment: Equipment = {};
-  const inventory = emptyGrid(10, 4);
+  const inventory = emptyGrid(INVENTORY_SIZE.w, INVENTORY_SIZE.h);
   const belt = {
     rows: 1,
     cols: 4 as const,
