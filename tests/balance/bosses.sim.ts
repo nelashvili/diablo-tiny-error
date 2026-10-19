@@ -2,7 +2,7 @@ import { it } from 'vitest';
 import { writeFileSync } from 'node:fs';
 import { DB } from '@/data/db';
 import { Rng } from '@/core/rng';
-import { arena, fight, makeHero, spawnGroup, startLoop, type FightResult } from './harness';
+import { arena, fight, HEALS_BUDGET, makeHero, spawnGroup, startLoop, type FightResult } from './harness';
 import { BUILDS } from './builds';
 
 const SEEDS = Number(process.env.SEEDS ?? 3);
@@ -57,7 +57,7 @@ it('bosses', () => {
               rng,
             );
             bossLife = foes[0]!.stats.lifeMax;
-            const r = fight(world, loop, p, b, foes, { maxSec: 240 });
+            const r = fight(world, loop, p, b, foes, { maxSec: 240, heals: HEALS_BUDGET });
             (withMinions ? rs : solo).push(r);
           }
         }
@@ -71,7 +71,9 @@ it('bosses', () => {
             .toFixed(1)
             .padStart(5)} mp${s((r) => r.manaPots)
             .toFixed(1)
-            .padStart(5)}${dead ? ` DEAD${dead}` : ''}${to ? ` TIMEOUT${to}` : ''}`;
+            .padStart(
+              5,
+            )} low${(Math.min(...xs.map((r) => r.minLifePct)) * 100).toFixed(0).padStart(3)}%${dead ? ` DEAD${dead}` : ''}${to ? ` TIMEOUT${to}` : ''}`;
         };
         out.push(
           `${boss.id.padEnd(20)} m${bl} hp${String(bossLife).padStart(4)} ${b.name.padEnd(15)} L${String(L).padEnd(2)} +minions: ${f(rs)} | solo: ${f(solo)}`,
@@ -79,5 +81,8 @@ it('bosses', () => {
       }
     }
   }
-  writeFileSync(`tests/balance/out-bosses-${GEAR}.txt`, out.join('\n'));
+  writeFileSync(
+    `tests/balance/out-bosses-${GEAR}${isFinite(HEALS_BUDGET) ? '-heals' + HEALS_BUDGET : ''}.txt`,
+    out.join('\n'),
+  );
 });

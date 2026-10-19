@@ -2,7 +2,16 @@ import { it } from 'vitest';
 import { writeFileSync } from 'node:fs';
 import { DB } from '@/data/db';
 import { Rng } from '@/core/rng';
-import { arena, fight, makeHero, spawnGroup, startLoop, type FightResult, type SpawnSpec } from './harness';
+import {
+  arena,
+  fight,
+  HEALS_BUDGET,
+  makeHero,
+  spawnGroup,
+  startLoop,
+  type FightResult,
+  type SpawnSpec,
+} from './harness';
 import { BUILDS } from './builds';
 
 const SEEDS = Number(process.env.SEEDS ?? 3);
@@ -28,10 +37,11 @@ function avg(rs: FightResult[]) {
     deaths: rs.filter((r) => r.died).length,
     fails: rs.filter((r) => !r.won && !r.died).length,
     dps: s((r) => r.dps),
+    low: Math.min(...rs.map((r) => r.minLifePct)),
   };
 }
 const fmt = (a: ReturnType<typeof avg>) =>
-  `${a.ttk.toFixed(1).padStart(5)}s dmg${(a.dmg * 100).toFixed(0).padStart(4)}% pot${a.pots.toFixed(1)} mp${a.mpots.toFixed(1)} dps${a.dps.toFixed(0).padStart(4)}${a.deaths ? ` DEAD${a.deaths}` : ''}${a.fails ? ` TIMEOUT${a.fails}` : ''}`;
+  `${a.ttk.toFixed(1).padStart(5)}s dmg${(a.dmg * 100).toFixed(0).padStart(4)}% pot${a.pots.toFixed(1)} mp${a.mpots.toFixed(1)} dps${a.dps.toFixed(0).padStart(4)} low${(a.low * 100).toFixed(0).padStart(3)}%${a.deaths ? ` DEAD${a.deaths}` : ''}${a.fails ? ` TIMEOUT${a.fails}` : ''}`;
 
 it('progression', () => {
   const out: string[] = [`gear=${GEAR} seeds=${SEEDS}`];
@@ -69,12 +79,15 @@ it('progression', () => {
           life = p.stats.lifeMax;
           skill = `${p.skills[b.attack.find((a) => p.skills[a]) ?? ''] ?? 0}x${b.attack.find((a) => p.skills[a]) ?? 'attack'}`;
           const foes = spawnGroup(world, p.pos, specs, new Rng(seed * 77 + L));
-          (kinds[key] ??= []).push(fight(world, loop, p, b, foes, { maxSec: 120 }));
+          (kinds[key] ??= []).push(fight(world, loop, p, b, foes, { maxSec: 120, heals: HEALS_BUDGET }));
         }
       }
       out.push(`${b.name} L${L} life${life} [${skill}] @${area.id}(m${mlvl})`);
       for (const [k, rs] of Object.entries(kinds)) out.push(`   ${k.padEnd(22)} ${fmt(avg(rs))}`);
     }
   }
-  writeFileSync(`tests/balance/out-progression-${GEAR}${ONLY ? '-' + ONLY : ''}.txt`, out.join('\n'));
+  writeFileSync(
+    `tests/balance/out-progression-${GEAR}${ONLY ? '-' + ONLY : ''}${isFinite(HEALS_BUDGET) ? '-heals' + HEALS_BUDGET : ''}.txt`,
+    out.join('\n'),
+  );
 });

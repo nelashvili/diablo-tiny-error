@@ -4,11 +4,13 @@ import { DB } from '../../data/db';
 import { buildAttackSpec } from '../skills/spec';
 import { makeTestSim } from '../sim/systems/testing';
 import { createMonster, monsterSpellMul } from './create';
-import { scaledMultipliers } from './scaling';
+import { RANK_MULT, scaledMultipliers } from './scaling';
 
 describe('monster spell scaling', () => {
   it('follows the physical damage curve', () => {
-    expect(monsterSpellMul(12, 'normal', 'normal')).toBeCloseTo(scaledMultipliers(12, 'normal').damage);
+    expect(monsterSpellMul(12, 'normal', 'normal')).toBeCloseTo(
+      scaledMultipliers(12, 'normal').damage * RANK_MULT.normal.damage,
+    );
     expect(monsterSpellMul(12, 'normal', 'normal')).toBeGreaterThan(monsterSpellMul(1, 'normal', 'normal'));
     expect(monsterSpellMul(63, 'legend', 'normal')).toBeGreaterThan(
       monsterSpellMul(12, 'normal', 'normal') * 20,

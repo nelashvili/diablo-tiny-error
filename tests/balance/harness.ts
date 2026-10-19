@@ -201,6 +201,9 @@ function potFor(list: string[], level: number) {
   return [...list].reverse().find((id) => (DB.items.get(id)?.qlvl ?? 99) <= level) ?? list[0]!;
 }
 
+/** Healing potion budget per fight from the HEALS env var (mana potions stay unlimited). */
+export const HEALS_BUDGET = process.env.HEALS ? Number(process.env.HEALS) : Infinity;
+
 /**
  * Fight until every listed monster is dead, the hero dies or time runs out. The hero bot stands
  * and uses its attack skill on the nearest foe, keeps buffs up and drinks at 40 % life / when dry.
@@ -211,7 +214,7 @@ export function fight(
   p: PlayerEntity,
   b: Build,
   foes: MonsterEntity[],
-  opts: { maxSec?: number; skill?: string; potions?: boolean } = {},
+  opts: { maxSec?: number; skill?: string; potions?: boolean; heals?: number } = {},
 ): FightResult {
   const maxTicks = (opts.maxSec ?? 120) * TICK;
   const skill = opts.skill ?? attackSkill(p, b);
@@ -235,12 +238,19 @@ export function fight(
   const lastCast = new Map<string, number>();
   let kiteUntil = 0;
   let nextKite = 0;
+  // A defeated hero stays `alive` (mode 'dying', then a respawn), so death is life hitting 0.
+  const down = () => !p.alive || p.life <= 0 || p.mode === 'dying' || p.mode === 'dead';
   let t = 0;
   for (; t < maxTicks; t++) {
     const alive = foes.filter((f) => f.alive);
-    if (!alive.length || !p.alive) break;
+    if (!alive.length || down()) break;
     minLife = Math.min(minLife, p.life / p.stats.lifeMax);
-    if (opts.potions !== false && p.life < p.stats.lifeMax * 0.4 && t >= nextPot) {
+    if (
+      opts.potions !== false &&
+      potions < (opts.heals ?? Infinity) &&
+      p.life < p.stats.lifeMax * 0.4 &&
+      t >= nextPot
+    ) {
       // D2 potions heal over a few seconds; use the item's real effect via a fresh stim.
       const it = createItem(heal, { ilvl: 1 }, rng);
       p.belt.slots[0] = it;
@@ -294,7 +304,9 @@ export function fight(
         return since > TICK * 6;
       });
       if (buff) lastCast.set(buff, t);
-      const use = buff ?? skill;
+      // Out of mana for the skill: players fall back to a plain attack instead of standing idle.
+      const attack = skill !== 'attack' && getSkillBlockReason(world, p, skill) === 'mana' ? 'attack' : skill;
+      const use = buff ?? attack;
       world.commands.push({ type: 'useSkill', skillId: use, targetId: tgt.id, targetPos: { ...tgt.pos } });
     }
     loop.step();
@@ -304,12 +316,12 @@ export function fight(
   const sec = t / TICK;
   return {
     won: foes.every((f) => !f.alive),
-    died: !p.alive,
+    died: down(),
     seconds: sec,
     dmgTaken: dmgTaken / p.stats.lifeMax,
     potions,
     manaPots,
-    minLifePct: p.alive ? minLife : 0,
+    minLifePct: down() ? 0 : minLife,
     dps: sec > 0 ? dealt / sec : 0,
     kills: foes.filter((f) => !f.alive).length,
   };

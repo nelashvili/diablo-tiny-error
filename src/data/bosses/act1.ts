@@ -71,7 +71,9 @@ export default [
     id: 'theCountezz',
     monster: 'countezz',
     name: 'boss.countezz',
-    mods: ['plasmaEnchanted', 'multishot'],
+    // D2's Countess has no modifiers: Multishot + Plasma Enchanted (75% plasma res) made her a minute-long
+    // potion drain for both plasma builds.
+    mods: [],
     minions: { monster: 'shadowWraith', count: { min: 2, max: 4 } },
     level: { normal: 10, veteran: 38, legend: 64 },
     treasure: tcFor('superunique'),

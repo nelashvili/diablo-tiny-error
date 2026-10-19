@@ -123,7 +123,8 @@ export const difficultyIndex = (d: Difficulty): number => DIFFICULTIES.indexOf(d
 
 /** Rank multipliers (D2: champions ~ x2.5 life, uniques ~ x3; minions are plain). */
 export const RANK_MULT = {
-  normal: { life: 1, damage: 1, attackRating: 1, xp: 1 },
+  // Trash packs hit a little harder so they are not free (champions/uniques were already the danger).
+  normal: { life: 1, damage: 1.15, attackRating: 1, xp: 1 },
   minion: { life: 1, damage: 1, attackRating: 1, xp: 1 },
   summon: { life: 1, damage: 1, attackRating: 1, xp: 0 },
   champion: { life: 2.5, damage: 1.4, attackRating: 1.3, xp: 3 },

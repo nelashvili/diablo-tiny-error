@@ -124,7 +124,7 @@ export default [
     d2Analog: 'Andariel Poison Nova',
     anim: 'cast',
     vfx: 'vfx.nova.darkStorm',
-    damage: { storm: { min: 6, max: 14 } },
+    damage: { storm: { min: 4, max: 10 } },
     element: 'storm',
     params: { radius: 7 },
     cooldownSec: 6,
@@ -136,7 +136,7 @@ export default [
     anim: 'attack1',
     vfx: 'vfx.hit.claw',
     weaponDamagePct: 100,
-    effects: [{ kind: 'toxin', durationSec: 4, magnitude: 20 }],
+    effects: [{ kind: 'toxin', durationSec: 4, magnitude: 12 }],
   }),
   // ---------------------------------------------------------------- enemy Forse powers
   // Every one is telegraphed (hands glow, `telegraph`), interrupted by hit stun, and capped on heroes

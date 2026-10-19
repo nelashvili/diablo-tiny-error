@@ -40,8 +40,10 @@ export function healActor(world: SimWorld, a: Actor, amount: number): number {
 /**
  * After a flinch, heroes and mercs keep their footing this long: hits still land, but a fast or
  * hard-hitting enemy (Count Dooky) can't chain flinches into a stun-lock that cancels every swing.
+ * Longer than a caster's bolt rhythm (the Countezz fires every 1.4 s), or a ranged hero's shots
+ * never finish.
  */
-export const HERO_POISE_SEC = 0.8;
+export const HERO_POISE_SEC = 1.5;
 const poiseUntil = new WeakMap<Actor, number>();
 const poised = (world: SimWorld, a: Actor): boolean => (poiseUntil.get(a) ?? -1) > world.time;
 
