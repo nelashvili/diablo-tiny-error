@@ -24,7 +24,9 @@ export default [
     id: 'captainScrapfire',
     monster: 'tuskinRaider',
     name: 'boss.captainScrapfire',
-    mods: ['plasmaEnchanted', 'extraStrong'],
+    // D2 Corpsefire is Spectral Hit; Plasma Enchanted (75% plasma res on him and every minion) walled
+    // off the whole plasma tree at the first boss.
+    mods: ['spectralHit', 'extraStrong'],
     minions: { monster: 'tuskinRaider', count: { min: 3, max: 5 } },
     level: { normal: 3, veteran: 33, legend: 60 },
     treasure: tcFor('superunique'),
