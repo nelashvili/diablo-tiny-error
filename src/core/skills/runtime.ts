@@ -39,6 +39,8 @@ export const DEFAULT_CAST_SEC = 0.6;
 /** D2 melee monsters swing roughly every 1.3-1.6s; faster felt relentless at low level. */
 export const DEFAULT_MONSTER_ATTACK_SEC = 1.4;
 export const MIN_ACTION_SEC = 0.15;
+/** Each hit of a multi-hit skill (Twin Strike, Jab, Flurry) takes this share of a normal swing. */
+export const MULTI_HIT_SWING = 0.55;
 
 interface ActionExtra {
   hits: number;
@@ -62,9 +64,15 @@ export function getSkillRange(actor: Actor, skillId: DefId): number {
       if (md) return md.attackRange;
       return getEquippedWeapon(actor)?.range ?? 1.2;
     }
+    case 'beam': {
+      // A beam reaches only as far as it is long (stand-off casting from further away hits nothing).
+      if (explicit >= 0) return explicit;
+      const length = skillParam(actor, def, 'length', level, -1);
+      if (length > 0) return length;
+      return 8;
+    }
     case 'missile':
     case 'multiMissile':
-    case 'beam':
     case 'chain': {
       if (explicit >= 0) return explicit;
       const m = def.missile ? DB.missiles.get(def.missile) : undefined;
@@ -136,7 +144,7 @@ function timingFor(actor: Actor, def: SkillDef, level: number): Timing {
     const perSec = w ? w.speed : actor.kind === 'player' ? UNARMED_SPEED : 1 / DEFAULT_MONSTER_ATTACK_SEC;
     base = 1 / (perSec * Math.max(0.1, actor.stats.attackSpeedMul));
   }
-  const duration = Math.max(MIN_ACTION_SEC, base * (hits > 1 ? hits * 0.8 : 1));
+  const duration = Math.max(MIN_ACTION_SEC, base * (hits > 1 ? hits * MULTI_HIT_SWING : 1));
   return { duration, fireAt: explicitFire >= 0 ? explicitFire : 0.5, hits };
 }
 

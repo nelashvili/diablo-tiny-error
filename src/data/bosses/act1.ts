@@ -57,7 +57,8 @@ export default [
     id: 'grizzwaldRustySmith',
     monster: 'grizzwald',
     name: 'boss.grizzwald',
-    mods: ['extraStrong', 'stoneSkin', 'magicResistant'],
+    // D2 Griswold is Cursed + Extra Strong; Stone Skin on top of his armor made melee land ~1 swing in 10.
+    mods: ['extraStrong', 'cursed', 'magicResistant'],
     minions: { monster: 'tuskinRaider', count: { min: 2, max: 3 } },
     level: { normal: 7, veteran: 36, legend: 63 },
     treasure: tcFor('superunique'),

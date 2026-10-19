@@ -16,9 +16,15 @@ export type StatKey = 'strength' | 'dexterity' | 'vitality' | 'energy';
 export const XP_SCALE = 2;
 
 /** XP a monster of `level` is worth before the player-level penalty. */
-export function monsterXp(def: Pick<MonsterDef, 'xp'> | undefined, level: number, rank = 'normal'): number {
+export function monsterXp(
+  def: (Pick<MonsterDef, 'xp'> & { flags?: MonsterDef['flags'] }) | undefined,
+  level: number,
+  rank = 'normal',
+): number {
   const base = (def?.xp ?? 5) * XP_SCALE * 1.2 ** Math.max(0, level - 1);
-  const mult = rank === 'champion' ? 3 : rank === 'unique' ? 4 : 1;
+  // A boss on an ordinary model (superunique) pays like a big unique; boss models carry their own xp.
+  const superunique = rank === 'boss' && def?.flags !== undefined && !def.flags.boss;
+  const mult = rank === 'champion' ? 3 : rank === 'unique' ? 4 : superunique ? 6 : 1;
   return Math.max(1, Math.round(base * mult));
 }
 

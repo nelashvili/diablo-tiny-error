@@ -94,6 +94,9 @@ export function applyAttackResult(
   opts: ApplyOpts = {},
 ): number {
   const sourceId = attacker?.id ?? opts.sourceId;
+  // Any attack, landed or not, keeps both sides in combat (no out-of-combat regen mid-fight).
+  markCombat(world, defender);
+  markCombat(world, attacker);
   if (sourceId !== undefined)
     world.emit({
       type: 'attackResult',

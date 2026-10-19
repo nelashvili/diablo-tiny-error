@@ -23,6 +23,8 @@ export const PLAYER_MAX_KNOCKBACK = 3;
 export const PLAYER_MAX_LIFT_SEC = 1.2;
 /** Bosses can't be lifted: Grip only staggers them. */
 export const BOSS_GRIP_STUN_SEC = 0.4;
+/** Slow (%) a boss gets instead of being frozen. */
+export const BOSS_FREEZE_CHILL = 50;
 /** Stun when a knockback slams the target into a wall, and the daze after being dropped. */
 export const WALL_SLAM_STUN_SEC = 0.8;
 export const DROP_STUN_SEC = 0.35;
@@ -117,6 +119,14 @@ export function applyEffect(
     }
     case 'freeze':
       if ((raw.cannotBeFrozen ?? 0) > 0) return false;
+      // Bosses are never frozen solid (D2): the cold only chills them.
+      if (weightOf(target) === 'boss')
+        return applyEffect(
+          world,
+          target,
+          { kind: 'chill', durationSec: dur, magnitude: BOSS_FREEZE_CHILL },
+          sourceId,
+        );
       if ((raw.halfFreezeDuration ?? 0) > 0) dur *= 0.5;
       break;
     case 'chill':

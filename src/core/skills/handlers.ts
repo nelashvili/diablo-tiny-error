@@ -111,12 +111,15 @@ export function meleeHandler(ctx: SkillFireContext, range: number): void {
     }
   }
   for (const t of targets) dealAttack(world, caster, t, spec, { melee: true, skillId: skill.id });
-  // Basic melee swings cleave: other enemies in front take part damage.
-  if (skill.id === 'attack' && targets.length === 1 && wieldsMelee(caster)) {
+  // Weapon swings cleave (basic attacks and single-target weapon skills alike, so putting points in
+  // a skill never loses the cleave): other enemies in front take part damage, without the skill's
+  // stun / knockback riders.
+  if (useWeapon(skill) && targets.length === 1 && wieldsMelee(caster)) {
     const half = (MELEE_MASTERY.cleaveArcDeg * Math.PI) / 360;
     const side = {
       ...spec,
       weaponDamagePct: ((spec.weaponDamagePct ?? 100) * MELEE_MASTERY.cleavePct) / 100,
+      effects: [],
     };
     for (const a of hostilesNear(world, caster.team, caster.pos, reach)) {
       if (a === targets[0]) continue;
@@ -148,7 +151,8 @@ function launch(ctx: SkillFireContext, count: number, spreadDeg: number, random:
       a += random
         ? (world.combatRng.next() - 0.5) * spread
         : count > 1
-          ? (i / (count - 1) - 0.5) * spread
+          ? // One missile always flies straight at the aim point (even counts lean one step to a side).
+            (i - Math.floor(count / 2)) * (spread / (count - 1))
           : 0;
     }
     const start = { x: caster.pos.x + Math.cos(a) * 0.5, y: caster.pos.y + Math.sin(a) * 0.5 };

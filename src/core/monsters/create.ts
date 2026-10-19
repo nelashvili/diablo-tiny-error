@@ -9,7 +9,7 @@ import type { MonsterEntity } from '../sim/entities';
 import type { SimWorld } from '../sim/world';
 import { DB, req } from '../../data/db';
 import type { MonsterDef, MonsterModifier } from '../../data/schema';
-import { RANK_MULT, scaledMultipliers } from './scaling';
+import { rankMultFor, scaledMultipliers } from './scaling';
 import { applyModifiers, rollModifierCount, rollModifiers } from './modifiers';
 import { generateUniqueName } from './uniqueNames';
 
@@ -51,7 +51,7 @@ export function buildMonsterStats(
   rng: Rng,
 ): BuiltStats {
   const m = scaledMultipliers(level, difficulty);
-  const r = RANK_MULT[rank];
+  const r = rankMultFor(def, rank);
   const life = Math.max(1, Math.round(rng.int(def.life.min, def.life.max) * m.life * r.life));
   const baseRes = { ...def.res, ...(def.resByDifficulty?.[difficulty] ?? {}) };
   const clampRes = (v: number | undefined) => Math.max(-100, Math.min(100, v ?? 0));
@@ -101,12 +101,17 @@ export function buildMonsterStats(
 /** XP awarded for killing (before player level-difference penalties, which the kill system owns). */
 export function monsterXp(def: MonsterDef, level: number, difficulty: Difficulty, rank: MonsterRank): number {
   const m = scaledMultipliers(level, difficulty);
-  return Math.max(1, Math.round(def.xp * m.xp * RANK_MULT[rank].xp));
+  return Math.max(1, Math.round(def.xp * m.xp * rankMultFor(def, rank).xp));
 }
 
 /** Multiplier for a monster's skill damage: the physical damage curve (level x difficulty x rank). */
-export function monsterSpellMul(level: number, difficulty: Difficulty, rank: MonsterRank): number {
-  return scaledMultipliers(level, difficulty).damage * RANK_MULT[rank].damage;
+export function monsterSpellMul(
+  level: number,
+  difficulty: Difficulty,
+  rank: MonsterRank,
+  def?: MonsterDef,
+): number {
+  return scaledMultipliers(level, difficulty).damage * rankMultFor(def, rank).damage;
 }
 
 export function createMonster(
@@ -131,7 +136,7 @@ export function createMonster(
   if (rank === 'unique' && !opts.nameKey) nameKey = generateUniqueName(rng).key;
 
   const { stats, life, extras } = buildMonsterStats(def, level, difficulty, rank, mods, rng);
-  const spellMul = monsterSpellMul(level, difficulty, rank);
+  const spellMul = monsterSpellMul(level, difficulty, rank, def);
   const scale = def.scale ?? 1;
   const ai: Record<string, unknown> = {
     state: 'idle',

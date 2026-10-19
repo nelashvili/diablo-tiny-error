@@ -63,7 +63,7 @@ export default [
     modelId: 'mon.grizzwald',
     ai: 'melee',
     life: { min: 140, max: 140 },
-    defense: 150,
+    defense: 110,
     attackRating: 100,
     damage: { min: 8, max: 16 },
     walkSpeed: 2.4,

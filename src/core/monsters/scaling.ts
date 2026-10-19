@@ -129,4 +129,17 @@ export const RANK_MULT = {
   champion: { life: 2.5, damage: 1.4, attackRating: 1.3, xp: 3 },
   unique: { life: 3, damage: 1.5, attackRating: 1.4, xp: 5 },
   boss: { life: 1, damage: 1, attackRating: 1, xp: 1 },
+  /** A named boss built on an ordinary monster (Captain Scrapfire is a Tuskin): a notch above a unique. */
+  superunique: { life: 4, damage: 1.6, attackRating: 1.5, xp: 6 },
 } as const;
+
+/**
+ * Rank multipliers for one monster: dedicated boss models (flags.boss) carry their toughness in
+ * their own stats, while a boss on an ordinary model scales as a superunique.
+ */
+export function rankMultFor(
+  def: { flags: { boss?: boolean } } | undefined,
+  rank: keyof typeof RANK_MULT,
+): (typeof RANK_MULT)[keyof typeof RANK_MULT] {
+  return rank === 'boss' && def && !def.flags.boss ? RANK_MULT.superunique : RANK_MULT[rank];
+}

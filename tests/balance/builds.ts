@@ -1,0 +1,57 @@
+import type { Build } from './harness';
+
+export const BUILDS: Build[] = [
+  {
+    name: 'yedi.saber',
+    classId: 'yediKnight',
+    stats: [2, 1, 2, 0],
+    weapon: ['litesaber'],
+    shield: true,
+    points: ['litesaberStrike:1', 'twinStrike', 'rally:1', 'saberMastery:4', 'litesaberStrike'],
+    attack: ['twinStrike', 'litesaberStrike'],
+    buffs: ['rally'],
+  },
+  {
+    name: 'huntur.blastur',
+    classId: 'bountyHuntur',
+    stats: [1, 2, 2, 0],
+    weapon: ['blasturPistol', 'blasturRifle'],
+    points: ['plasmaShot:1', 'chargedShot:1', 'precision:1', 'spreadShot', 'cryoShot:1', 'plasmaShot'],
+    attack: ['spreadShot', 'plasmaShot'],
+  },
+  {
+    name: 'huntur.spear',
+    classId: 'bountyHuntur',
+    stats: [2, 1, 2, 0],
+    weapon: ['vibroPike', 'javelin'],
+    points: ['vibroJab:1', 'powerThrust', 'precision:1', 'dodge:1', 'vibroJab'],
+    attack: ['powerThrust', 'vibroJab'],
+  },
+  {
+    name: 'adept.plasma',
+    classId: 'forseAdept',
+    stats: [0, 0, 3, 2],
+    weapon: ['forseStaff'],
+    points: ['plasmaBolt:1', 'plasmaStream', 'innerHeat:2', 'frostArmor:1', 'plasmaBolt'],
+    attack: ['plasmaStream', 'plasmaBolt'],
+    buffs: ['frostArmor'],
+  },
+  {
+    name: 'adept.storm',
+    classId: 'forseAdept',
+    stats: [0, 0, 3, 2],
+    weapon: ['forseStaff'],
+    points: ['sparkBolts:1', 'forseLightning', 'frostArmor:1', 'forsePush:1', 'sparkBolts'],
+    attack: ['forseLightning', 'sparkBolts'],
+    buffs: ['frostArmor'],
+  },
+  {
+    name: 'adept.cryo',
+    classId: 'forseAdept',
+    stats: [0, 0, 3, 2],
+    weapon: ['forseStaff'],
+    points: ['iceBolt:1', 'frostArmor:1', 'iceBlast', 'frostNova:1', 'iceBolt'],
+    attack: ['iceBlast', 'iceBolt'],
+    buffs: ['frostArmor'],
+  },
+];
