@@ -226,10 +226,10 @@ function guyWireChirp(sr: number, rng: () => number, len: number, o: ChirpOpts =
  * A full blaster shot: the guy-wire "pyew" plus what a chirp alone lacks, a bright muzzle crack for
  * the attack and a falling low thump for weight. Rifles get a longer, lower sweep and a bigger thump.
  */
-function blasterShot(sr: number, rng: () => number, heavy: boolean): Float32Array {
+function blasterShot(sr: number, rng: () => number, heavy: boolean, len = heavy ? 0.42 : 0.3): Float32Array {
   const d = heavy
-    ? guyWireChirp(sr, rng, 0.42, { a: 0.9, stages: 240, lp: 4800, hp: 150 })
-    : guyWireChirp(sr, rng, 0.3, { hp: 220 });
+    ? guyWireChirp(sr, rng, len, { a: 0.9, stages: 240, lp: 4800, hp: 150 })
+    : guyWireChirp(sr, rng, len, { hp: 220 });
   const crack = buf(sr, 0.012);
   for (let i = 0; i < crack.length; i++) crack[i] = noise(rng) * (1 - i / crack.length) ** 2;
   highpass(crack, sr, 2500);
@@ -256,6 +256,24 @@ interface WhooshOpts {
   /** Shock weapons: electric crackle through the swing. */
   crackle?: boolean;
   gain: number;
+}
+
+/** Several shots mixed at `offsets` (seconds) with per-shot gains: volleys and bursts. */
+function shotVolley(
+  sr: number,
+  rng: () => number,
+  offsets: number[],
+  gains: number[],
+  len: number,
+): Float32Array {
+  const d = buf(sr, (offsets.at(-1) ?? 0) + len);
+  offsets.forEach((at, k) => {
+    const s = blasterShot(sr, rng, false, len);
+    const off = Math.floor(at * sr);
+    for (let i = 0; i < s.length && off + i < d.length; i++) add(d, off + i, s[i]! * (gains[k] ?? 1));
+  });
+  for (let i = 0; i < d.length; i++) d[i] = softclip(d[i]!);
+  return declick(normalize(d, 0.9), sr);
 }
 
 /** A weapon cutting the air: noise through a resonant band that rises as the swing peaks, then falls. */
@@ -401,6 +419,39 @@ export const RECIPES: Record<string, SynthRecipe> = {
     gain: 0.65,
     render(sr, rng) {
       return blasterShot(sr, rng, true);
+    },
+  },
+  /** Spread shot: several bolts leaving at once, a fat smeared "PYEW". */
+  blasturSpread: {
+    pitchVar: 0.05,
+    gain: 0.65,
+    render(sr, rng) {
+      return shotVolley(sr, rng, [0, 0.011, 0.024], [1, 0.8, 0.65], 0.32);
+    },
+  },
+  /** Rapid fire: a quick "pew-pew-pew-pew" burst. */
+  blasturBurst: {
+    pitchVar: 0.05,
+    gain: 0.6,
+    render(sr, rng) {
+      return shotVolley(sr, rng, [0, 0.07, 0.14, 0.21], [1, 0.85, 0.9, 0.75], 0.2);
+    },
+  },
+  /** Seeker lock-on: two rising targeting beeps over the shot. */
+  seekerPing: {
+    pitchVar: 0.02,
+    gain: 0.4,
+    render(sr) {
+      const d = buf(sr, 0.22);
+      let ph = 0;
+      for (let i = 0; i < d.length; i++) {
+        const t = i / sr;
+        const beep = t < 0.07 ? t : t - 0.09;
+        const on = (t < 0.07 || (t >= 0.09 && t < 0.2)) && beep < 0.07;
+        ph += (TAU * (1500 + 4000 * beep + (t >= 0.09 ? 300 : 0))) / sr;
+        d[i] = on ? Math.sin(ph) * ad(beep, 0.004, 0.035) : 0;
+      }
+      return declick(normalize(d, 0.7), sr);
     },
   },
   /** Melee swings by weapon weight and kind (see whoosh). */

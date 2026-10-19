@@ -26,6 +26,7 @@ import {
   elementForSkill,
   isSwing,
   type BasicAttackSound,
+  type BlasturSkillSound,
   type CueContext,
   type SwingSound,
 } from '@/audio/eventMap';
@@ -187,6 +188,7 @@ export class Game {
     hitsWithSaber: (id) => wieldsSaber(this.world, id),
     isDroyd: (id) => isDroyd(this.world, id),
     hostileAttackSound: (id, skillId) => hostileAttackSound(this.world, id, skillId),
+    blasturSkill: (id, skillId) => blasturSkillSound(this.world, id, skillId),
   };
 
   questView(): QuestLogView {
@@ -764,6 +766,26 @@ function hostileAttackSound(world: SimWorld, id: number, skillId: string): Basic
   const el = def.element;
   if (el === 'storm' || el === 'plasma' || el === 'cryo' || el === 'toxin') return el;
   return 'magic';
+}
+
+/** A blaster skill fires like the wielded blaster, tinted by its element; multi-shots volley or burst. */
+function blasturSkillSound(world: SimWorld, id: number, skillId: string): BlasturSkillSound | undefined {
+  const def = DB.skills.get(skillId);
+  if (!def?.weaponReq?.includes('blasturPistol')) return undefined;
+  const a = world.get(id);
+  const heavy =
+    (a?.kind === 'player' || a?.kind === 'merc') && getEquippedWeapon(a)?.weaponClass === 'blasturRifle';
+  const el = def.element;
+  const element = el === 'storm' || el === 'plasma' || el === 'cryo' || el === 'toxin' ? el : undefined;
+  const pattern =
+    def.kind === 'multiMissile'
+      ? def.params?.['random']
+        ? 'burst'
+        : 'spread'
+      : def.params?.['homing']
+        ? 'seeker'
+        : 'single';
+  return { heavy, pattern, ...(element ? { element } : {}) };
 }
 
 function isDroyd(world: SimWorld, id: number): boolean {

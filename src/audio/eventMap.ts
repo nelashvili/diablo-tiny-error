@@ -80,6 +80,37 @@ export function itemDropIds(quality: string): string[] {
   return q === proc ? [`itemDrop.${q}`] : [`itemDrop.${q}`, `itemDrop.${proc}`];
 }
 
+/** How a blaster skill fires (from its skill def and the caster's weapon). */
+export interface BlasturSkillSound {
+  /** Fired from a rifle (longer, lower shots). */
+  heavy: boolean;
+  /** Element tint layered quietly over the shot. */
+  element?: 'storm' | 'plasma' | 'cryo' | 'toxin';
+  pattern: 'single' | 'spread' | 'burst' | 'seeker';
+}
+
+const ELEMENT_TINT: Record<NonNullable<BlasturSkillSound['element']>, string> = {
+  storm: 'lightning',
+  plasma: 'plasma',
+  cryo: 'cryo',
+  toxin: 'toxin',
+};
+
+/** A blaster skill: the shot (pattern, pistol or rifle) plus its element tint and seeker lock-on. */
+export function blasturSkillCues(s: BlasturSkillSound, pos?: { x: number; y: number }): Cue[] {
+  const rifle = s.heavy ? 0.88 : 1;
+  const shot: Cue =
+    s.pattern === 'spread'
+      ? { ids: ['blasturSpread'], volume: 0.9, rate: rifle, pos }
+      : s.pattern === 'burst'
+        ? { ids: ['blasturBurst'], volume: 0.85, rate: rifle, pos }
+        : { ids: [s.heavy ? 'blasturHeavy' : 'blasturClassic'], volume: s.heavy ? 0.85 : 0.8, pos };
+  const out = [shot];
+  if (s.element) out.push({ ids: [ELEMENT_TINT[s.element]], volume: 0.3, rate: 1.3, pos });
+  if (s.pattern === 'seeker') out.push({ ids: ['seekerPing'], volume: 0.5, pos });
+  return out;
+}
+
 /** Melee swings by weapon: light (daggers, fists, throws), medium, heavy (pikes, staves), vibro, shock. */
 export type SwingSound = 'swingLight' | 'swingMedium' | 'swingHeavy' | 'swingVibro' | 'swingShock';
 const SWINGS: ReadonlySet<string> = new Set<SwingSound>([
@@ -105,6 +136,8 @@ export interface CueContext {
    * Undefined for anyone else (heroes and mercs use the normal sounds).
    */
   hostileAttackSound?(casterId: number, skillId: string): BasicAttackSound | undefined;
+  /** For a hero's (or merc's) blaster skill: how it fires; undefined for any other skill. */
+  blasturSkill?(casterId: number, skillId: string): BlasturSkillSound | undefined;
 }
 
 /** Enemy attacks: quieter and pitched up so they sit under the hero's own sounds. */
@@ -154,6 +187,8 @@ export function cuesForEvent(e: GameEvent, ctx?: CueContext): Cue[] {
         }));
       if (BASIC_SKILLS.has(e.skillId))
         return basicAttackCue(ctx?.basicAttackSound?.(e.casterId) ?? null, e.targetPos);
+      const blastur = ctx?.blasturSkill?.(e.casterId, e.skillId);
+      if (blastur) return blasturSkillCues(blastur, e.targetPos);
       return [{ ids: skillSoundIds(e.skillId), pos: e.targetPos }];
     }
     case 'heal':

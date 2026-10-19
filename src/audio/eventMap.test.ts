@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { GameEvent } from '../core/sim/events';
-import { cuesForEvent, elementForSkill, itemDropIds, planCues, soundForSkill } from './eventMap';
+import {
+  blasturSkillCues,
+  cuesForEvent,
+  elementForSkill,
+  itemDropIds,
+  planCues,
+  soundForSkill,
+  type BlasturSkillSound,
+} from './eventMap';
 import { PROCEDURAL_IDS } from './synth';
 
 const pos = { x: 1, y: 2 };
@@ -177,5 +185,30 @@ describe('enemy attack sounds', () => {
     expect(cuesForEvent(cast(1, 'attack'), { ...ctx, basicAttackSound: () => 'blastur' })[0]?.volume).toBe(
       0.8,
     );
+  });
+});
+
+describe('blaster skill sounds', () => {
+  const cast = { type: 'skillCast', casterId: 7, skillId: 'cryoShot', targetPos: pos } as const;
+  const ids = (s: BlasturSkillSound) =>
+    cuesForEvent({ ...cast }, { blasturSkill: () => s }).map((c) => c.ids.at(-1));
+  it('fire like the wielded blaster, tinted by element', () => {
+    expect(ids({ heavy: false, pattern: 'single' })).toEqual(['blasturClassic']);
+    expect(ids({ heavy: true, pattern: 'single', element: 'cryo' })).toEqual(['blasturHeavy', 'cryo']);
+  });
+  it('volley, burst and lock on by pattern', () => {
+    expect(ids({ heavy: false, pattern: 'spread' })).toEqual(['blasturSpread']);
+    expect(ids({ heavy: false, pattern: 'burst' })).toEqual(['blasturBurst']);
+    expect(ids({ heavy: false, pattern: 'seeker' })).toEqual(['blasturClassic', 'seekerPing']);
+    for (const id of ['blasturSpread', 'blasturBurst', 'seekerPing']) expect(PROCEDURAL_IDS).toContain(id);
+  });
+  it('rifles pitch volleys down', () => {
+    const [c] = blasturSkillCues({ heavy: true, pattern: 'burst' });
+    expect(c?.rate).toBeLessThan(1);
+  });
+  it('other skills keep their family sound', () => {
+    expect(
+      cuesForEvent({ ...cast, skillId: 'iceBolt' }, { blasturSkill: () => undefined })[0]?.ids.at(-1),
+    ).toBe('cryo');
   });
 });
