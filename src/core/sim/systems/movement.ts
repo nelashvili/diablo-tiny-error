@@ -119,14 +119,15 @@ function separate(world: SimWorld): void {
       let dx = a.pos.x - b.pos.x;
       let dy = a.pos.y - b.pos.y;
       let d = Math.hypot(dx, dy);
-      const minD = (a.radius + b.radius) * 0.9;
+      // Full radii: at 90% the rendered bodies (shoulders, weapons) visibly sank into each other.
+      const minD = a.radius + b.radius;
       if (d >= minD) continue;
       if (d < 1e-4) {
         dx = a.id % 2 ? 1 : -1;
         dy = b.id % 2 ? 1 : -1;
         d = Math.hypot(dx, dy);
       }
-      const push = (minD - d) * 0.35;
+      const push = (minD - d) * 0.5;
       const wa = a.kind === 'player' || a.kind === 'merc' ? 0 : 1;
       const wb = b.kind === 'player' || b.kind === 'merc' || b.kind === 'npc' ? 0 : 1;
       const wsum = wa + wb;
