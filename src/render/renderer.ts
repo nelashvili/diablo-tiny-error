@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import type { EntityId, Vec2 } from '../core/types';
 import type { WorldView } from '../core/sim/world';
 import type { GameEvent } from '../core/sim/events';
-import type { GeneratedLevel } from '../core/world/types';
+import type { GeneratedLevel, TileKind } from '../core/world/types';
 import type { QualityLevel, Renderer, VfxSystem, VisualFactory } from './types';
 import { createVisualFactory } from './models';
 import { createVfxSystem } from './vfx';
@@ -14,6 +14,7 @@ import { createPostFx, type PostFx } from './vfx/post';
 import { DB } from '../data/db';
 import { IsoCamera } from './camera/isoCamera';
 import { buildMap, type MapRenderer } from './map/mapRenderer';
+import { dressingFor, propVariants } from './map/dressing';
 import { SceneLighting, presetFor } from './scene/lighting';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
@@ -236,10 +237,15 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       map = null;
       const ids = new Set<string>();
       for (const p of level.placements) {
-        if (p.kind === 'prop' && p.ref) ids.add(p.ref.startsWith('prop.') ? p.ref : `prop.${p.ref}`);
+        if (p.kind === 'prop' && p.ref)
+          for (const v of propVariants(p.ref.startsWith('prop.') ? p.ref : `prop.${p.ref}`)) ids.add(v);
       }
       const kinds = new Set<string>(level.map.kinds);
-      for (const k of kinds) if (k !== 'void') ids.add(`tile.${tileset}.${k}`);
+      for (const k of kinds) {
+        if (k === 'void') continue;
+        ids.add(`tile.${tileset}.${k}`);
+        for (const v of dressingFor(tileset, k as TileKind)?.props ?? []) ids.add(v);
+      }
       await visuals.preload([...ids]);
       const b = iso.basis.toCam;
       map = buildMap(level, tileset, visuals, {

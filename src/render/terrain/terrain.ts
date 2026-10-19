@@ -143,6 +143,8 @@ const GROUND_FRAG = /* glsl */ `
   w /= max(dot(w, vec4(1.0)), 1e-5);
   vec3 g = c0 * w.x + c1 * w.y + c2 * w.z + c3 * w.w;
   g *= 0.86 + 0.28 * mix(macro, fine, 0.4);
+  // Pull the saturated CC0 greens toward a softer, painted palette.
+  g = mix(vec3(groundLum(g)), g, 0.68);
   diffuseColor.rgb *= g;
 }
 `;
@@ -224,7 +226,11 @@ uniform sampler2D tNoise;
 varying float vDepth;
 varying vec2 vXZ;
 void main() {
-  float d = clamp(vDepth / 0.22, 0.0, 1.0);
+  // The surface spans the banks too; it ends where the bank rises above it, along a noisy contour.
+  float edgeN = texture2D(tNoise, vXZ * 1.7).r;
+  float dep = vDepth + (edgeN - 0.5) * 0.06;
+  if (dep < 0.0) discard;
+  float d = clamp(dep / 0.22, 0.0, 1.0);
   vec3 col = mix(uShallow, uDeep, smoothstep(0.1, 1.0, d));
   float n1 = texture2D(tNoise, vXZ * 0.35 + vec2(uTime * 0.03, uTime * 0.017)).r;
   float n2 = texture2D(tNoise, vXZ * 0.6 - vec2(uTime * 0.021, -uTime * 0.026)).r;
@@ -232,7 +238,7 @@ void main() {
   float glint = step(0.8, n1 * 0.6 + n2 * 0.6);
   col += glint * 0.12;
   // Foam where the water is shallow (along the banks), broken up by noise.
-  float foam = (1.0 - smoothstep(0.02, 0.12 + 0.06 * n2, vDepth));
+  float foam = 1.0 - smoothstep(0.015, 0.06 + 0.05 * n2, dep);
   col = mix(col, vec3(0.92, 0.96, 1.0), foam * 0.85);
   gl_FragColor = vec4(col, 0.9 - 0.25 * (1.0 - d) + foam * 0.1);
   #include <colorspace_fragment>
@@ -277,6 +283,16 @@ export function buildTerrain(
   const vw = W * SUB + 1;
   const hAt = (i: number, j: number) => heights[Math.min(vw * (H * SUB + 1) - 1, j * vw + i)] ?? 0;
 
+  // Water surface covers water tiles and their neighbours (the shader trims it to the shoreline).
+  const nearWater = (tx: number, ty: number) => {
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const x = tx + dx;
+        const y = ty + dy;
+        if (x >= 0 && y >= 0 && x < W && y < H && kinds[y * W + x] === 'water') return true;
+      }
+    return false;
+  };
   const ground = groundMaterial(set, splatTex, W, H, opts.quality);
   const water = waterMaterial(set);
   const geos: THREE.BufferGeometry[] = [];
@@ -312,7 +328,7 @@ export function buildTerrain(
       for (let tx = r.x0; tx < r.x1; tx++) {
         const kind = kinds[ty * W + tx];
         if (!kind || kind === 'void') continue;
-        const into = kind === 'water' ? [gIdx, wIdx] : [gIdx];
+        const into = nearWater(tx, ty) ? [gIdx, wIdx] : [gIdx];
         for (let sj = 0; sj < SUB; sj++)
           for (let si = 0; si < SUB; si++) {
             const i0 = (tx - r.x0) * SUB + si;

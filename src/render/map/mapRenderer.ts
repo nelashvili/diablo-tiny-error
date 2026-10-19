@@ -3,6 +3,7 @@ import type { GeneratedLevel, TileKind } from '../../core/world/types';
 import type { QualityLevel, VisualFactory } from '../types';
 import { CHUNK_SIZE, chunkGrid, chunkIndexOf, countKindsPerChunk, hash01 } from './chunking';
 import { TERRAIN_KINDS, buildTerrain } from '../terrain/terrain';
+import { depthInto, dressingFor, propVariant, tileTint } from './dressing';
 
 type Part = { geometry: THREE.BufferGeometry; material: THREE.Material };
 
@@ -158,6 +159,7 @@ export function buildMap(
     CHUNK_SIZE,
     new Set<string>(['void', ...TERRAIN_KINDS]),
   );
+  const dressed = (k: TileKind) => dressingFor(tileset, k) !== undefined;
 
   // ------------------------------------------------------------------ tiles
   interface Batch {
@@ -194,7 +196,7 @@ export function buildMap(
     if (!m) continue;
     for (const [kind, n] of m) {
       const style = STYLE[kind as Exclude<TileKind, 'void'>];
-      if (!style) continue;
+      if (!style || dressed(kind as TileKind)) continue;
       const { parts, box } = getParts(`tile.${tileset}.${kind}`);
       box.getSize(_size);
       box.getCenter(_ctr);
@@ -227,7 +229,7 @@ export function buildMap(
     for (let tx = 0; tx < width; tx++) {
       const idx = ty * width + tx;
       const kind = map.kinds[idx];
-      if (!kind || kind === 'void' || TERRAIN_KINDS.has(kind)) continue;
+      if (!kind || kind === 'void' || TERRAIN_KINDS.has(kind) || dressed(kind)) continue;
       const ci = chunkIndexOf(grid, tx, ty);
       const b = batches.get(`${ci}:${kind}`);
       if (!b) continue;
@@ -250,7 +252,7 @@ export function buildMap(
       mat.compose(pos, quat, scl);
       mat.multiply(_tmpTranslate.makeTranslation(-norm.ax, -norm.ay, -norm.az));
       const shade = (style.shade ?? 1) * (0.86 + 0.28 * h);
-      col.setRGB(shade, shade, shade);
+      col.setHex(tileTint(tileset, kind)).multiplyScalar(shade);
       const i = b.n++;
       for (const im of b.meshes) {
         im.setMatrixAt(i, mat);
@@ -260,13 +262,19 @@ export function buildMap(
   }
 
   // ------------------------------------------------------------------ props & lights
+  // Every prop instance first, then one InstancedMesh per (chunk, model).
+  interface PropInst {
+    id: string;
+    x: number;
+    z: number;
+    rot: number;
+    scale: number;
+    /** Dressed tiles (tree lines, boulders) sink with the wall cutaway; free props don't. */
+    fade: boolean;
+    cast: boolean;
+  }
   const lights: MapLightSpec[] = [];
-  const propBatches = new Map<
-    string,
-    { meshes: THREE.InstancedMesh[]; n: number; ax: number; ay: number; az: number }
-  >();
-  const propCounts = new Map<string, number>();
-  const propKey = (ci: number, id: string) => `${ci}|${id}`;
+  const insts: PropInst[] = [];
   const propId = (ref: string) => (ref.startsWith('prop.') ? ref : `prop.${ref}`);
   for (const p of level.placements) {
     if (p.kind === 'light') {
@@ -281,34 +289,76 @@ export function buildMap(
       const tx = Math.floor(p.pos.x);
       const ty = Math.floor(p.pos.y);
       if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
-      const k = propKey(chunkIndexOf(grid, tx, ty), propId(p.ref));
-      propCounts.set(k, (propCounts.get(k) ?? 0) + 1);
+      insts.push({
+        id: propVariant(propId(p.ref), hash01(tx * 31 + 7, ty * 17 + 3)),
+        x: p.pos.x,
+        z: p.pos.y,
+        rot: p.facing ?? hash01(tx, ty) * Math.PI * 2,
+        scale: 1,
+        fade: false,
+        cast: opts.quality !== 'low',
+      });
     }
   }
-  for (const [k, n] of propCounts) {
-    const id = k.slice(k.indexOf('|') + 1);
-    const { parts, box } = getParts(id);
+  // Dressed tile kinds: one jittered prop per tile (thinned deep inside solid masses).
+  const solid = (k: TileKind) => k === 'void' || k === 'wall' || k === 'rock';
+  const depth = depthInto(map.kinds, width, height, solid);
+  for (let ty = 0; ty < height; ty++)
+    for (let tx = 0; tx < width; tx++) {
+      const idx = ty * width + tx;
+      const kind = map.kinds[idx];
+      const d = kind && kind !== 'void' ? dressingFor(tileset, kind) : undefined;
+      if (!d) continue;
+      if (d.thinBeyond && depth[idx]! > d.thinBeyond && (tx + ty) % 2 === 1) continue;
+      const h1 = hash01(idx, 11);
+      const h2 = hash01(idx, 23);
+      const h3 = hash01(idx, 37);
+      insts.push({
+        id: d.props[Math.floor(hash01(idx, 5) * d.props.length)]!,
+        x: tx + 0.5 + (h1 - 0.5) * 2 * d.jitter,
+        z: ty + 0.5 + (h2 - 0.5) * 2 * d.jitter,
+        rot: h3 * Math.PI * 2,
+        scale: d.scale[0] + (d.scale[1] - d.scale[0]) * hash01(idx, 51),
+        fade: true,
+        cast: d.castShadow === true && opts.quality === 'high',
+      });
+    }
+
+  const propBatches = new Map<
+    string,
+    { meshes: THREE.InstancedMesh[]; n: number; ax: number; ay: number; az: number }
+  >();
+  const propKey = (inst: PropInst) =>
+    `${chunkIndexOf(grid, Math.floor(inst.x), Math.floor(inst.z))}|${inst.fade ? 1 : 0}|${inst.cast ? 1 : 0}|${inst.id}`;
+  const propCounts = new Map<string, { n: number; first: PropInst }>();
+  for (const inst of insts) {
+    const k = propKey(inst);
+    const c = propCounts.get(k);
+    if (c) c.n++;
+    else propCounts.set(k, { n: 1, first: inst });
+  }
+  for (const [k, { n, first }] of propCounts) {
+    const { parts, box } = getParts(first.id);
     box.getCenter(_ctr);
     propBatches.set(k, {
-      meshes: mkMesh(parts, n, false, opts.quality !== 'low', true),
+      meshes: mkMesh(parts, n, first.fade, first.cast, true),
       n: 0,
       ax: _ctr.x,
       ay: box.min.y,
       az: _ctr.z,
     });
   }
-  for (const p of level.placements) {
-    if (p.kind !== 'prop' || !p.ref) continue;
-    const tx = Math.floor(p.pos.x);
-    const ty = Math.floor(p.pos.y);
-    if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
-    const b = propBatches.get(propKey(chunkIndexOf(grid, tx, ty), propId(p.ref)));
+  for (const inst of insts) {
+    const b = propBatches.get(propKey(inst));
     if (!b) continue;
-    pos.set(p.pos.x, map.elevation?.[ty * width + tx] ?? 0, p.pos.y);
-    rotY.setFromAxisAngle(up, -(p.facing ?? hash01(tx, ty) * Math.PI * 2));
-    mat.compose(pos, rotY, scl.set(1, 1, 1));
+    const tx = Math.min(width - 1, Math.max(0, Math.floor(inst.x)));
+    const ty = Math.min(height - 1, Math.max(0, Math.floor(inst.z)));
+    pos.set(inst.x, map.elevation?.[ty * width + tx] ?? 0, inst.z);
+    rotY.setFromAxisAngle(up, -inst.rot);
+    mat.compose(pos, rotY, scl.set(inst.scale, inst.scale, inst.scale));
     mat.multiply(_tmpTranslate.makeTranslation(-b.ax, -b.ay, -b.az));
-    col.setRGB(1, 1, 1);
+    const shade = inst.fade ? 0.82 + 0.3 * hash01(Math.floor(inst.x * 7), Math.floor(inst.z * 7)) : 1;
+    col.setRGB(shade, shade, shade);
     const i = b.n++;
     for (const im of b.meshes) {
       im.setMatrixAt(i, mat);

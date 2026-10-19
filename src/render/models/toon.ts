@@ -1,5 +1,6 @@
 /** Shared toon material helpers: one gradient map, cached materials, tint/highlight variants. */
 import * as THREE from 'three';
+import { MATERIAL_PALETTE } from '../assets/palette';
 
 let gradient: THREE.DataTexture | null = null;
 
@@ -165,8 +166,9 @@ export function toToon(src: THREE.Material): THREE.Material {
   const s = src as THREE.MeshStandardMaterial;
   let out: THREE.Material;
   if (s.isMeshStandardMaterial || (src as THREE.MeshPhongMaterial).isMeshPhongMaterial) {
+    const painted = MATERIAL_PALETTE[s.name];
     const m = new THREE.MeshToonMaterial({
-      color: s.color,
+      color: painted !== undefined ? new THREE.Color(painted) : s.color,
       map: s.map,
       gradientMap: getGradientMap(),
       emissive: s.emissive,
