@@ -189,7 +189,7 @@ const ACTORS: ModelEntry[] = [
   // Classic tan battle droids: the skinny skeleton rig, cloak off, painted sand-tan (rusty for scrap).
   battleDroid('mon.scrapDroyd', 0xb88a56, 0xff6a1a, 0.74),
   {
-    // Black probe droid with a red eye.
+    // Black probe droid.
     id: 'mon.probeDroyd',
     url: M('monsters/robot'),
     scale: 0.2,
@@ -198,26 +198,102 @@ const ACTORS: ModelEntry[] = [
     placeholder: ph('sphere', 0x2c2f36, 0.9, 0.3),
     accent: 0xff2222,
     recolor: [
-      { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: 0xff2a2a, flat: 1 },
-      { hue: [0, 360], minSat: 0, color: 0x3a3e46 },
+      { hue: [0, 360], minSat: 0.5, color: 0x2a2e36, flat: 0.7 },
+      { hue: [0, 360], maxSat: 0.5, minVal: 0.5, color: 0x6a707a },
     ],
   },
-  kay('mon.jawwa', 'monsters/rogueHooded', 0x7a5a36, 0xffd23f, 0.6),
-  kay('mon.tuskinRaider', 'monsters/barbarian', 0xc2a878, undefined, 0.78),
-  kay('mon.normtrooper', 'monsters/skeletonMinion', 0xe8e8ee, 0x9fd0ff, 0.75),
+  // Jawwa: a short brown-robed scavenger, face lost in the dark of its hood.
+  kay('mon.jawwa', 'monsters/rogueHooded', 0x6a4a2a, 0xffd23f, 0.58, {
+    recolor: [
+      { hue: [95, 200], color: 0x5c3f22 },
+      { hue: [55, 95], minSat: 0.35, color: 0x3e2a16 },
+      { hue: [10, 50], minSat: 0.2, color: 0x0e0a06, flat: 1 },
+    ],
+  }),
+  // Tuskin Raider: tall desert raider wrapped head to toe in sand-colored cloth, with a gaderffii pike.
+  kay('mon.tuskinRaider', 'monsters/rogueHooded', 0xc2a878, undefined, 0.82, {
+    recolor: [
+      { hue: [95, 200], color: 0xc9b08a },
+      { hue: [55, 95], minSat: 0.35, color: 0x7a5e3e },
+      { hue: [10, 50], minSat: 0.2, color: 0x6e604c, flat: 0.8 },
+    ],
+  }),
+  // Normtrooper: white armor, black visor and joints, and a blastur carbine.
+  kay('mon.normtrooper', 'heroes/knight', 0xeeeeee, 0xff5a3a, 0.72, {
+    hide: ['Knight_Cape'],
+    recolor: [
+      { hue: [0, 360], maxSat: 0.12, minVal: 0.35, color: 0xf2f2f4, flat: 0.5 },
+      { hue: [0, 360], maxSat: 0.12, color: 0x1a1a1e },
+      { hue: [330, 60], minSat: 0.2, color: 0x222228, flat: 0.6 },
+    ],
+    gear: { mainHand: 'hunturCarbine' },
+  }),
   {
+    // Moss Beast: a squat, mossy swamp brute (no axe; it spits quills).
     id: 'mon.mossBeast',
     url: M('monsters/orc'),
     scale: 0.5,
     clips: { ...QM_CLIPS },
     bones: { ...QM_BONES },
     placeholder: ph('capsule', 0x4f7a3a, 1.5, 0.5),
-    accent: 0x9be36a, // tint toward moss green
+    accent: 0x9be36a,
+    hide: ['Orc_Weapon'],
+    recolor: [
+      { hue: [60, 160], minSat: 0.2, color: 0x5d7a34 },
+      { hue: [170, 280], minSat: 0.2, color: 0x3a4a22 },
+    ],
   },
-  kay('mon.nightsistah', 'heroes/mage', 0x3a2a55, 0xc040ff, 0.75),
-  kay('mon.shadowWraith', 'monsters/skeletonMage', 0x2a2a3a, 0x8866ff, 0.75),
-  // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery) — larger, dark crimson, red litesaber
-  kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95),
+  // Nightsistah: Dathomir witch in crimson and black robes, chalk-white skin, no wizard hat.
+  kay('mon.nightsistah', 'heroes/mage', 0x7a1a24, 0xc040ff, 0.74, {
+    hide: ['Mage_Hat'],
+    recolor: [
+      { hue: [220, 285], minSat: 0.15, color: 0x7a1622 },
+      { hue: [300, 345], minSat: 0.4, color: 0x1c1418 },
+      { hue: [15, 40], minSat: 0.2, color: 0xe8e2dc },
+    ],
+    gear: { mainHand: 'apprenticeStaff', accent: 0x6aff8a },
+  }),
+  // Shadow Wraith: a Syth shade, a black hooded robe around a faint violet glow.
+  kay('mon.shadowWraith', 'monsters/rogueHooded', 0x1a1622, 0x8866ff, 0.78, {
+    recolor: [
+      { hue: [95, 200], color: 0x16121c },
+      { hue: [55, 95], minSat: 0.35, color: 0x4a2a7a, flat: 0.6 },
+      { hue: [10, 50], minSat: 0.2, color: 0x07060a, flat: 1 },
+    ],
+  }),
+  // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery), larger, dark crimson, red litesaber.
+  kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95, {
+    recolor: [
+      { hue: [95, 200], color: 0x221820 },
+      { hue: [55, 95], minSat: 0.35, color: 0x5a1a22 },
+    ],
+    gear: { mainHand: 'trainingLitesaber', accent: 0xff2a2a },
+  }),
+  // The Countezz: a Syth noblewoman in black and blood red.
+  kay('mon.countezz', 'heroes/mage', 0x1c1418, 0xff3a3a, 0.86, {
+    hide: ['Mage_Hat'],
+    recolor: [
+      { hue: [220, 285], minSat: 0.15, color: 0x1c1418 },
+      { hue: [300, 345], minSat: 0.4, color: 0x9a1622 },
+      { hue: [15, 40], minSat: 0.2, color: 0xe0d8d2 },
+    ],
+    gear: { mainHand: 'trainingLitesaber', accent: 0xff2a2a },
+  }),
+  {
+    // Grizzwald the Rusty Smith: a hulking, rust-eaten forge droyd.
+    id: 'mon.grizzwald',
+    url: M('monsters/robot'),
+    scale: 0.34,
+    clips: { ...ROBOT_CLIPS },
+    bones: { ...ROBOT_BONES },
+    placeholder: ph('capsule', 0x8a4a22, 1.8, 0.5),
+    accent: 0xff8a2a,
+    recolor: [
+      { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: 0xffa040, flat: 1 },
+      { hue: [0, 360], minSat: 0, minVal: 0.3, color: 0x9a5a2e },
+      { hue: [0, 360], minSat: 0, color: 0x3a2a20 },
+    ],
+  },
   // Player summons
   battleDroid('mon.battleDroyd', 0xd8bc84, 0x4fc3ff, 0.78),
   // Holo-Decoy: a blue hologram of the Bounty Huntur.

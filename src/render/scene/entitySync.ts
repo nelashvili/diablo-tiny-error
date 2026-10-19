@@ -4,6 +4,7 @@ import type { WorldView } from '../../core/sim/world';
 import type { Entity, EntityKind } from '../../core/sim/entities';
 import type { EntityVisual, VfxSystem, VisualFactory } from '../types';
 import { armorLook } from '../models/outfit';
+import { getModelEntry } from '../assets/catalog';
 import { DB } from '../../data/db';
 import { MotionBuffer, type MotionSample } from './interp';
 import { distSqToSegment } from '../camera/isoMath';
@@ -408,6 +409,7 @@ export class EntitySync {
           r.modeTime = e.modeTime;
           this.applyTint(r, v, e);
           if (e.kind === 'player' || e.kind === 'merc') this.applyEquipment(r, v, e.equipment);
+          else if (!r.equip0 && e.modelId) this.applyGear(r, v, e.modelId);
           break;
         }
         case 'object':
@@ -461,6 +463,19 @@ export class EntitySync {
       r.tint = tint;
       v.setTint(tint === TINT_NONE ? null : tint);
     }
+  }
+
+  /** Monsters and NPCs show the gear their catalog entry gives them (once). */
+  private applyGear(r: Rec, v: EntityVisual, modelId: string): void {
+    const gear = getModelEntry(modelId).gear;
+    r.equip0 = gear?.mainHand ?? '-';
+    if (!gear) return;
+    if (gear.mainHand) {
+      const wc = DB.items.get(gear.mainHand)?.weaponClass;
+      r.ranged = !!wc && RANGED_WEAPON_CLASSES.has(wc);
+      v.setAttachment('mainHand', itemModelId(gear.mainHand), gear.accent);
+    }
+    if (gear.offHand) v.setAttachment('offHand', itemModelId(gear.offHand), gear.accent);
   }
 
   private applyEquipment(r: Rec, v: EntityVisual, eq: Readonly<Record<string, { base: string }>>): void {

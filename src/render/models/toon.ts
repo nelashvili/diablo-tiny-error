@@ -174,7 +174,7 @@ export function recolorMaterial(
     // x = min saturation (hue rules) or -max saturation (grey rules, ignoring hue).
     rcSat: { value: rules.slice(0, n).map((r) => (r.maxSat !== undefined ? -r.maxSat : (r.minSat ?? 0.25))) },
     rcCol: { value: rules.slice(0, n).map((r) => lin(r.color)) },
-    rcMinV: { value: rules.slice(0, n).map((r) => r.minVal ?? 0.12) },
+    rcMinV: { value: rules.slice(0, n).map((r) => r.minVal ?? (r.maxSat !== undefined ? 0.12 : -1)) },
     rcFlat: { value: rules.slice(0, n).map((r) => r.flat ?? 0) },
   };
   out.onBeforeCompile = (shader) => {
@@ -206,7 +206,7 @@ vec3 rcHsv(vec3 c) {
     vec2 r = rcHue[i];
     bool inside = r.x <= r.y ? (hsv.x >= r.x && hsv.x <= r.y) : (hsv.x >= r.x || hsv.x <= r.y);
     bool grey = rcSat[i] < 0.0;
-    if (grey ? (hsv.y <= -rcSat[i] && hsv.z > rcMinV[i] && hsv.z < 0.97) : (inside && hsv.y >= rcSat[i])) {
+    if (grey ? (hsv.y <= -rcSat[i] && hsv.z > rcMinV[i] && hsv.z < 0.97) : (inside && hsv.y >= rcSat[i] && hsv.z > rcMinV[i])) {
       vec3 tgt = pow(rcCol[i], vec3(1.0 / 2.2));
       float tv = max(max(tgt.r, tgt.g), max(tgt.b, 1e-3));
       // Keep the texel's shading (its value relative to the palette's brightest) on the new color,

@@ -68,6 +68,8 @@ export interface ModelEntry {
   hide?: string[];
   /** Per-bone scale held over the animation (e.g. a stretched droid head), as [x, y, z]. */
   boneScale?: Record<string, [number, number, number]>;
+  /** What a monster/NPC carries: an item base id per hand (e.g. a trooper's carbine), blade color. */
+  gear?: { mainHand?: string; offHand?: string; accent?: number };
 }
 
 /** VFX toolkit keys referenced from SkillDef.vfx / MissileDef.vfx. */
