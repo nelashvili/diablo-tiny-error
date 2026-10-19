@@ -32,7 +32,9 @@ const TINT_UNIQUE = 0xffd24a;
 
 /** Hit reaction: flash + recoil away from the attacker + squash, decaying over HIT_FX_SEC. */
 const HIT_FX_SEC = 0.18;
-const HIT_FLASH = 0xffffff;
+/** Hit flash (added as emissive at half strength): warm and below the bloom threshold, so a struck
+ * pack flickers instead of turning into white blobs. */
+const HIT_FLASH = 0x9a8270;
 const HIT_RECOIL = 0.14;
 const HIT_SQUASH = 0.14;
 const CRIT_MUL = 1.8;

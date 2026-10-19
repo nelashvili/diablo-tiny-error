@@ -253,8 +253,9 @@ export function variantMaterial(
     if (m.color && m.emissive) {
       if (tint !== null) {
         scratchTint.setHex(tint);
-        m.color.lerp(scratchTint, 0.5);
-        m.emissive.copy(scratchTint).multiplyScalar(0.22);
+        // Mostly a color shift; a little glow so tinted packs read in shadow without going flat.
+        m.color.lerp(scratchTint, 0.45);
+        m.emissive.copy(scratchTint).multiplyScalar(0.1);
       }
       if (hl !== null) {
         scratchHl.setHex(hl).multiplyScalar(0.5);

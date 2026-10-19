@@ -74,11 +74,12 @@ const SCATTER: Record<string, Partial<Record<TileKind, GroundScatter>>> = {
   forest: {
     grass: {
       props: [
-        ...['prop.grass', 'prop.grass', 'prop.grass', 'prop.grass', 'prop.grass', 'prop.grass'],
+        // Mostly grass; a flower, a mushroom or a pebble now and then (pink reads as noise en masse).
+        ...Array<string>(28).fill('prop.grass'),
         'prop.flowers',
-        'prop.flowers',
-        'prop.rock.small',
         'prop.mushrooms',
+        'prop.rock.small',
+        'prop.rock.small',
       ],
       density: 0.8,
       scale: [0.7, 1.15],
@@ -87,7 +88,7 @@ const SCATTER: Record<string, Partial<Record<TileKind, GroundScatter>>> = {
   },
   town: {
     grass: {
-      props: ['prop.grass', 'prop.grass', 'prop.grass', 'prop.flowers'],
+      props: [...Array<string>(14).fill('prop.grass'), 'prop.flowers'],
       density: 0.6,
       scale: [0.7, 1.1],
     },

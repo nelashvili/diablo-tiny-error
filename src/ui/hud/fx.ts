@@ -122,8 +122,9 @@ export class FxModel {
         }
         case 'attackResult': {
           if (e.outcome === 'hit') break;
-          const involvesPlayer = e.attackerId === pid || e.targetId === pid;
-          if (!involvesPlayer) break;
+          // Your misses, and your blocks/dodges; a pack's misses on you would bury the numbers.
+          const shown = e.attackerId === pid || (e.targetId === pid && e.outcome !== 'miss');
+          if (!shown) break;
           const target = view?.get(e.targetId);
           if (!target) break;
           const key =
