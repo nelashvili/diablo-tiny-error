@@ -1,6 +1,7 @@
 /**
- * Status effects (chill, freeze, stun, toxin/burn DoT, knockback), buffs, heal-over-time and
- * timed summons. `createEffectsSystem()` ticks them; `applyEffect`/`addBuff` are the entry points.
+ * Status effects (chill, freeze, stun, toxin/burn DoT, knockback slides, Forse lift), buffs,
+ * heal-over-time and timed summons. `createEffectsSystem()` ticks them; `applyEffect`/`addBuff`
+ * are the entry points.
  */
 import type { StatusEffectSpec } from '../../combat/types';
 import type { EntityId, Vec2 } from '../../types';
@@ -8,8 +9,36 @@ import type { Actor, ActiveEffect, Buff } from '../entities';
 import { isActor } from '../entities';
 import type { SimSystem, SimWorld } from '../world';
 import { moveWithCollision } from './collision';
-import { isTargetable, setMode } from './util';
+import { invalidateActorGrid, queryActors } from './spatial';
+import { isTargetable, monsterDefOf, setMode } from './util';
 import { tickTrails } from '../../skills/trail';
+
+/** Knockback slide speed (tiles/second). */
+export const KNOCKBACK_SPEED = 14;
+/** Push / lift scaling by body weight (MonsterDef.weight; bosses always 'boss'). */
+export const WEIGHT_MUL = { light: 1.5, medium: 1, heavy: 0.5, boss: 0.25 } as const;
+export type Weight = keyof typeof WEIGHT_MUL;
+/** Fairness caps for enemy Forse powers used on heroes. */
+export const PLAYER_MAX_KNOCKBACK = 3;
+export const PLAYER_MAX_LIFT_SEC = 1.2;
+/** Bosses can't be lifted: Grip only staggers them. */
+export const BOSS_GRIP_STUN_SEC = 0.4;
+/** Stun when a knockback slams the target into a wall, and the daze after being dropped. */
+export const WALL_SLAM_STUN_SEC = 0.8;
+export const DROP_STUN_SEC = 0.35;
+/** Knockbacks at least this strong bowl over others in the path (at BOWL_PCT of the strength). */
+const BOWL_MIN = 2;
+const BOWL_PCT = 0.4;
+
+export function weightOf(a: Actor): Weight {
+  const md = monsterDefOf(a);
+  if (!md) return 'medium';
+  if (md.flags.boss || (a.kind === 'monster' && a.rank === 'boss')) return 'boss';
+  return md.weight ?? 'medium';
+}
+
+/** Actors already bowled over by a slide (so one push doesn't hit the same body twice). */
+const bowled = new WeakMap<ActiveEffect, Set<EntityId>>();
 
 /** Fractional DoT damage not yet applied, per effect object. */
 const dotAcc = new WeakMap<ActiveEffect, number>();
@@ -49,15 +78,40 @@ export function applyEffect(
   let dur = spec.durationSec;
   switch (spec.kind) {
     case 'knockback': {
-      const dist = spec.magnitude ?? 1.5;
+      let dist = (spec.magnitude ?? 1.5) * WEIGHT_MUL[weightOf(target)];
+      if (target.kind === 'player') dist = Math.min(dist, PLAYER_MAX_KNOCKBACK);
       const from = sourcePos ?? (sourceId !== undefined ? world.get(sourceId)?.pos : undefined);
-      if (!from || dist <= 0) return false;
+      if (!from || dist < 0.05) return false;
       const dx = target.pos.x - from.x;
       const dy = target.pos.y - from.y;
-      const l = Math.hypot(dx, dy) || 1;
-      moveWithCollision(world.level?.map, target.pos, (dx / l) * dist, (dy / l) * dist, target.radius);
+      const dir = Math.hypot(dx, dy) > 1e-6 ? Math.atan2(dy, dx) : target.facing + Math.PI;
+      const slide = Math.max(0.1, dist / KNOCKBACK_SPEED);
+      target.effects = target.effects.filter((e) => e.spec.kind !== 'knockback');
+      target.effects.push({
+        spec: { ...spec, durationSec: slide, magnitude: dist },
+        remainingSec: slide,
+        sourceId,
+        dir,
+        distLeft: dist,
+      });
       target.path = [];
+      if (target.mode !== 'stunned' && target.mode !== 'frozen') {
+        cancelAction(target);
+        setMode(target, 'hit');
+        target.modeTime = 0;
+      }
       return true;
+    }
+    case 'lifted': {
+      const w = weightOf(target);
+      if (w === 'boss')
+        return applyEffect(world, target, { kind: 'stun', durationSec: BOSS_GRIP_STUN_SEC }, sourceId);
+      if (w === 'heavy') dur *= 0.5;
+      if (target.kind === 'player')
+        dur = Math.min(PLAYER_MAX_LIFT_SEC, dur) / Math.max(1, target.stats.hitRecoveryMul);
+      if (dur > 0 && dur !== spec.durationSec)
+        spec = { ...spec, magnitude: ((spec.magnitude ?? 0) * dur) / spec.durationSec };
+      break;
     }
     case 'freeze':
       if ((raw.cannotBeFrozen ?? 0) > 0) return false;
@@ -90,7 +144,7 @@ export function applyEffect(
   } else {
     target.effects.push(next);
   }
-  if (spec.kind === 'freeze' || spec.kind === 'stun') {
+  if (spec.kind === 'freeze' || spec.kind === 'stun' || spec.kind === 'lifted') {
     cancelAction(target);
     target.path = [];
     setMode(target, spec.kind === 'freeze' ? 'frozen' : 'stunned');
@@ -151,7 +205,7 @@ function tickHots(world: SimWorld, a: Actor, dt: number): void {
 
 function tickDot(world: SimWorld, a: Actor, e: ActiveEffect, dt: number): void {
   const kind = e.spec.kind;
-  if (kind !== 'toxin' && kind !== 'burn') return;
+  if (kind !== 'toxin' && kind !== 'burn' && kind !== 'lifted') return;
   const dps = (e.spec.magnitude ?? 0) / Math.max(0.01, e.spec.durationSec);
   const step = Math.min(dt, Math.max(0, e.remainingSec));
   const acc = (dotAcc.get(e) ?? 0) + dps * step;
@@ -167,10 +221,75 @@ function tickDot(world: SimWorld, a: Actor, e: ActiveEffect, dt: number): void {
     targetId: a.id,
     sourceId: e.sourceId,
     amount: whole,
-    dtype: kind === 'toxin' ? 'toxin' : 'plasma',
+    dtype: kind === 'toxin' ? 'toxin' : kind === 'lifted' ? 'magic' : 'plasma',
     crit: false,
     pos: { x: a.pos.x, y: a.pos.y },
   });
+}
+
+/**
+ * Move a knocked-back actor along its slide. Hitting a wall head-on ends the slide with a slam
+ * (damage + stun); strong pushes bowl over others in the path.
+ */
+function slideStep(world: SimWorld, a: Actor, fx: ActiveEffect, dt: number): void {
+  const left = fx.distLeft ?? 0;
+  if (left <= 1e-6 || fx.dir === undefined || !isTargetable(a)) return;
+  const step = Math.min(left, KNOCKBACK_SPEED * dt);
+  const moved = moveWithCollision(
+    world.level?.map,
+    a.pos,
+    Math.cos(fx.dir) * step,
+    Math.sin(fx.dir) * step,
+    a.radius,
+  );
+  fx.distLeft = left - step;
+  invalidateActorGrid(world);
+  if (moved < step * 0.5) {
+    fx.distLeft = 0;
+    fx.remainingSec = Math.min(fx.remainingSec, dt);
+    const slam = fx.spec.slam ?? 0;
+    if (slam > 0) {
+      const dealt = Math.min(a.life, Math.round(slam));
+      if (dealt > 0) {
+        a.life -= dealt;
+        if (fx.sourceId !== undefined) a.lastHitBy = fx.sourceId;
+        world.emit({
+          type: 'damage',
+          targetId: a.id,
+          sourceId: fx.sourceId,
+          amount: dealt,
+          dtype: 'physical',
+          crit: false,
+          pos: { x: a.pos.x, y: a.pos.y },
+        });
+      }
+      world.emit({
+        type: 'skillImpact',
+        skillId: 'wallSlam',
+        pos: { x: a.pos.x, y: a.pos.y },
+        radius: 1,
+        vfx: 'vfx.wallSlam',
+      });
+      applyEffect(world, a, { kind: 'stun', durationSec: WALL_SLAM_STUN_SEC }, fx.sourceId);
+    }
+    return;
+  }
+  const strength = fx.spec.magnitude ?? 0;
+  if (strength < BOWL_MIN) return;
+  let hit = bowled.get(fx);
+  for (const o of queryActors(world, a.pos, a.radius + 0.35)) {
+    if (o === a || o.team !== a.team || o.kind === 'npc' || !isTargetable(o)) continue;
+    if (!hit) bowled.set(fx, (hit = new Set()));
+    if (hit.has(o.id)) continue;
+    hit.add(o.id);
+    applyEffect(
+      world,
+      o,
+      { kind: 'knockback', durationSec: 0.2, magnitude: strength * BOWL_PCT },
+      fx.sourceId,
+      a.pos,
+    );
+  }
 }
 
 export function createEffectsSystem(): SimSystem {
@@ -182,14 +301,27 @@ export function createEffectsSystem(): SimSystem {
         const a: Actor = e;
 
         if (a.effects.length > 0) {
+          let dropped = false;
           for (const fx of a.effects) {
             tickDot(world, a, fx, dt);
+            if (fx.spec.kind === 'knockback') slideStep(world, a, fx, dt);
             fx.remainingSec -= dt;
+            if (fx.spec.kind === 'lifted' && fx.remainingSec <= 0) dropped = true;
           }
           a.effects = a.effects.filter((f) => f.remainingSec > 0);
+          if (dropped && isTargetable(a)) {
+            world.emit({
+              type: 'skillImpact',
+              skillId: 'forseGrip',
+              pos: { x: a.pos.x, y: a.pos.y },
+              radius: 0.8,
+              vfx: 'vfx.grip.drop',
+            });
+            applyEffect(world, a, { kind: 'stun', durationSec: DROP_STUN_SEC });
+          }
           if (isTargetable(a)) {
             const frozen = hasEffect(a, 'freeze');
-            const stunned = hasEffect(a, 'stun');
+            const stunned = hasEffect(a, 'stun') || hasEffect(a, 'lifted');
             if (frozen) setMode(a, 'frozen');
             else if (stunned) setMode(a, 'stunned');
             else if (a.mode === 'frozen' || a.mode === 'stunned') setMode(a, 'idle');

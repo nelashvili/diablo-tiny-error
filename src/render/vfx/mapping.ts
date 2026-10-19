@@ -37,6 +37,13 @@ export const LOOT_BEAM_IDS: Record<string, string> = {
 };
 
 const HIT_HEIGHT = 0.9;
+/** Hand height for Forse arcs, beams and wind-up glows. */
+const ARC_HEIGHT = 1.1;
+
+/** Hands glow violet-white before Syth lightning, red before the other Syth powers. */
+export function windupId(skillId: string): string {
+  return DB.skills.get(skillId)?.element === 'storm' ? 'vfx.windup.syth' : 'vfx.windup.sythRed';
+}
 
 /** Muzzle flash per missile vfx: blastur bolts flash at the barrel when fired. */
 const MUZZLE_IDS: Record<string, string> = {
@@ -84,6 +91,24 @@ export function mapEvents(events: readonly GameEvent[], view: WorldView, sink: E
         break;
       case 'skillImpact':
         sink.spawn(e.vfx, e.pos, { radius: e.radius });
+        break;
+      case 'skillArc': {
+        const dx = e.to.x - e.from.x;
+        const dy = e.to.y - e.from.y;
+        sink.spawn(e.vfx, e.from, {
+          dir: Math.atan2(dy, dx),
+          radius: Math.hypot(dx, dy),
+          height: ARC_HEIGHT,
+        });
+        break;
+      }
+      case 'skillWindup': {
+        const caster = view.get(e.casterId);
+        if (caster) sink.spawn(windupId(e.skillId), caster.pos, { durationSec: e.sec, height: ARC_HEIGHT });
+        break;
+      }
+      case 'deflect':
+        sink.spawn('vfx.deflect', e.pos, { height: HIT_HEIGHT, radius: 1.2 });
         break;
       case 'missileHit': {
         const m = view.get(e.missileId);

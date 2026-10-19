@@ -181,6 +181,7 @@ export function statusGlyph(id: string, buff: boolean): keyof typeof GLYPHS {
     case 'burn':
       return 'flame';
     case 'stun':
+    case 'lifted':
       return 'stars';
     case 'knockback':
       return 'arrow';

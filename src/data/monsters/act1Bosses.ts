@@ -8,7 +8,8 @@ const bossTc = { normal: 'tc.a1.unique', champion: 'tc.a1.unique', unique: 'tc.a
 
 export default [
   {
-    // Andariel analog: toxin/dark-lightning nova, spit, melee; enrages below 50% life.
+    // Andariel analog, rethemed as a Syth duelist: Forse Lightning, a dark-lightning nova, saber
+    // claws; enraged (below 50% life) he also yanks heroes in with Pull, throws his saber and Grips.
     id: 'countDooky',
     name: 'mon.countDooky',
     family: 'countDooky',
@@ -26,6 +27,7 @@ export default [
     xp: 600,
     treasure: bossTc,
     skills: [{ skill: 'm_dookyClaw', level: 1, chance: 100 }],
+    deflectPct: 35,
     flags: { boss: true, canBeChampion: false },
     pack: { min: 1, max: 1 },
     scale: 1.5,

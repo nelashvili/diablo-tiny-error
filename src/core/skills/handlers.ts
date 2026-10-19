@@ -10,8 +10,8 @@ import { angleTo, fromAngle } from '../math';
 import { rollDrops } from '../loot';
 import { spawnGroundItem } from '../player/inventory';
 import { dealAttack, healActor } from '../sim/systems/damage';
-import { addBuff, applyEffect } from '../sim/systems/effects';
-import { firstBlocked, moveWithCollision, nearestStandable } from '../sim/systems/collision';
+import { addBuff, applyEffect, WEIGHT_MUL, weightOf } from '../sim/systems/effects';
+import { firstBlocked, nearestStandable } from '../sim/systems/collision';
 import { hostilesNear, invalidateActorGrid, queryActors } from '../sim/systems/spatial';
 import { isHostile, isTargetable } from '../sim/systems/util';
 import type { Actor } from '../sim/entities';
@@ -41,13 +41,27 @@ export function emitCast(ctx: SkillFireContext): void {
   });
 }
 
-function impact(ctx: SkillFireContext, pos: Vec2, radius?: number): void {
+export function impact(ctx: SkillFireContext, pos: Vec2, radius?: number, vfx = ctx.skill.vfx): void {
   ctx.world.emit({
     type: 'skillImpact',
     skillId: ctx.skill.id,
     pos: { x: pos.x, y: pos.y },
     radius,
-    vfx: ctx.skill.vfx,
+    vfx,
+  });
+}
+
+/** Element-colored burst for line skills, whose own vfx is the line itself. */
+export const elementImpact = (s: SkillDef): string => `vfx.impact.${s.element ?? 'magic'}`;
+
+/** Draw a line effect (beam, lightning arc) from `from` to `to` using the skill's vfx. */
+export function arc(ctx: SkillFireContext, from: Vec2, to: Vec2, vfx = ctx.skill.vfx): void {
+  ctx.world.emit({
+    type: 'skillArc',
+    skillId: ctx.skill.id,
+    from: { x: from.x, y: from.y },
+    to: { x: to.x, y: to.y },
+    vfx,
   });
 }
 
@@ -268,7 +282,8 @@ const beamHandler: Handler = (ctx) => {
       hits++;
     }
   }
-  impact(ctx, end);
+  arc(ctx, caster.pos, end);
+  impact(ctx, end, undefined, elementImpact(skill));
 };
 
 const chainHandler: Handler = (ctx) => {
@@ -290,10 +305,13 @@ const chainHandler: Handler = (ctx) => {
     }
   }
   const hit = new Set<number>();
+  let prev: Vec2 = caster.pos;
   for (let i = 0; i < jumps && current; i++) {
     hit.add(current.id);
     dealAttack(world, caster, current, spec, { skillId: skill.id, pos: current.pos });
-    impact(ctx, current.pos);
+    arc(ctx, prev, current.pos);
+    prev = { x: current.pos.x, y: current.pos.y };
+    impact(ctx, current.pos, undefined, elementImpact(skill));
     const from: Vec2 = current.pos;
     let next: Actor | undefined;
     let best = Infinity;
@@ -484,11 +502,14 @@ const utilityHandler: Handler = (ctx) => {
       const dy = caster.pos.y - a.pos.y;
       const l = Math.hypot(dx, dy);
       if (l < 1.2) continue;
-      const m = Math.min(dist, l - 1);
-      moveWithCollision(world.level?.map, a.pos, (dx / l) * m, (dy / l) * m, a.radius);
-      a.path = [];
+      // A knockback "from behind" the target slides it toward the caster (weight still applies),
+      // stopping about a tile short.
+      const w = WEIGHT_MUL[weightOf(a)];
+      const m = Math.min(dist, (l - 1) / w);
+      const behind = { x: a.pos.x - dx / l, y: a.pos.y - dy / l };
+      applyEffect(world, a, { kind: 'knockback', durationSec: 0.2, magnitude: m }, caster.id, behind);
+      arc(ctx, caster.pos, a.pos);
     }
-    invalidateActorGrid(world);
   }
 
   const remR = p(ctx, 'remnantRadius');

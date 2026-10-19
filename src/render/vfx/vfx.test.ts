@@ -198,6 +198,44 @@ describe('event mapping', () => {
     expect(calls).toEqual(['spawn:vfx.nova.cryo', 'spawn:vfx.levelup', 'spawn:vfx.impact.physical']);
     expect(opts[0]?.radius).toBe(3);
   });
+  it('maps skillArc to a beam from the hand toward the target, and wind-ups / deflects', () => {
+    run([
+      {
+        type: 'skillArc',
+        skillId: 's',
+        from: { x: 1, y: 1 },
+        to: { x: 1, y: 4 },
+        vfx: 'vfx.arc.forseLightning',
+      },
+      { type: 'skillWindup', casterId: 7, skillId: 'm_forseLightning', sec: 0.6 },
+      { type: 'skillWindup', casterId: 7, skillId: 'm_forsePush', sec: 0.5 },
+      { type: 'deflect', id: 7, pos },
+    ]);
+    expect(calls).toEqual([
+      'spawn:vfx.arc.forseLightning',
+      'spawn:vfx.windup.syth',
+      'spawn:vfx.windup.sythRed',
+      'spawn:vfx.deflect',
+    ]);
+    expect(opts[0]?.radius).toBeCloseTo(3);
+    expect(opts[0]?.dir).toBeCloseTo(Math.PI / 2);
+    expect(opts[1]?.durationSec).toBe(0.6);
+  });
+  it('every vfx id used by skills, missiles and the Forse events exists', () => {
+    const used = new Set<string>([
+      'vfx.deflect',
+      'vfx.windup.syth',
+      'vfx.windup.sythRed',
+      'vfx.grip.lift',
+      'vfx.grip.drop',
+      'vfx.wallSlam',
+    ]);
+    for (const s of DB.skills.values())
+      if (s.vfx.startsWith('vfx.arc') || s.vfx.startsWith('vfx.forse') || s.vfx.startsWith('vfx.grip'))
+        used.add(s.vfx);
+    for (const m of DB.missiles.values()) if (m.vfx.startsWith('vfx.bolt.saber')) used.add(m.vfx);
+    for (const id of used) expect(DB.vfx.has(id), id).toBe(true);
+  });
   it('maps loot beams for set/unique, sparkle for rare, none for normal, stops on removal', () => {
     run([
       { type: 'itemDropped', id: 10, quality: 'set', pos },

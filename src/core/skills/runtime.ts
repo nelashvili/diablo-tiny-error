@@ -17,6 +17,7 @@ import { isTargetable, monsterDefOf, setMode } from '../sim/systems/util';
 import type { SimWorld } from '../sim/world';
 import type { DefId, EntityId, Vec2 } from '../types';
 import './behaviors';
+import './forse';
 import { KIND_HANDLERS, emitCast } from './handlers';
 import { getSkillLevel, skillParam } from './level';
 import { getSkillBehavior, type SkillFireContext } from './registry';
@@ -188,6 +189,14 @@ export function startSkill(world: SimWorld, actor: Actor, skillId: DefId, target
   actor.moveTarget = undefined;
   setMode(actor, def.anim === 'cast' ? 'cast' : def.anim === 'throw' ? 'throw' : 'attack');
   actor.modeTime = 0;
+  // Telegraphed skills (enemy Forse powers) announce their wind-up so the hero can react.
+  if (skillParam(actor, def, 'telegraph', level) > 0)
+    world.emit({
+      type: 'skillWindup',
+      casterId: actor.id,
+      skillId,
+      sec: (tm.duration / tm.hits) * tm.fireAt,
+    });
   return true;
 }
 

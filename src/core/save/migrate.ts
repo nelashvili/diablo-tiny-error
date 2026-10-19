@@ -35,7 +35,48 @@ const CHARACTER_MIGRATIONS: Step[] = [
     o['version'] = 1;
     return o;
   },
+  // v2: the classic Forse powers replaced some D2 copies. Renamed skills keep their points;
+  // removed skills refund theirs, and skill-bar slots pointing at them are cleared.
+  (r) => {
+    const o: Raw = { ...r, version: 2 };
+    if (!isObj(r['skills'])) return o;
+    const skills: Raw = {};
+    let refund = 0;
+    for (const [id, v] of Object.entries(r['skills'])) {
+      const pts = typeof v === 'number' && Number.isFinite(v) ? v : 0;
+      const to = SKILL_RENAMES_V2[id];
+      if (to) skills[to] = ((skills[to] as number | undefined) ?? 0) + pts;
+      else if (SKILLS_REMOVED_V2.has(id)) refund += Math.max(0, Math.floor(pts));
+      else skills[id] = v;
+    }
+    o['skills'] = skills;
+    o['skillPointsUnspent'] = num(r['skillPointsUnspent'], 0, 0) + refund;
+    const remap = (id: unknown): unknown =>
+      typeof id === 'string' ? (SKILL_RENAMES_V2[id] ?? (SKILLS_REMOVED_V2.has(id) ? null : id)) : id;
+    for (const hand of ['leftSkill', 'rightSkill']) {
+      const id = remap(r[hand]);
+      if (id === null) delete o[hand];
+      else if (id !== undefined) o[hand] = id;
+    }
+    if (Array.isArray(r['hotkeys'])) o['hotkeys'] = (r['hotkeys'] as unknown[]).map(remap);
+    return o;
+  },
 ];
+
+/** v1 -> v2 skill id changes (Forse powers update). */
+export const SKILL_RENAMES_V2: Record<string, string> = {
+  fearRoar: 'mindTrik',
+  swiftStep: 'forseSpeed',
+  shockwave: 'forseRepulse',
+};
+export const SKILLS_REMOVED_V2 = new Set([
+  'staticField',
+  'stormNova',
+  'lightning',
+  'twinThrow',
+  'pikeMastery',
+  'avoid',
+]);
 
 const ACCOUNT_MIGRATIONS: Step[] = [
   (r) => {
@@ -45,6 +86,7 @@ const ACCOUNT_MIGRATIONS: Step[] = [
     o['version'] = 1;
     return o;
   },
+  (r) => ({ ...r, version: 2 }),
 ];
 
 const isObj = (v: unknown): v is Raw => !!v && typeof v === 'object' && !Array.isArray(v);

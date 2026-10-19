@@ -142,6 +142,8 @@ export interface MissileDef {
   /** Explodes on impact with this radius. */
   explodeRadius?: number;
   homing?: boolean;
+  /** Boomerang: flies out to its range (or a wall), then back to the owner, hitting on both legs. */
+  returns?: boolean;
   vfx: string;
 }
 
@@ -323,6 +325,10 @@ export interface MonsterDef {
   skills?: { skill: DefId; level: number; chance: number }[];
   missile?: DefId;
   flags: { droyd?: boolean; boss?: boolean; noRemnant?: boolean; canBeChampion?: boolean };
+  /** How far Forse Push/knockback shoves it and whether Grip can lift it (default medium; bosses: boss). */
+  weight?: 'light' | 'medium' | 'heavy';
+  /** % chance to deflect incoming blastur bolts and thrown weapons (Syth blades). */
+  deflectPct?: number;
   /** Pack size range when spawned normally. */
   pack: Range;
   /** Optional minions spawned with it. */

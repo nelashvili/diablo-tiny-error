@@ -27,6 +27,12 @@ export type GameEvent =
   | { type: 'playerDefeated'; id: EntityId }
   | { type: 'skillCast'; casterId: EntityId; skillId: DefId; targetPos?: Vec2; targetId?: EntityId }
   | { type: 'skillImpact'; skillId: DefId; pos: Vec2; radius?: number; vfx: string }
+  /** A drawn line effect from one point to another (lightning arcs, beams). */
+  | { type: 'skillArc'; skillId: DefId; from: Vec2; to: Vec2; vfx: string }
+  /** A telegraphed skill started winding up (hands glow) and fires in `sec` seconds. */
+  | { type: 'skillWindup'; casterId: EntityId; skillId: DefId; sec: number }
+  /** A projectile was deflected back by a litesaber (or a Syth's blade). */
+  | { type: 'deflect'; id: EntityId; pos: Vec2 }
   | { type: 'missileHit'; missileId: EntityId; pos: Vec2; targetId?: EntityId }
   | { type: 'levelUp'; id: EntityId; level: number }
   | { type: 'xpGained'; id: EntityId; amount: number }

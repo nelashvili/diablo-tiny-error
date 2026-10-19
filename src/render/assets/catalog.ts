@@ -270,6 +270,16 @@ const ACTORS: ModelEntry[] = [
     ],
     gear: { mainHand: 'apprenticeStaff', accent: 0x6aff8a },
   }),
+  // Syth Acolyte: a young Syth apprentice in a black robe with a red sash and a red training blade.
+  uni('mon.sythAcolyte', 'rangerM', 0x1e1a1e, 0xff3a3a, 0.95, {
+    clips: { ...UNI_CLIPS, idle: 'Sword_Idle' },
+    hide: ['Hair_SimpleParted'],
+    recolor: [
+      { hue: [60, 180], minSat: 0.15, color: 0x1c181c },
+      { hue: [10, 50], minSat: 0.2, color: 0x6a1a1e },
+    ],
+    gear: { mainHand: 'trainingLitesaber', accent: 0xff3a3a },
+  }),
   // Shadow Wraith: a Syth shade, a black hooded robe around a faint violet glow.
   // Shadow Wraith: a Syth shade, a black hooded robe around a faint violet glow.
   uni('mon.shadowWraith', 'rangerM', 0x1a1622, 0x8866ff, 0.98, {

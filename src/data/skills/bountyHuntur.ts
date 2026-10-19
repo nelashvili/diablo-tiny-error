@@ -229,13 +229,20 @@ export default [
     vfx: 'vfx.nova.cryo',
     anim: 'cast',
   }),
-  passive({
-    id: 'avoid',
-    d2Analog: 'Avoid',
+  ins({
+    id: 'jetpakBoost',
+    d2Analog: 'Avoid slot (gadget: jetpack hop)',
+    kind: 'movement',
     tier: 2,
     col: 1,
     prereqs: ['dodge'],
-    mods: [{ stat: 'avoidChance', op: 'flat', value: ls(24, 3, 2, 1.5, 1, 0.5) }],
+    manaCost: ls(6, -0.1, -0.1, -0.05, 0, 0),
+    cooldownSec: ls(3, -0.05, -0.05, -0.05, -0.03, -0.02),
+    damage: { plasma: dmg(4, 8, 2, 3) },
+    element: 'plasma',
+    params: { distance: ls(5, 0.2, 0.15, 0.1, 0.1, 0.05), leapSec: 0.4, landRadius: 2, knockback: 1.5 },
+    vfx: 'vfx.jetpak',
+    anim: 'special',
   }),
   passive({
     id: 'armorPiercing',
@@ -269,7 +276,7 @@ export default [
     d2Analog: 'Evade',
     tier: 4,
     col: 1,
-    prereqs: ['avoid'],
+    prereqs: ['dodge'],
     mods: [{ stat: 'evadeChance', op: 'flat', value: ls(18, 3, 2, 1.5, 1, 0.5) }],
   }),
   ins({

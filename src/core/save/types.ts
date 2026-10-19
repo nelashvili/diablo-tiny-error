@@ -6,7 +6,7 @@
 import type { ActId, ClassId, DefId, Difficulty } from '../types';
 import type { Belt, Equipment, GridContainer } from '../items/types';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export interface CharacterSave {
   version: number;

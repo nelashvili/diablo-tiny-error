@@ -47,6 +47,9 @@ export interface ActiveEffect {
   spec: StatusEffectSpec;
   remainingSec: number;
   sourceId?: EntityId;
+  /** Knockback slide: direction (radians) and remaining tiles to travel. */
+  dir?: number;
+  distLeft?: number;
 }
 
 export interface Buff {
@@ -175,6 +178,8 @@ export interface MissileEntity extends EntityBase {
   /** Entities already hit (for pierce). */
   hitIds: EntityId[];
   homingTargetId?: EntityId;
+  /** Boomerang missiles (MissileDef.returns): flying back to the owner. */
+  returning?: boolean;
   /** Precomputed attack payload so impacts don't need the caster alive. */
   payload: AttackSpec;
   /** Snapshot of caster stats at launch. */

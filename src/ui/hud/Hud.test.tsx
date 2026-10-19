@@ -24,11 +24,11 @@ describe('<Hud>', () => {
     // Open the right-hand picker and choose a skill.
     await act(() => (root.querySelector('.hud-skillbtn--right') as HTMLButtonElement).click());
     const item = [...root.querySelectorAll<HTMLButtonElement>('.hud-picker__item')].find((b) =>
-      b.textContent?.includes('Static Field'),
+      b.textContent?.includes('Forse Push'),
     );
     expect(item).toBeTruthy();
     await act(() => item!.click());
-    expect(mock.commands).toContainEqual({ type: 'selectSkill', hand: 'right', skillId: 'staticField' });
+    expect(mock.commands).toContainEqual({ type: 'selectSkill', hand: 'right', skillId: 'forsePush' });
     expect(root.querySelector('.hud-picker')).toBeNull();
 
     // Menu buttons toggle panels; map panel renders the big map.

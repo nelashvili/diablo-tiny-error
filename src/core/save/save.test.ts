@@ -75,12 +75,33 @@ describe('migrations', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.migratedFrom).toBe(0);
-    expect(r.value.version).toBe(1);
+    expect(r.value.version).toBe(2);
     expect(r.value.classId).toBe('bountyHuntur');
     expect(r.value.creditz).toBe(321);
     expect(r.value.allocated.dexterity).toBe(20);
     expect(r.value.inventory.items).toHaveLength(1);
     expect(r.value.cube.w).toBe(3);
+  });
+
+  it('v1 -> v2: renamed Forse skills keep points, removed skills refund them and leave the skill bar', () => {
+    const r = migrateCharacter({
+      version: 1,
+      id: 'f',
+      classId: 'yediKnight',
+      level: 20,
+      skillPointsUnspent: 1,
+      skills: { fearRoar: 3, shockwave: 1, twinThrow: 4, pikeMastery: 2, litesaberStrike: 5 },
+      leftSkill: 'twinThrow',
+      rightSkill: 'fearRoar',
+      hotkeys: ['twinThrow', 'swiftStep', 'litesaberStrike', null, null, null, null, null],
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.skills).toEqual({ mindTrik: 3, forseRepulse: 1, litesaberStrike: 5 });
+    expect(r.value.skillPointsUnspent).toBe(7);
+    expect(r.value.rightSkill).toBe('mindTrik');
+    expect(r.value.leftSkill).not.toBe('twinThrow');
+    expect(r.value.hotkeys.slice(0, 3)).toEqual([null, 'forseSpeed', 'litesaberStrike']);
   });
 
   it('repairs missing fields and bad numbers', () => {

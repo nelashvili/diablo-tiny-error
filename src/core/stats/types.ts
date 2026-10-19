@@ -82,6 +82,7 @@ export type StatId =
   | 'dodgeChance' // % (melee) from passives
   | 'avoidChance' // % (missiles)
   | 'evadeChance' // % (while moving)
+  | 'missileReflectPct' // % chance to deflect missiles back at the shooter (Saber Deflect)
   // utility
   | 'magicFind' // % "Salvage Find"
   | 'goldFind' // % "Creditz Find"

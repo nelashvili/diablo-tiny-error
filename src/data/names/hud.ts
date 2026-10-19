@@ -93,6 +93,7 @@ export default {
   'hud.status.burn': 'Burning',
   'hud.status.knockback': 'Knocked back',
   'hud.status.slow': 'Slowed',
+  'hud.status.lifted': 'Lifted by the Forse',
 
   // map
   'hud.map.title': 'Map',

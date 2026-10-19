@@ -22,6 +22,8 @@ export default [
   { id: 'toxinDart', speed: 18, range: 14, radius: 0.3, explodeRadius: 1.2, vfx: 'vfx.bolt.toxin' },
   { id: 'arcJavelin', speed: 26, range: 16, radius: 0.3, pierce: true, vfx: 'vfx.bolt.storm' },
   { id: 'arcFury', speed: 24, range: 16, radius: 0.3, pierce: true, vfx: 'vfx.bolt.storm' },
+  // Yedi Knight — litesaber boomerang
+  { id: 'saberThrow', speed: 16, range: 8, radius: 0.5, pierce: true, returns: true, vfx: 'vfx.bolt.saber' },
   // Forse Adept
   { id: 'plasmaBolt', speed: 16, range: 15, radius: 0.3, vfx: 'vfx.bolt.plasma' },
   { id: 'plasmaOrb', speed: 14, range: 15, radius: 0.35, explodeRadius: 2.2, vfx: 'vfx.bolt.plasmaOrb' },

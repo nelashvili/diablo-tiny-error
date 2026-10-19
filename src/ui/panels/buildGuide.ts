@@ -10,7 +10,7 @@ export const BUILD_GUIDES: Record<ClassId, string[]> = {
   yediKnight: [
     'litesaberStrike',
     'saberMastery',
-    'fearRoar',
+    'mindTrik',
     'litesaberStrike:3',
     'twinStrike',
     'forseLeap',
@@ -23,13 +23,13 @@ export const BUILD_GUIDES: Record<ClassId, string[]> = {
     'leapStrike',
     'saberFlurry',
     'battleOrders',
-    'swiftStep',
+    'forseSpeed',
     'saberCyclone',
     'saberCyclone:20',
     'saberMastery:20',
     'battleOrders:10',
   ],
-  // Arc Fury Huntur: javelin tree with Dodge/Avoid/Evade.
+  // Arc Fury Huntur: javelin tree with Dodge/Evade and Jetpak Boost to reposition.
   bountyHuntur: [
     'vibroJab',
     'precision',
@@ -39,7 +39,7 @@ export const BUILD_GUIDES: Record<ClassId, string[]> = {
     'dodge',
     'arcJavelin',
     'impale',
-    'avoid',
+    'jetpakBoost',
     'chargedThrust',
     'toxinCloud',
     'armorPiercing',
@@ -58,8 +58,8 @@ export const BUILD_GUIDES: Record<ClassId, string[]> = {
     'iceBolt:3',
     'frostNova',
     'iceBlast',
+    'forsePush',
     'forsePull',
-    'staticField',
     'shiverArmor',
     'iceBlast:5',
     'glacialSpike',

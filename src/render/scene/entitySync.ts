@@ -90,6 +90,20 @@ interface Rec {
   hitPower: number;
   hitDx: number;
   hitDz: number;
+  /** Smoothed Forse-lift height (tiles). */
+  liftY: number;
+}
+
+/** How high a gripped actor floats, and how fast it rises / drops. */
+export const LIFT_HEIGHT = 0.9;
+const LIFT_RISE_RATE = 6;
+const LIFT_DROP_RATE = 14;
+
+/** Target lift height for an actor: LIFT_HEIGHT (with a slow bob) while it has a 'lifted' effect. */
+export function liftTarget(effects: readonly { spec: { kind: string } }[], t: number): number {
+  for (let i = 0; i < effects.length; i++)
+    if (effects[i]?.spec.kind === 'lifted') return LIFT_HEIGHT + Math.sin(t * 5) * 0.06;
+  return 0;
 }
 
 /** Missile vfx ids drawn as solid laser bolts: [body color, halo color]. */
@@ -360,6 +374,7 @@ export class EntitySync {
       pickable,
       alwaysVisible: e.id === localId || e.kind === 'missile' || e.kind === 'area',
       hitT: 0,
+      liftY: 0,
       hitPower: 0,
       hitDx: 0,
       hitDz: 0,
@@ -389,6 +404,15 @@ export class EntitySync {
       r.root.position.x = sample.x;
       r.root.position.z = sample.y;
       if (e.kind !== 'missile') r.root.position.y = e.kind === 'groundItem' ? 0.05 : 0;
+      if (e.kind === 'player' || e.kind === 'monster' || e.kind === 'merc') {
+        const want = liftTarget(e.effects, e.modeTime);
+        if (want > 0 || r.liftY > 0) {
+          const k = Math.min(1, dt * (want > r.liftY ? LIFT_RISE_RATE : LIFT_DROP_RATE));
+          r.liftY += (want - r.liftY) * k;
+          if (want === 0 && r.liftY < 0.01) r.liftY = 0;
+          r.root.position.y += r.liftY;
+        }
+      }
       drawn++;
       const v = r.visual;
       switch (e.kind) {

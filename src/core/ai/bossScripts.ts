@@ -46,8 +46,9 @@ export function getBossScript(key: string | undefined): BossScript | undefined {
 // ---------------------------------------------------------------- Count Dooky (Andariel analog)
 
 /**
- * Phase 0: melee (venom claw) + dark-lightning nova when the hero is close + toxin spit at range.
- * Phase 1 (below 50% life): enrage - faster, harder hitting, shorter special cooldowns.
+ * Phase 0: saber claws + dark-lightning nova when the hero is close + Forse Lightning at mid range.
+ * Phase 1 (below 50% life): enrage - faster, harder hitting, shorter cooldowns, and he adds the
+ * Syth tricks: Pull a distant hero into reach, Saber Throw, and a brief Grip.
  */
 registerBossScript('countDooky', (c) => {
   if (c.phase === 0 && c.hpFrac < 0.5) {
@@ -62,12 +63,27 @@ registerBossScript('countDooky', (c) => {
   }
   if (!c.target) return;
   const enraged = c.phase >= 1;
-  if (c.distToTarget <= 8 && c.ready('nova') && c.cast('m_dookyNova')) {
-    c.startCooldown('nova', enraged ? 4 : 6);
+  const d = c.distToTarget;
+  if (d <= 5 && c.ready('nova') && c.cast('m_dookyNova')) {
+    c.startCooldown('nova', enraged ? 5 : 7);
     return 'handled';
   }
-  if (c.distToTarget > 3 && c.distToTarget <= 12 && c.ready('spit') && c.cast('m_dookyToxin')) {
-    c.startCooldown('spit', enraged ? 5 : 8);
+  if (enraged) {
+    if (d > 6 && d <= 9 && c.ready('pull') && c.cast('m_forsePull')) {
+      c.startCooldown('pull', 9);
+      return 'handled';
+    }
+    if (d > 3 && d <= 7 && c.ready('grip') && c.cast('m_forseGrip')) {
+      c.startCooldown('grip', 14);
+      return 'handled';
+    }
+    if (d > 2.5 && d <= 8 && c.ready('throw') && c.cast('m_saberThrow')) {
+      c.startCooldown('throw', 6);
+      return 'handled';
+    }
+  }
+  if (d > 2.5 && d <= 5.5 && c.ready('lightning') && c.cast('m_forseLightning')) {
+    c.startCooldown('lightning', enraged ? 2.5 : 4);
     return 'handled';
   }
 });

@@ -45,7 +45,7 @@ const ALL_STATS: readonly StatId[] = [
   'pierce', 'knockback', 'preventHeal', 'defense', 'blockChance', 'fbr', 'fhr', 'frw', 'resPlasma',
   'resCryo', 'resStorm', 'resToxin', 'maxResPlasma', 'maxResCryo', 'maxResStorm', 'maxResToxin',
   'damageReduced', 'damageReducedPct', 'magicDamageReduced', 'thorns', 'cannotBeFrozen',
-  'halfFreezeDuration', 'poisonLengthReduced', 'dodgeChance', 'avoidChance', 'evadeChance', 'magicFind',
+  'halfFreezeDuration', 'poisonLengthReduced', 'dodgeChance', 'avoidChance', 'evadeChance', 'missileReflectPct', 'magicFind',
   'goldFind', 'lightRadius', 'staminaDrainReduced', 'requirementsReduced', 'allSkills', 'classSkills',
   'treeSkills', 'singleSkill', 'chargedSkill', 'auraWhenEquipped',
 ];

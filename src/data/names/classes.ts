@@ -6,6 +6,6 @@ export default {
   'tree.bountyHuntur.instincts': 'Instincts',
   'tree.bountyHuntur.spearArc': 'Spear & Arc',
   'tree.forseAdept.plasma': 'Plasma',
-  'tree.forseAdept.storm': 'Storm',
+  'tree.forseAdept.storm': 'Forse',
   'tree.forseAdept.cryo': 'Cryo',
 } satisfies Record<string, string>;

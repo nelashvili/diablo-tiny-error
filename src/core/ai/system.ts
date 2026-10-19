@@ -162,7 +162,7 @@ function randomNear(ctx: Ctx, center: Vec2, radius: number): Vec2 | null {
   return null;
 }
 
-function chooseSkill(ctx: Ctx, m: MonsterEntity, def: MonsterDef): string | null {
+function chooseSkill(ctx: Ctx, m: MonsterEntity, def: MonsterDef, target?: Actor): string | null {
   const bb = m.ai;
   const list = def.skills ?? [];
   if (
@@ -174,7 +174,13 @@ function chooseSkill(ctx: Ctx, m: MonsterEntity, def: MonsterDef): string | null
     bb.cd_multishot = ctx.time + 3;
     return 'm_multishot';
   }
-  const usable = list.filter((s) => canUseSkill(ctx.world, m, s.skill));
+  // Secondary skills only when the target is within their reach (a Push from across the room is a waste).
+  const gap = target ? dist(m.pos, target.pos) - target.radius : 0;
+  const usable = list.filter(
+    (s, i) =>
+      canUseSkill(ctx.world, m, s.skill) &&
+      (i === 0 || gap <= Math.max(1.5, getSkillRange(m, s.skill)) + 0.3),
+  );
   if (usable.length) return ctx.rng.weighted(usable, (s) => s.chance).skill;
   return list.length ? null : 'attack';
 }
@@ -186,7 +192,7 @@ function attackRange(m: MonsterEntity, def: MonsterDef, skill: string): number {
 function tryAttack(ctx: Ctx, m: MonsterEntity, def: MonsterDef, target: Actor): boolean {
   const bb = m.ai;
   if (ctx.time < getNum(bb, 'nextAttackTry')) return false;
-  const skill = chooseSkill(ctx, m, def);
+  const skill = chooseSkill(ctx, m, def, target);
   if (!skill) return false;
   face(m, target.pos);
   const ok = startSkill(ctx.world, m, skill, { id: target.id, pos: { x: target.pos.x, y: target.pos.y } });

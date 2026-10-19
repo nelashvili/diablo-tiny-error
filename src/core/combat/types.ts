@@ -10,11 +10,17 @@ import type { Rng } from '../rng';
 export type DamagePacket = Partial<Record<DamageType, number>>;
 
 export interface StatusEffectSpec {
-  /** chill = slowed (cryo), freeze = cannot act, stun, toxin = damage over time, burn = DoT. */
-  kind: 'chill' | 'freeze' | 'stun' | 'toxin' | 'burn' | 'knockback' | 'slow';
+  /**
+   * chill = slowed (cryo), freeze = cannot act, stun, toxin = damage over time, burn = DoT,
+   * knockback = shoved away from the source (slides for durationSec), lifted = held in the air by
+   * the Forse (cannot act; magnitude = total Forse damage over the lift).
+   */
+  kind: 'chill' | 'freeze' | 'stun' | 'toxin' | 'burn' | 'knockback' | 'slow' | 'lifted';
   durationSec: number;
-  /** Strength: slow % for chill/slow, total damage for toxin/burn. */
+  /** Strength: slow % for chill/slow, total damage for toxin/burn/lifted, tiles for knockback. */
   magnitude?: number;
+  /** Knockback only: damage dealt (and a short stun) if the target is slammed into a wall. */
+  slam?: number;
 }
 
 /** What is being attempted. Skills build these. */
