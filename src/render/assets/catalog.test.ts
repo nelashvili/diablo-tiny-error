@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_PLACEHOLDER, MODEL_CATALOG, getModelEntry } from './catalog';
 import { AUDIO_CATALOG, getAudioEntry, pickVariant } from './audio';
+import { DB } from '../../data/db';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -191,5 +192,20 @@ describe('manifest', () => {
       .readdirSync(dir, { recursive: true, encoding: 'utf8' })
       .filter((f) => fs.statSync(path.join(dir, f)).isFile());
     for (const f of files) expect(listed.has(`public/assets/${f}`), f).toBe(true);
+  });
+});
+
+describe('monster gear', () => {
+  it('every carried weapon is a real item', () => {
+    for (const e of MODEL_CATALOG)
+      for (const id of [e.gear?.mainHand, e.gear?.offHand])
+        if (id) expect(DB.items.has(id), `${e.id}: ${id}`).toBe(true);
+  });
+
+  it('armed monsters carry a weapon', () => {
+    // Beasts (claws/quills), probe droids and turrets fight with what they're built with.
+    const unarmed = new Set(['mon.probeDroyd', 'mon.mossBeast', 'mon.blasturTurret', 'mon.default']);
+    for (const e of MODEL_CATALOG)
+      if (e.id.startsWith('mon.') && !unarmed.has(e.id)) expect(e.gear?.mainHand, e.id).toBeTruthy();
   });
 });

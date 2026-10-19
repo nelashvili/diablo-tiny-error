@@ -61,7 +61,8 @@ const ROBOT_CLIPS: NonNullable<ModelEntry['clips']> = {
   interact: 'ThumbsUp',
   cheer: 'Dance',
 };
-const ROBOT_BONES = { rightHand: 'Hand.R', leftHand: 'Hand.L', head: 'Head' };
+// 'HandR' in this file is a skinned mesh group at the origin; the palm bones are the real hands.
+const ROBOT_BONES = { rightHand: 'Palm2R', leftHand: 'Palm2L', head: 'Head' };
 const QM_CLIPS: NonNullable<ModelEntry['clips']> = {
   idle: 'Idle',
   walk: 'Walk',
@@ -97,17 +98,29 @@ const kay = (
   ...extra,
 });
 
-/** B1-style battle droid: skeleton minion without its cloak, all tan, eyes glowing `eye`. */
-const battleDroid = (id: string, tan: number, eye: number, scale: number): ModelEntry =>
-  kay(id, 'monsters/skeletonMinion', tan, eye, scale, {
-    hide: ['Skeleton_Minion_Cloak', 'Skeleton_Minion_Jaw'],
-    boneScale: { head: [0.72, 0.85, 1.55], chest: [0.8, 1, 0.8] },
-    recolor: [
-      { hue: [0, 360], minSat: 0.6, minVal: 0.75, color: eye, flat: 1 },
-      { hue: [0, 360], minSat: 0, minVal: 0.45, color: tan, flat: 0.65 },
-      { hue: [0, 360], minSat: 0, color: 0x4a3a28, flat: 0.5 },
-    ],
-  });
+/**
+ * B1-style battle droid on the robot mesh (the skeleton read as bones, not a machine): painted
+ * `tan` with dark joints, carrying a stun mace glowing `eye`.
+ */
+const darken = (c: number): number =>
+  ((((c >> 16) & 255) * 0.62) << 16) | ((((c >> 8) & 255) * 0.62) << 8) | ((c & 255) * 0.62);
+
+const battleDroid = (id: string, tan: number, eye: number, scale: number): ModelEntry => ({
+  id,
+  url: M('monsters/robot'),
+  scale,
+  clips: { ...ROBOT_CLIPS },
+  bones: { ...ROBOT_BONES },
+  placeholder: ph('capsule', tan, 1.4, 0.3),
+  accent: eye,
+  // The robot's bright paint becomes the droid's tan shell, shaded parts darker, joints near black.
+  recolor: [
+    { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: tan, flat: 0.6 },
+    { hue: [0, 360], minSat: 0, minVal: 0.3, color: darken(tan), flat: 0.6 },
+    { hue: [0, 360], minSat: 0, color: 0x2e241a, flat: 0.5 },
+  ],
+  gear: { mainHand: 'stunMace', accent: eye },
+});
 
 const stat = (
   id: string,
@@ -188,7 +201,7 @@ const ACTORS: ModelEntry[] = [
 
   // Act I monsters (mesh re-use + suggested tint in `accent`)
   // Classic tan battle droids: the skinny skeleton rig, cloak off, painted sand-tan (rusty for scrap).
-  battleDroid('mon.scrapDroyd', 0xb88a56, 0xff6a1a, 0.74),
+  battleDroid('mon.scrapDroyd', 0xc09464, 0xff6a1a, 0.22),
   {
     // Black probe droid.
     id: 'mon.probeDroyd',
@@ -210,6 +223,8 @@ const ACTORS: ModelEntry[] = [
       { hue: [55, 95], minSat: 0.35, color: 0x3e2a16 },
       { hue: [10, 50], minSat: 0.2, color: 0x0e0a06, flat: 1 },
     ],
+    // A stubby ion blaster for its stun bolts.
+    gear: { mainHand: 'scoutBlastur', accent: 0x66aaff },
   }),
   // Tuskin Raider: tall desert raider wrapped head to toe in sand-colored cloth, with a gaderffii pike.
   kay('mon.tuskinRaider', 'monsters/rogueHooded', 0xc2a878, undefined, 0.82, {
@@ -218,6 +233,7 @@ const ACTORS: ModelEntry[] = [
       { hue: [55, 95], minSat: 0.35, color: 0x7a5e3e },
       { hue: [10, 50], minSat: 0.2, color: 0x6e604c, flat: 0.8 },
     ],
+    gear: { mainHand: 'vibroSpear' },
   }),
   // Normtrooper: white armor, black visor and joints, and a blastur carbine.
   kay('mon.normtrooper', 'heroes/knight', 0xeeeeee, 0xff5a3a, 0.72, {
@@ -262,6 +278,8 @@ const ACTORS: ModelEntry[] = [
       { hue: [55, 95], minSat: 0.35, color: 0x4a2a7a, flat: 0.6 },
       { hue: [10, 50], minSat: 0.2, color: 0x07060a, flat: 1 },
     ],
+    // A ghostly violet blade.
+    gear: { mainHand: 'trainingLitesaber', accent: 0x8866ff },
   }),
   // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery), larger, dark crimson, red litesaber.
   kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95, {
@@ -295,12 +313,14 @@ const ACTORS: ModelEntry[] = [
       { hue: [0, 360], minSat: 0, minVal: 0.3, color: 0x9a5a2e },
       { hue: [0, 360], minSat: 0, color: 0x3a2a20 },
     ],
+    gear: { mainHand: 'doubleVibroAxe', accent: 0xff8a2a },
   },
   // Player summons
-  battleDroid('mon.battleDroyd', 0xd8bc84, 0x4fc3ff, 0.78),
+  battleDroid('mon.battleDroyd', 0xdcc690, 0x4fc3ff, 0.24),
   // Holo-Decoy: a blue hologram of the Bounty Huntur.
   kay('mon.holoDecoy', 'heroes/knight', 0x4fc3ff, 0x4fc3ff, 0.75, {
     recolor: [{ hue: [0, 360], minSat: 0, color: 0x6ad0ff }],
+    gear: { mainHand: 'scoutBlastur', accent: 0x4fc3ff },
   }),
   stat('mon.blasturTurret', null, 1, ph('cylinder', 0x5a5f66, 0.9, 0.35), 0xff5a3a),
   // generic fallbacks

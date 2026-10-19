@@ -11,6 +11,8 @@ import { replaceHelmet } from './headgear';
 
 const FADE = 0.15;
 
+const KAY_HAND_PER_HEIGHT = 0.46;
+
 export class GltfRig implements Rig {
   readonly root = new THREE.Group();
   readonly bodyMeshes: THREE.Mesh[] = [];
@@ -79,9 +81,28 @@ export class GltfRig implements Rig {
       parent.add(s);
       return s;
     };
+    // Held items are sized for KayKit hands (bone scale ~= entry.scale). Rigs exported at another
+    // unit scale (the robot's bones are in centimetres) get a child socket that cancels the difference.
+    this.root.updateMatrixWorld(true);
+    const rootScale = new THREE.Vector3();
+    this.root.getWorldScale(rootScale);
+    const hand = (n?: string): THREE.Object3D | null => {
+      const bone = find(n);
+      if (!bone) return null;
+      const ws = new THREE.Vector3();
+      bone.getWorldScale(ws);
+      const rel = ws.x / (rootScale.x || 1);
+      // KayKit hands sit at ~0.46x the body height (0.74 scale on a 1.6-tile body).
+      const fix = rel > 0 ? (KAY_HAND_PER_HEIGHT * h) / rel : 1;
+      if (fix > 0.5 && fix < 2) return bone;
+      const s = new THREE.Object3D();
+      s.scale.setScalar(fix);
+      bone.add(s);
+      return s;
+    };
     this.sockets = {
-      mainHand: find(entry.bones?.rightHand) ?? mkSock(this.root, h * 0.5),
-      offHand: find(entry.bones?.leftHand) ?? mkSock(this.root, h * 0.5),
+      mainHand: hand(entry.bones?.rightHand) ?? mkSock(this.root, h * 0.5),
+      offHand: hand(entry.bones?.leftHand) ?? mkSock(this.root, h * 0.5),
       head: find(entry.bones?.head) ?? mkSock(this.root, h),
       chest: mkSock(this.root, h * 0.65),
     };
