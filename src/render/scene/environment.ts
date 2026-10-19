@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import type { EnvDef, EnvLightDef } from '../../data/schema';
 import { gradeFor, type GradeParams } from '../vfx/post';
+import { NO_FOG } from './fog';
 
 /** Seconds for one full day. */
 export const DAY_LENGTH = 720;
@@ -95,6 +96,17 @@ export function mixLight(a: EnvLightDef, b: EnvLightDef, t: number, out: EnvLigh
   out.playerLight = mixHex(a.playerLight, b.playerLight, t);
   out.playerLightI = lerp(a.playerLightI, b.playerLightI, t);
   out.mapLights = lerp(a.mapLights ?? 1, b.mapLights ?? 1, t);
+  // Clear air blends as fog of the other side's color pushed out past the screen.
+  const fa = a.fog ?? b.fog;
+  const fb = b.fog ?? a.fog;
+  if (!fa || !fb) {
+    out.fog = undefined;
+    return out;
+  }
+  const fog = (out.fog ??= { color: 0, near: 0, far: 0 });
+  fog.color = mixHex(fa.color, fb.color, t);
+  fog.near = lerp(a.fog?.near ?? NO_FOG.near, b.fog?.near ?? NO_FOG.near, t);
+  fog.far = lerp(a.fog?.far ?? NO_FOG.far, b.fog?.far ?? NO_FOG.far, t);
   return out;
 }
 

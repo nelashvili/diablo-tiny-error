@@ -92,6 +92,20 @@ describe('EnvironmentClock', () => {
     expect(night.light.hemi).toBeGreaterThanOrEqual(0.7);
   });
 
+  it('fog closes in at night and blends smoothly from dusk', () => {
+    const c = new EnvironmentClock();
+    c.setEnv(outdoor, null);
+    c.pinned = 0.3;
+    const day = structuredClone(c.eval(0)!.light.fog!);
+    c.pinned = 0.85;
+    const night = structuredClone(c.eval(0)!.light.fog!);
+    expect(night.far).toBeLessThan(day.far);
+    c.pinned = 0.71;
+    const mid = c.eval(0)!.light.fog!;
+    expect(mid.far).toBeLessThan(day.far);
+    expect(mid.far).toBeGreaterThan(night.far);
+  });
+
   it('without an EnvDef it defers to the fallback', () => {
     const c = new EnvironmentClock();
     c.setEnv(null, 'endoor.forest');
@@ -104,7 +118,11 @@ describe('environment data', () => {
     for (const l of DB.levels.values()) {
       if (l.ambientLight) expect(DB.environments.has(l.ambientLight), `${l.id} ${l.ambientLight}`).toBe(true);
     }
-    for (const e of DB.environments.values()) expect(GRADES[e.grade], e.id).toBeDefined();
+    for (const e of DB.environments.values()) {
+      expect(GRADES[e.grade], e.id).toBeDefined();
+      for (const l of [e.day, ...(e.cycle ? Object.values(e.cycle) : [])])
+        if (l.fog) expect(l.fog.near, e.id).toBeLessThan(l.fog.far);
+    }
   });
 
   it('towns and outdoor areas cycle; underground areas do not', () => {

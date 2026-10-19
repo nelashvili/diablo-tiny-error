@@ -109,7 +109,7 @@ class Shared {
   solidMat(color: number): THREE.MeshBasicMaterial {
     let m = this.solid.get(color);
     if (!m) {
-      m = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+      m = new THREE.MeshBasicMaterial({ color, toneMapped: false, fog: false });
       this.solid.set(color, m);
     }
     return m;
@@ -126,6 +126,7 @@ class Shared {
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide,
+        fog: false,
       });
       this.mats.set(key, m);
     }

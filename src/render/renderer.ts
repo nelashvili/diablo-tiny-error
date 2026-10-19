@@ -17,6 +17,7 @@ import { buildMap, type MapRenderer } from './map/mapRenderer';
 import { dressingFor, propVariants, scatterFor } from './map/dressing';
 import { SceneLighting, SUN_DIR, presetFor } from './scene/lighting';
 import { EnvironmentClock, keyLightDir, parseTimeParam } from './scene/environment';
+import { NO_FOG, installWorldFog } from './scene/fog';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
@@ -95,7 +96,10 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const vfx = deps.vfx ?? createVfxSystem();
   const postFactory = deps.post ?? createPostFx;
 
+  installWorldFog();
   const scene = new THREE.Scene();
+  const fog = new THREE.Fog(0x000000, NO_FOG.near, NO_FOG.far);
+  scene.fog = fog;
   const iso = new IsoCamera();
   const lighting = new SceneLighting();
   const env = new EnvironmentClock();
@@ -216,6 +220,10 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     lighting.apply(fr.light);
     lighting.setKeyDir(keyLightDir(fr.f, SUN_DIR, keyDir));
     (scene.background as THREE.Color).setHex(fr.light.bg);
+    const f = fr.light.fog;
+    fog.color.setHex(f?.color ?? fr.light.bg);
+    fog.near = f?.near ?? NO_FOG.near;
+    fog.far = f?.far ?? NO_FOG.far;
     post?.setGradeParams(fr.grade);
     return true;
   };
@@ -289,6 +297,8 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         lighting.apply(preset);
         lighting.setKeyDir(SUN_DIR);
         (scene.background as THREE.Color).setHex(preset.bg);
+        fog.near = NO_FOG.near;
+        fog.far = NO_FOG.far;
         post?.setGrade(envId ?? tileset);
       }
       snapCamera = true;

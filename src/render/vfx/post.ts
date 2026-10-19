@@ -49,7 +49,7 @@ export const GRADES: Record<string, GradeParams> = {
   embers: { tint: [1.08, 0.98, 0.88], lift: [0.008, 0.002, 0], sat: 1.08, contrast: 1.06, vignette: 0.34 },
   gloom: { tint: [0.88, 1.02, 0.96], lift: [0, 0.006, 0.008], sat: 0.95, contrast: 1.08, vignette: 0.4 },
   fog: { tint: [0.9, 1.02, 1.0], lift: [0.012, 0.016, 0.016], sat: 0.92, contrast: 0.96, vignette: 0.34 },
-  cave: { tint: [1.04, 0.98, 0.9], lift: [0.004, 0.002, 0], sat: 0.92, contrast: 1.08, vignette: 0.42 },
+  cave: { tint: [1.0, 0.98, 0.94], lift: [0.006, 0.004, 0.004], sat: 0.9, contrast: 1.04, vignette: 0.36 },
   temple: { tint: [0.94, 0.98, 1.08], lift: [0, 0.004, 0.01], sat: 0.95, contrast: 1.06, vignette: 0.4 },
   crypt: { tint: [0.9, 0.95, 1.1], lift: [0, 0.002, 0.012], sat: 0.85, contrast: 1.1, vignette: 0.45 },
 };

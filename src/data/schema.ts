@@ -389,6 +389,11 @@ export interface EnvLightDef {
   playerLightI: number;
   /** Multiplier on torches, beacons and other map lights (default 1). */
   mapLights?: number;
+  /**
+   * Fog around the hero: none within `near` tiles, thickest at `far`. Omit for clear air.
+   * Night and mist shrink it; it never fully hides the world (render/scene/fog FOG_MAX).
+   */
+  fog?: { color: number; near: number; far: number };
 }
 
 /** A level's look: referenced by LevelDef.ambientLight. Purely visual, never read by the sim. */

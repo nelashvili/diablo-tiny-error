@@ -225,6 +225,7 @@ uniform float uTime;
 uniform sampler2D tNoise;
 varying float vDepth;
 varying vec2 vXZ;
+#include <fog_pars_fragment>
 void main() {
   // The surface spans the banks too; it ends where the bank rises above it, along a noisy contour.
   float edgeN = texture2D(tNoise, vXZ * 1.7).r;
@@ -241,6 +242,7 @@ void main() {
   float foam = 1.0 - smoothstep(0.015, 0.06 + 0.05 * n2, dep);
   col = mix(col, vec3(0.92, 0.96, 1.0), foam * 0.85);
   gl_FragColor = vec4(col, 0.9 - 0.25 * (1.0 - d) + foam * 0.1);
+  #include <fog_fragment>
   #include <colorspace_fragment>
 }
 `;
@@ -248,6 +250,7 @@ void main() {
 function waterMaterial(set: GroundSet): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: {
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
       uShallow: { value: new THREE.Color(set.water[0]) },
       uDeep: { value: new THREE.Color(set.water[1]) },
       uTime: { value: 0 },
@@ -255,6 +258,7 @@ function waterMaterial(set: GroundSet): THREE.ShaderMaterial {
     },
     vertexShader: WATER_VERT,
     fragmentShader: WATER_FRAG,
+    fog: true,
     transparent: true,
     depthWrite: false,
   });

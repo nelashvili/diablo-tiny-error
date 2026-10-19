@@ -182,7 +182,8 @@ export function glowMaterial(color: number, opacity = 1, additive = false): THRE
   const key = `${color}|${opacity}|${additive ? 1 : 0}`;
   let m = glowCache.get(key);
   if (!m) {
-    m = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+    // Light sources shine through fog.
+    m = new THREE.MeshBasicMaterial({ color, toneMapped: false, fog: false });
     if (opacity < 1 || additive) {
       m.transparent = true;
       m.opacity = opacity;
