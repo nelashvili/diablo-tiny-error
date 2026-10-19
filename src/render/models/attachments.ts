@@ -8,6 +8,7 @@ import { glowMaterial, toonMaterial } from './toon';
 import type { ModelEntry } from '../types';
 import type { LoadedAsset } from './loader';
 import { parseWeaponStyle, type WeaponStyle } from './weaponStyle';
+import { BLADE_LOOKS, flickerAt, type FlickerFrame } from './bladeLook';
 
 export interface Attachment {
   readonly object: THREE.Object3D;
@@ -40,14 +41,18 @@ function capsule(key: string, r: number, len: number): THREE.BufferGeometry {
 let phaseCounter = 1;
 const DEFAULT_SABER = 0x4fc3ff;
 const white = new THREE.Color();
-function coreColor(accent: number): number {
-  white.setHex(accent).lerp(new THREE.Color(1, 1, 1), 0.75);
+function coreColor(accent: number, whiten = 0.75): number {
+  white.setHex(accent).lerp(new THREE.Color(1, 1, 1), whiten);
   return white.getHex();
 }
+const flick: FlickerFrame = { w: 1, jx: 0 };
 
 /** Blade color per saber line (training blue, cadet green, guard blue, falchion purple). */
 const LINE_BLADES = [0x4fc3ff, 0x3dff6a, 0x5ad8ff, 0xb36bff];
-/** Exceptional sabers burn temple-guard yellow, elite ones white-hot; uniques/sets amber. */
+/**
+ * Exceptional sabers burn temple-guard yellow, elite ones white-hot; uniques/sets amber. A Kybur
+ * crystal (or elemental damage) overrides all of these with its blade color.
+ */
 const TIER_BLADES = [0, 0xffd24a, 0xf4f4ff];
 const UNIQUE_BLADE = 0xff8a2a;
 /** Hilt trim per tier: steel, gold, black-and-gold. */
@@ -59,6 +64,7 @@ const TIER_HILT: [number, number][] = [
 
 export function saberColor(style: WeaponStyle | null): number {
   if (!style) return DEFAULT_SABER;
+  if (style.blade) return BLADE_LOOKS[style.blade].color;
   if (style.unique) return UNIQUE_BLADE;
   return TIER_BLADES[style.tier] || LINE_BLADES[style.line % LINE_BLADES.length]!;
 }
@@ -93,9 +99,10 @@ export function buildLitesaber(
     g.add(pommel, mk(unit.box(), hiltMat, 0.1, 0.025, 0.03, 0.03, hiltLen * 0.25, 0));
   }
   if (tier > 0) g.add(mk(unit.cylinder(), toonMaterial(0xe0b040), 0.064, 0.02, 0.064, 0, hiltLen * 0.18, 0));
-  const glowW = tier === 2 ? 1.35 : tier === 1 ? 1.15 : 1;
+  const look = style?.blade ? BLADE_LOOKS[style.blade] : null;
+  const glowW = (tier === 2 ? 1.35 : tier === 1 ? 1.15 : 1) * (look?.width ?? 1);
   const glows: THREE.Mesh[] = [];
-  const coreMat = glowMaterial(coreColor(ac));
+  const coreMat = glowMaterial(coreColor(ac, look?.coreWhite));
   const glowMat = glowMaterial(ac, 0.5, true);
   const addBlade = (dir: 1 | -1) => {
     const base = (hiltLen / 2) * dir;
@@ -114,7 +121,7 @@ export function buildLitesaber(
   // Guard-line sabers get two short crossguard vents.
   if (line === 2 && !double)
     for (const side of [-1, 1]) {
-      const q = new THREE.Mesh(capsule('quillon', 0.02, 0.1), glowMaterial(coreColor(ac)));
+      const q = new THREE.Mesh(capsule('quillon', 0.02, 0.1), glowMaterial(coreColor(ac, look?.coreWhite)));
       q.rotation.z = Math.PI / 2;
       q.position.set(side * 0.1, hiltLen / 2 - 0.03, 0);
       q.userData.noTint = true;
@@ -126,8 +133,12 @@ export function buildLitesaber(
     tilt: 1.1,
     long: double,
     update(time) {
-      const f = 1 + Math.sin(time * 38 + phase) * 0.06 + Math.sin(time * 11.3 + phase) * 0.05;
-      for (const m of glows) m.scale.set(f * glowW, 1, f * glowW);
+      flickerAt(look?.flicker ?? 'hum', time, phase, Math.random, flick);
+      const f = flick.w * glowW;
+      for (const m of glows) {
+        m.scale.set(f, 1, f);
+        m.position.x = flick.jx;
+      }
     },
   };
 }

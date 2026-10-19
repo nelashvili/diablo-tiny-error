@@ -70,9 +70,15 @@ const UNI_CLIPS: NonNullable<ModelEntry['clips']> = {
   run: 'Jog_Fwd_Loop',
   attack: 'Sword_Regular_A',
   attack2: 'Sword_Regular_B',
+  // Swings and flinches take turns (gltfRig variants): backhand, overhead, the combo's opening cut.
+  'attack.2': 'Sword_Regular_B',
+  'attack.3': 'Sword_Attack@0.3-1.1',
+  'attack.4': 'Sword_Regular_C@0-0.7',
   cast: 'Spell_Simple_Shoot',
   throw: 'OverhandThrow',
   hit: 'Hit_Chest',
+  'hit.2': 'Hit_Head',
+  'hit.3': 'Hit_Knockback@0-0.5',
   block: 'Sword_Block',
   stunned: 'Hit_Head',
   frozen: 'Idle_Loop',
@@ -88,6 +94,9 @@ const SHOOTER_CLIPS: NonNullable<ModelEntry['clips']> = {
   idle: 'Pistol_Idle_Loop',
   attack: 'Pistol_Shoot',
   attack2: 'Pistol_Shoot',
+  'attack.2': 'Pistol_Shoot',
+  'attack.3': 'Pistol_Shoot',
+  'attack.4': 'Pistol_Shoot',
 };
 /** Camp NPCs: relaxed idles. */
 const NPC_CLIPS: NonNullable<ModelEntry['clips']> = { ...UNI_CLIPS, idle: 'Idle_Talking_Loop' };

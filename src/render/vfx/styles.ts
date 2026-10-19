@@ -13,7 +13,10 @@ export type VfxStyle =
   | 'strikes' // aoeZone: periodic sky strikes
   | 'ringUp' // nova: ring + rising motes (shouts)
   | 'flash' // nova: vertical flash (teleport)
-  | 'dust'; // impact: alpha dust puff
+  | 'dust' // impact: alpha dust puff
+  | 'slash' // impact: litesaber cut streak + directional sparks
+  | 'embers' // impact: rising embers
+  | 'frost'; // impact: falling ice shards + cold mist
 
 const TABLE: Record<string, VfxStyle> = {
   'vfx.bolt.blastur': 'blastur',
@@ -42,6 +45,20 @@ const TABLE: Record<string, VfxStyle> = {
   'vfx.nova.battleCry': 'ringUp',
   'vfx.teleport': 'flash',
   'vfx.leapLanding': 'dust',
+  'vfx.saber.sparks': 'slash',
+  'vfx.saber.hit.red': 'slash',
+  'vfx.saber.hit.blue': 'slash',
+  'vfx.saber.hit.yellow': 'slash',
+  'vfx.saber.hit.green': 'slash',
+  'vfx.saber.hit.white': 'slash',
+  'vfx.saber.hit.purple': 'slash',
+  'vfx.saber.hit.syth': 'slash',
+  'vfx.saber.burst.red': 'embers',
+  'vfx.saber.burst.blue': 'frost',
+  'vfx.saber.burst.yellow': 'lightning',
+  'vfx.saber.burst.green': 'dust',
+  'vfx.saber.burst.white': 'flash',
+  'vfx.saber.burst.purple': 'ringUp',
 };
 
 export function styleOf(id: string): VfxStyle {

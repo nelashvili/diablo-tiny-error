@@ -12,6 +12,34 @@ import { buildArmor, buildHelmet, vertexColorToon } from './armor';
 import type { HeadgearStyle } from './outfit';
 
 const FADE = 0.15;
+/** Modes with alternative clips (`clips['attack.2']`, `clips['hit.3']`, ...), picked in turn so repeated swings and flinches differ. */
+const VARIANT_MODES: readonly ActorMode[] = ['attack', 'hit'];
+const MAX_VARIANTS = 5;
+/** Alternative clips are sped up / slowed to the main clip's length, within these bounds. */
+const FIT_MIN = 0.75;
+const FIT_MAX = 2.6;
+
+interface Variant {
+  action: THREE.AnimationAction;
+  /** Time scale that fits this clip to the main clip's duration. */
+  fit: number;
+}
+
+/**
+ * A clip by name, or a slice of one: `Name@0.2-0.9` keeps seconds 0.2-0.9 (long combo clips hold
+ * several swings; one is enough for a single attack).
+ */
+export function clipSpec(spec: string): { name: string; from: number; to: number } {
+  const m = /^(.*)@([\d.]+)-([\d.]+)$/.exec(spec);
+  return m ? { name: m[1]!, from: Number(m[2]), to: Number(m[3]) } : { name: spec, from: 0, to: Infinity };
+}
+
+/** Pick another index in [0, n) than `prev` (random, never the same twice in a row). */
+export function nextVariant(prev: number, n: number, rnd: () => number): number {
+  if (n <= 1) return 0;
+  if (prev < 0) return Math.floor(rnd() * n) % n;
+  return (prev + 1 + Math.floor(rnd() * (n - 1))) % n;
+}
 
 const KAY_HAND_PER_HEIGHT = 0.46;
 
@@ -71,6 +99,9 @@ export class GltfRig implements Rig {
   private readonly actions = new Map<ActorMode, THREE.AnimationAction | null>();
   private current: THREE.AnimationAction | null = null;
   private currentMode: ActorMode | null = null;
+  private readonly variants = new Map<ActorMode, Variant[]>();
+  private readonly variantAt = new Map<ActorMode, number>();
+  private fit = 1;
   private readonly pose = makePose();
   private readonly model: THREE.Object3D;
   private readonly procedural: boolean;
@@ -141,6 +172,23 @@ export class GltfRig implements Rig {
       }
       this.actions.set(mode, a ?? null);
     }
+    for (const mode of VARIANT_MODES) {
+      const main = this.actions.get(mode);
+      if (!main) continue;
+      const list: Variant[] = [{ action: main, fit: 1 }];
+      const mainDur = main.getClip().duration;
+      for (let k = 2; k <= MAX_VARIANTS; k++) {
+        const spec = entry.clips?.[`${mode}.${k}`];
+        if (!spec) continue;
+        const { name, from, to } = clipSpec(spec);
+        const src = clips.find((c) => c.name === name);
+        if (!src || src === main.getClip()) continue;
+        const clip = to < Infinity ? sliceClip(src, from, to) : src;
+        const fit = THREE.MathUtils.clamp(clip.duration / mainDur, FIT_MIN, FIT_MAX);
+        list.push({ action: this.mixer.clipAction(clip), fit });
+      }
+      if (list.length > 1) this.variants.set(mode, list);
+    }
     this.procedural = byClip.size === 0;
     for (const [name, sc] of Object.entries(entry.boneScale ?? {})) {
       const bone = this.model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(name));
@@ -207,8 +255,22 @@ export class GltfRig implements Rig {
       this.root.scale.setScalar(p.scale);
       return;
     }
-    const next = this.actions.get(mode) ?? null;
-    if (mode !== this.currentMode || next !== this.current) {
+    // Visual calls this when a mode starts or starts over (the next swing): one-shot clips replay from
+    // the top and their alternatives take turns; a looping clip just keeps going.
+    const fresh = mode !== this.currentMode || !modeLoops(mode);
+    const vars = this.variants.get(mode);
+    let next = this.actions.get(mode) ?? null;
+    this.fit = 1;
+    if (vars) {
+      let i = this.variantAt.get(mode) ?? -1;
+      if (fresh || i < 0) {
+        i = nextVariant(i, vars.length, Math.random);
+        this.variantAt.set(mode, i);
+      }
+      next = vars[i]!.action;
+      this.fit = vars[i]!.fit;
+    }
+    if (fresh || next !== this.current) {
       const loops = modeLoops(mode);
       if (next) {
         next.reset();
@@ -228,7 +290,7 @@ export class GltfRig implements Rig {
       this.current = next;
       this.currentMode = mode;
     }
-    if (this.current) this.current.timeScale = mode === 'frozen' ? 0 : sp;
+    if (this.current) this.current.timeScale = mode === 'frozen' ? 0 : sp * this.fit;
   }
 
   /** Hood: the model's own hood mesh (hair tucked in). Helmets: a fitted skinned helmet. */
@@ -293,4 +355,14 @@ export class GltfRig implements Rig {
     this.mixer.stopAllAction();
     this.mixer.uncacheRoot(this.model);
   }
+}
+
+/** Seconds `from`-`to` of a clip, retimed to start at 0. */
+function sliceClip(clip: THREE.AnimationClip, from: number, to: number): THREE.AnimationClip {
+  const tracks = clip.tracks.map((tr) => {
+    const out = tr.clone();
+    out.trim(from, to).shift(-from);
+    return out;
+  });
+  return new THREE.AnimationClip(`${clip.name}@${from}-${to}`, to - from, tracks);
 }

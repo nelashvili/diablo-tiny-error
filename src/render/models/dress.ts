@@ -5,9 +5,15 @@
  */
 import type { EntityVisual } from '../types';
 import { armorLook } from './outfit';
-import { weaponModelId } from './weaponStyle';
+import { weaponModelOf } from './weaponStyle';
 
-type Worn = Readonly<Partial<Record<string, { base: string; quality?: string }>>>;
+type Worn = Readonly<Partial<Record<string, WornItem>>>;
+export type WornItem = {
+  base: string;
+  quality?: string;
+  socketed?: readonly { base: string }[];
+  mods?: readonly { stat: string; value: number }[];
+};
 
 export interface Dress {
   /** Attachment model ids ('' = empty hand). */
@@ -25,8 +31,8 @@ export function dressOf(eq: Worn, emptyHand = false): Dress {
   const mi = emptyHand ? undefined : eq['mainHand'];
   const oi = eq['offHand'];
   return {
-    mainHand: mi ? weaponModelId(mi.base, mi.quality) : '',
-    offHand: oi ? weaponModelId(oi.base, oi.quality) : '',
+    mainHand: mi ? weaponModelOf(mi) : '',
+    offHand: oi ? weaponModelOf(oi) : '',
     head: eq['head']?.base ?? '',
     chest: eq['chest']?.base ?? '',
     gloves: eq['gloves']?.base ?? '',

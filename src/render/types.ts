@@ -174,7 +174,15 @@ export interface VfxSystem {
   spawn(
     vfxId: string,
     pos: Vec2,
-    opts?: { radius?: number; dir?: number; durationSec?: number; height?: number },
+    opts?: {
+      radius?: number;
+      dir?: number;
+      durationSec?: number;
+      height?: number;
+      /** Saber swing arcs: sweep direction (+1 / -1) and tilt (0 = flat). */
+      sweep?: number;
+      tilt?: number;
+    },
   ): void;
   /** Persistent effect following an object (missiles, buffs, areas). Returns handle to stop. */
   attach(vfxId: string, target: Object3D, opts?: { radius?: number }): { stop(): void };

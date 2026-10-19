@@ -53,3 +53,16 @@ describe('applyDress', () => {
     expect(calls.some((c) => c.startsWith('outfit.arms='))).toBe(true);
   });
 });
+
+describe('blade colors', () => {
+  it('re-dresses the hand when a crystal goes into the saber', () => {
+    const plain = dressOf({ mainHand: { base: 'trainingLitesaber' } });
+    const red = dressOf({
+      mainHand: { base: 'trainingLitesaber', socketed: [{ base: 'kybur.red.chipped' }] },
+    });
+    expect(red.mainHand).not.toBe(plain.mainHand);
+    const { v, calls } = fakeVisual();
+    applyDress(v, red, plain);
+    expect(calls).toEqual([`mainHand=${red.mainHand}`]);
+  });
+});

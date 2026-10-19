@@ -4,6 +4,7 @@ import path from 'node:path';
 import { DEFAULT_PLACEHOLDER, MODEL_CATALOG, getModelEntry } from './catalog';
 import { AUDIO_CATALOG, getAudioEntry, pickVariant } from './audio';
 import { DB } from '../../data/db';
+import { clipSpec } from '../models/gltfRig';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -93,7 +94,7 @@ describe('model catalog', () => {
       }
       const clipNames = new Set((clipJson.animations ?? []).map((a) => a.name));
       for (const [mode, clip] of Object.entries(m.clips ?? {})) {
-        expect(clipNames.has(clip as string), `${m.id}: clip ${mode} -> ${clip}`).toBe(true);
+        expect(clipNames.has(clipSpec(clip as string).name), `${m.id}: clip ${mode} -> ${clip}`).toBe(true);
       }
       const nodeNames = new Set(json.nodes.map((n) => n.name));
       for (const [slot, bone] of Object.entries(m.bones ?? {})) {

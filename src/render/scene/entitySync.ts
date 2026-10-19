@@ -11,7 +11,9 @@ import { distSqToSegment } from '../camera/isoMath';
 import type { IsoCamera } from '../camera/isoCamera';
 import { rectContains, type GroundRect } from '../culling/viewRect';
 import { RANGED_WEAPON_CLASSES } from '../models/helpers';
-import { weaponModelId } from '../models/weaponStyle';
+import { weaponModelId, weaponModelOf } from '../models/weaponStyle';
+import { BLADE_LOOKS } from '../models/bladeLook';
+import { bladeColor } from '../../core/items/blade';
 
 /** Model id for an item base: weapons by class, line and tier (see weaponStyle), the rest by base id. */
 function itemModelId(baseId: string, quality?: string): string {
@@ -19,8 +21,8 @@ function itemModelId(baseId: string, quality?: string): string {
 }
 
 /** Items on the ground: weapons by their class model; everything else from its data (itemLook). */
-function groundModelId(baseId: string, quality?: string): string {
-  return DB.items.get(baseId)?.weaponClass ? weaponModelId(baseId, quality) : `item.drop.${baseId}`;
+function groundModelId(item: Parameters<typeof weaponModelOf>[0]): string {
+  return DB.items.get(item.base)?.weaponClass ? weaponModelOf(item) : `item.drop.${item.base}`;
 }
 
 const TINT_NONE = -1;
@@ -38,6 +40,35 @@ const HIT_FLASH = 0x9a8270;
 const HIT_RECOIL = 0.14;
 const HIT_SQUASH = 0.14;
 const CRIT_MUL = 1.8;
+/**
+ * Hit reactions take turns so a flurry never repeats the same jolt: squashed back, twisted round by
+ * the blow, or rocked back away from the attacker.
+ */
+export const HIT_STYLES = ['squash', 'twist', 'rock'] as const;
+export type HitStyle = (typeof HIT_STYLES)[number];
+const HIT_TWIST = 0.38;
+const HIT_ROCK = 0.22;
+const ACTOR_KINDS: ReadonlySet<EntityKind> = new Set<EntityKind>(['player', 'monster', 'merc', 'npc']);
+const ROCK_AXIS = new THREE.Vector3();
+const ROCK_Q = new THREE.Quaternion();
+
+/** Pose offsets of a hit reaction at strength `e` (1 at impact, 0 when over). */
+export function hitPose(
+  style: HitStyle,
+  e: number,
+  power: number,
+  side: number,
+): { recoil: number; squash: number; twist: number; rock: number } {
+  const k = e * power;
+  switch (style) {
+    case 'twist':
+      return { recoil: HIT_RECOIL * k * 0.6, squash: 0, twist: HIT_TWIST * k * side, rock: 0 };
+    case 'rock':
+      return { recoil: HIT_RECOIL * k * 0.5, squash: HIT_SQUASH * k * 0.3, twist: 0, rock: HIT_ROCK * k };
+    default:
+      return { recoil: HIT_RECOIL * k, squash: HIT_SQUASH * k, twist: 0, rock: 0 };
+  }
+}
 
 export const QUALITY_COLORS: Record<string, number> = {
   magic: 0x6a8cff,
@@ -89,6 +120,9 @@ interface Rec {
   hitPower: number;
   hitDx: number;
   hitDz: number;
+  hitStyle: HitStyle;
+  /** Which way a twist turns (+1 / -1). */
+  hitSide: number;
   /** Smoothed Forse-lift height (tiles). */
   liftY: number;
   /** Thrown litesaber mesh, spun every frame. */
@@ -222,6 +256,12 @@ export class EntitySync {
     r.hitPower = power;
     r.hitDx = dx;
     r.hitDz = dz;
+    const i = HIT_STYLES.indexOf(r.hitStyle);
+    r.hitStyle =
+      HIT_STYLES[(i + 1 + Math.floor(Math.random() * (HIT_STYLES.length - 1))) % HIT_STYLES.length]!;
+    r.hitSide = Math.random() < 0.5 ? -1 : 1;
+    // Twisting and rocking need the facing re-set every frame, which only actors get.
+    if (!ACTOR_KINDS.has(r.kind)) r.hitStyle = 'squash';
   }
 
   private applyHitReaction(r: Rec, v: EntityVisual, dt: number): void {
@@ -231,6 +271,8 @@ export class EntitySync {
         r.hitPower = 0;
         o.position.set(0, 0, 0);
         o.scale.set(1, 1, 1);
+        o.rotation.x = 0;
+        o.rotation.z = 0;
         v.setHighlight(r.highlighted, HOVER_COLOR[r.kind] ?? 0xffe070);
       }
       return;
@@ -239,10 +281,17 @@ export class EntitySync {
     const k = r.hitT / HIT_FX_SEC; // 1 -> 0
     // Fast out, eased back: peak displacement right at impact.
     const ease = k * k;
-    const p = r.hitPower;
-    o.position.set(r.hitDx * HIT_RECOIL * p * ease, 0, r.hitDz * HIT_RECOIL * p * ease);
-    const sq = HIT_SQUASH * p * ease;
-    o.scale.set(1 + sq * 0.6, 1 - sq, 1 + sq * 0.6);
+    const pose = hitPose(r.hitStyle, ease, r.hitPower, r.hitSide);
+    o.position.set(r.hitDx * pose.recoil, 0, r.hitDz * pose.recoil);
+    o.scale.set(1 + pose.squash * 0.6, 1 - pose.squash, 1 + pose.squash * 0.6);
+    // setFacing() wrote a pure yaw this frame: turn it further, or rock it about the axis across the blow.
+    o.rotation.x = 0;
+    o.rotation.z = 0;
+    o.rotation.y += pose.twist;
+    if (pose.rock !== 0 && (r.hitDx !== 0 || r.hitDz !== 0)) {
+      ROCK_AXIS.set(r.hitDz, 0, -r.hitDx);
+      o.quaternion.premultiply(ROCK_Q.setFromAxisAngle(ROCK_AXIS, pose.rock));
+    }
     const flash = k > 0.45;
     v.setHighlight(flash || r.highlighted, flash ? HIT_FLASH : (HOVER_COLOR[r.kind] ?? 0xffe070));
   }
@@ -273,13 +322,13 @@ export class EntitySync {
       case 'object':
         return `obj.${e.defId}`;
       case 'groundItem':
-        return e.creditz ? 'item.drop.creditz' : groundModelId(e.item.base, e.item.quality);
+        return e.creditz ? 'item.drop.creditz' : groundModelId(e.item);
       default:
         return null;
     }
   }
 
-  private create(e: Readonly<Entity>, localId: EntityId | null): Rec {
+  private create(e: Readonly<Entity>, localId: EntityId | null, view?: WorldView): Rec {
     const root = new THREE.Group();
     root.name = `${e.kind}#${e.id}`;
     const model = this.modelFor(e as Entity);
@@ -343,8 +392,12 @@ export class EntitySync {
           this.missileVfx.set(e.defId, id);
         }
         root.position.y = 0.9;
-        const saber = THROWN_SABERS[id];
+        let saber = THROWN_SABERS[id];
         if (saber) {
+          // A thrown saber keeps its blade color (Kybur crystal) in flight.
+          const owner = view?.get(e.ownerId);
+          const blade = owner && 'equipment' in owner ? bladeColor(owner.equipment.mainHand) : null;
+          if (blade) saber = [BLADE_LOOKS[blade].color, BLADE_LOOKS[blade].color];
           // A real litesaber: white-hot core, colored glow, dark hilt, whirling flat like a disc.
           const s = new THREE.Group();
           s.add(new THREE.Mesh(this.shared.bladeGeo, this.shared.solidMat(0xffffff)));
@@ -410,6 +463,8 @@ export class EntitySync {
       hitPower: 0,
       hitDx: 0,
       hitDz: 0,
+      hitStyle: 'squash',
+      hitSide: 1,
     };
   }
 
@@ -427,7 +482,7 @@ export class EntitySync {
     for (const e of view.all()) {
       let r = this.records.get(e.id);
       if (!r) {
-        r = this.create(e, localId);
+        r = this.create(e, localId, view);
         this.records.set(e.id, r);
       }
       r.seen = frame;

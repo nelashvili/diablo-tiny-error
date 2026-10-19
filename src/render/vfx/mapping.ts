@@ -11,6 +11,9 @@ export interface SpawnOpts {
   dir?: number;
   durationSec?: number;
   height?: number;
+  /** Saber swings: sweep direction (+1 / -1) and arc tilt (0 = flat). */
+  sweep?: number;
+  tilt?: number;
 }
 
 export interface EffectSink {

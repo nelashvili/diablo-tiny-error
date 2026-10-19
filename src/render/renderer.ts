@@ -12,6 +12,7 @@ import { createVisualFactory } from './models';
 import { createVfxSystem } from './vfx';
 import { createPostFx, type PostFx } from './vfx/post';
 import { DB } from '../data/db';
+import { bladeColor, isSaberBase, type BladeColor } from '../core/items/blade';
 import { IsoCamera } from './camera/isoCamera';
 import { buildMap, type MapRenderer } from './map/mapRenderer';
 import { dressingFor, propVariants, scatterFor } from './map/dressing';
@@ -36,17 +37,38 @@ import { makeRect, type GroundRect } from './culling/viewRect';
 import { GROUND_WETNESS, setTerrainAnisotropy } from './terrain/terrain';
 
 const SABER_SPARKS = 'vfx.saber.sparks';
-const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
+const SABER_SWING = 'vfx.saber.attack';
 
-/** Is the attacker swinging a litesaber? (its hits throw sparks) */
-function wieldsSaber(view: WorldView, id: EntityId): boolean {
+/** The attacker's litesaber: undefined when not swinging one, else its blade color (null = plain). */
+function saberOf(view: WorldView, id: EntityId): BladeColor | null | undefined {
   const e = view.get(id);
-  const base = e && 'equipment' in e ? e.equipment.mainHand?.base : undefined;
-  const wc = base ? DB.items.get(base)?.weaponClass : undefined;
-  return wc !== undefined && SABER_CLASSES.has(wc);
+  const item = e && 'equipment' in e ? e.equipment.mainHand : undefined;
+  return item && isSaberBase(item.base) ? bladeColor(item) : undefined;
 }
 
-const SABER_SWING = 'vfx.saber.attack';
+/** Saber hits: a cut across the target in the blade's color, plus the color's own burst. */
+function saberHit(
+  vfx: VfxSystem,
+  blade: BladeColor | null,
+  pos: { x: number; y: number },
+  from: { x: number; y: number },
+): void {
+  const dir = Math.atan2(pos.y - from.y, pos.x - from.x);
+  const radius = 0.85 + Math.random() * 0.3;
+  vfx.spawn(blade ? `vfx.saber.hit.${blade}` : SABER_SPARKS, pos, { height: 0.9, radius, dir });
+  if (!blade) return;
+  const burst = `vfx.saber.burst.${blade}`;
+  if (blade === 'yellow') {
+    // Storm: two or three short arcs jump off the target.
+    const n = 2 + (Math.random() < 0.5 ? 1 : 0);
+    for (let i = 0; i < n; i++)
+      vfx.spawn(burst, pos, {
+        dir: dir + (Math.random() - 0.5) * 2.6,
+        radius: 0.6 + Math.random() * 0.6,
+        height: 0.6 + Math.random() * 0.6,
+      });
+  } else vfx.spawn(burst, pos, { height: 0.9, radius: 1, dir });
+}
 
 /** Melee attacks with a litesaber leave a glowing arc in front of the wielder (both ends for doubles). */
 function saberSwingArcs(
@@ -55,7 +77,7 @@ function saberSwingArcs(
   skillId: string,
   targetPos: { x: number; y: number } | undefined,
 ): { pos: { x: number; y: number }; dir: number }[] {
-  if (DB.skills.get(skillId)?.kind !== 'meleeAttack' || !wieldsSaber(view, casterId)) return [];
+  if (DB.skills.get(skillId)?.kind !== 'meleeAttack' || saberOf(view, casterId) === undefined) return [];
   const e = view.get(casterId);
   if (!e) return [];
   const dir =
@@ -73,6 +95,9 @@ function saberSwingArcs(
       ]
     : [{ pos: e.pos, dir }];
 }
+
+/** Arc tilts cycled through by successive swings (flat, rising, falling, ...). */
+const SWING_TILTS = [0, 0.32, -0.26, 0.12, -0.4];
 
 export const DPR_CAP: Record<QualityLevel, number> = { low: 1, medium: 1.5, high: 2 };
 
@@ -199,14 +224,34 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     return frameStats;
   };
 
+  /** Swings per attacker, to alternate their direction. */
+  const swings = new Map<EntityId, number>();
+
   const saberSwing = (
     view: WorldView,
     casterId: EntityId,
     skillId: string,
     targetPos: { x: number; y: number } | undefined,
   ): void => {
-    for (const arc of saberSwingArcs(view, casterId, skillId, targetPos))
-      vfx.spawn(SABER_SWING, arc.pos, { dir: arc.dir, radius: 1.05, height: 0.85 });
+    const arcs = saberSwingArcs(view, casterId, skillId, targetPos);
+    if (!arcs.length) return;
+    const blade = saberOf(view, casterId);
+    const id = blade ? `${SABER_SWING}.${blade}` : SABER_SWING;
+    // Swings alternate forehand / backhand and come in flat or diagonal, so a flurry never repeats.
+    const n = (swings.get(casterId) ?? 0) + 1;
+    swings.set(casterId, n);
+    if (swings.size > 256) swings.clear();
+    const sweep = n % 2 ? 1 : -1;
+    const tilt = SWING_TILTS[n % SWING_TILTS.length]!;
+    arcs.forEach((arc, i) =>
+      vfx.spawn(id, arc.pos, {
+        dir: arc.dir,
+        radius: 1.05,
+        height: 0.85,
+        sweep: i ? -sweep : sweep,
+        tilt,
+      }),
+    );
   };
 
   const scanEvents = (events: readonly GameEvent[], view: WorldView): void => {
@@ -220,8 +265,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         if (e.outcome === 'hit') {
           sync.onHit(e.targetId, e.attackerId, false);
           const target = view.get(e.targetId);
-          if (target && wieldsSaber(view, e.attackerId))
-            vfx.spawn(SABER_SPARKS, target.pos, { height: 0.9, radius: 1 });
+          const blade = saberOf(view, e.attackerId);
+          const attacker = view.get(e.attackerId);
+          if (target && attacker && blade !== undefined) saberHit(vfx, blade, target.pos, attacker.pos);
         }
       } else if (e.type === 'damage') {
         if (e.crit) sync.onHit(e.targetId, e.sourceId, true);

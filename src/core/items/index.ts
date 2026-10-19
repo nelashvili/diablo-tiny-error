@@ -1,3 +1,4 @@
+export * from './blade';
 export * from './create';
 export * from './describe';
 export * from './grid';

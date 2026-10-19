@@ -1,4 +1,5 @@
 import { DB } from '../../data/db';
+import { bladeColor } from './blade';
 import { MELEE_MASTERY, weaponDps } from '../player/weapon';
 import { hasName, t } from '../../data/names';
 import type { Modifier, StatId } from '../stats/types';
@@ -9,7 +10,7 @@ import type { ItemInstance } from './types';
 
 export interface ItemLine {
   text: string;
-  /** Style hint: 'base' | 'mod' | 'req' | 'reqFail' | 'set' | 'flavor' | 'socket' | 'better' | 'worse'. */
+  /** Style hint: 'base' | 'mod' | 'req' | 'reqFail' | 'set' | 'flavor' | 'socket' | 'blade' | 'better' | 'worse'. */
   style: string;
 }
 
@@ -149,6 +150,9 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
         }),
         'magic',
       );
+    const blade = bladeColor(item);
+    if (blade)
+      push(t('item.blade', { color: t(`item.blade.${blade}`), fx: t(`item.blade.fx.${blade}`) }), 'blade');
   }
   if (b.defense) push(t('item.defense', { v: itemDefense(item) }), 'base');
   if (b.block) push(t('item.block', { v: b.block }), 'base');

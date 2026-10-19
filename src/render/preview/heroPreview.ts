@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { EntityVisual, VisualFactory } from '../types';
 import { createVisualFactory } from '../models';
-import { applyDress, dressOf, type Dress } from '../models/dress';
+import { applyDress, dressOf, type Dress, type WornItem } from '../models/dress';
 
 export type PreviewPose = 'idle' | 'walk' | 'attack' | 'cast';
 
@@ -14,10 +14,7 @@ export interface HeroPreview {
   /** The canvas to put on screen; the same element for the life of the preview. */
   readonly canvas: HTMLCanvasElement;
   /** Show this hero model wearing `equipment` (cheap when nothing changed: call every frame). */
-  show(
-    modelId: string,
-    equipment: Readonly<Partial<Record<string, { base: string; quality?: string }>>>,
-  ): void;
+  show(modelId: string, equipment: Readonly<Partial<Record<string, WornItem>>>): void;
   setPose(pose: PreviewPose): void;
   /** Turn the hero by `rad` (dragging); `autoSpin` keeps a slow turn going. */
   turn(rad: number): void;

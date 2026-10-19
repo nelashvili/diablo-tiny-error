@@ -77,6 +77,9 @@ class Fx {
   z = 0;
   dir = 0;
   rad = 1;
+  /** Saber swing: +1 sweeps right to left, -1 back; tilt raises one end of the arc (radians-ish). */
+  sweep = 1;
+  tilt = 0;
   target: THREE.Object3D | null = null;
   stopping = false;
   stopT = 0;
@@ -486,6 +489,8 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
     fx.sx = x;
     fx.sz = z;
     fx.dir = o?.dir ?? 0;
+    fx.sweep = (o?.sweep ?? 1) < 0 ? -1 : 1;
+    fx.tilt = o?.tilt ?? 0;
     const prim = def.primitive;
     fx.dur =
       o?.durationSec ??
@@ -526,6 +531,9 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
     const sc = (d.size ?? 1) * (fx.rad > 0 ? fx.rad : 1);
     const n = cnt((d.particles ?? 14) * Math.min(2, sc));
     const c2 = d.color2 ?? d.color;
+    if (fx.style === 'slash') return slashImpact(fx, sc, n, c2);
+    if (fx.style === 'embers') return emberImpact(fx, sc, n, c2);
+    if (fx.style === 'frost') return frostImpact(fx, sc, n, c2);
     if (fx.style === 'dust') {
       for (let i = 0; i < n; i++) {
         const a = rnd() * TAU;
@@ -577,6 +585,148 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
     }
     addP(fx.x, fx.y, fx.z, 0, 0, 0, 0.13, 1.1 * sc, 0.4 * sc, c2, d.color, 0.95, 0);
     addP(fx.x, fx.y, fx.z, 0, 0, 0, 0.22, 0.6 * sc, 1.8 * sc, d.color, d.color, 0.55, 0);
+  }
+
+  /**
+   * Litesaber hit: a glowing cut across the target at a random angle (flat, diagonal or nearly upright,
+   * so no two hits look alike), sparks sprayed away from the attacker (fx.dir) and a flash.
+   */
+  function slashImpact(fx: Fx, sc: number, n: number, c2: number): void {
+    const d = fx.def;
+    const dx = Math.cos(fx.dir);
+    const dz = Math.sin(fx.dir);
+    const cut = rr(-1.25, 1.25);
+    // Cut direction: across the body (perpendicular to the blow) tilted up by `cut`.
+    const lx = -dz * Math.cos(cut);
+    const ly = Math.sin(cut);
+    const lz = dx * Math.cos(cut);
+    const len = 1.35 * sc;
+    const m = 17;
+    for (let i = 0; i < m; i++) {
+      const s = i / (m - 1) - 0.5;
+      const taper = 1 - Math.abs(s) * 1.5;
+      const px = fx.x + lx * len * s + dx * 0.25;
+      const py = fx.y + ly * len * s;
+      const pz = fx.z + lz * len * s + dz * 0.25;
+      // The cut opens from its middle outward: the ends appear a moment later.
+      const life = 0.3 - Math.abs(s) * 0.16;
+      addP(px, py, pz, dx * 0.3, 0, dz * 0.3, life, 0.2 * sc * taper, 0.12 * sc * taper, c2, c2, 0.95, 0);
+      addP(
+        px,
+        py,
+        pz,
+        dx * 0.3,
+        0,
+        dz * 0.3,
+        life * 0.8,
+        0.09 * sc * taper,
+        0.05 * sc * taper,
+        0xffffff,
+        c2,
+        1,
+        0,
+      );
+    }
+    for (let i = 0; i < n; i++) {
+      const a = fx.dir + rr(-0.95, 0.95);
+      const e = rr(-0.25, 0.9);
+      const sp = rr(2.4, 6.5) * sc;
+      const ch = Math.sqrt(1 - e * e);
+      addP(
+        fx.x,
+        fx.y,
+        fx.z,
+        Math.cos(a) * ch * sp,
+        e * sp + 1,
+        Math.sin(a) * ch * sp,
+        rr(0.2, 0.45),
+        0.13 * sc,
+        0.03,
+        d.color,
+        c2,
+        1,
+        0,
+        2.2,
+        7,
+        SHAPE_SPARK,
+      );
+    }
+    addP(fx.x, fx.y, fx.z, 0, 0, 0, 0.1, 0.6 * sc, 0.3 * sc, 0xffffff, c2, 0.7, 0);
+    addP(fx.x, fx.y, fx.z, 0, 0, 0, 0.2, 0.4 * sc, 1.2 * sc, c2, c2, 0.35, 0);
+  }
+
+  /** Plasma: embers drifting up and away, cooling from orange to dark red. */
+  function emberImpact(fx: Fx, sc: number, n: number, c2: number): void {
+    const d = fx.def;
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU;
+      const r = rr(0, 0.3) * sc;
+      addP(
+        fx.x + Math.cos(a) * r,
+        fx.y + rr(-0.3, 0.3),
+        fx.z + Math.sin(a) * r,
+        Math.cos(a) * rr(0.3, 1.2),
+        rr(0.8, 2),
+        Math.sin(a) * rr(0.3, 1.2),
+        rr(0.5, 1),
+        rr(0.08, 0.15) * sc,
+        0.02,
+        d.color,
+        c2,
+        1,
+        0,
+        1.5,
+        -1.2,
+      );
+    }
+    addP(fx.x, fx.y, fx.z, 0, 0.4, 0, 0.3, 0.7 * sc, 1.4 * sc, d.color, c2, 0.6, 0);
+  }
+
+  /** Cryo: ice shards thrown out that fall to the ground, and a cold mist. */
+  function frostImpact(fx: Fx, sc: number, n: number, c2: number): void {
+    const d = fx.def;
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU;
+      const sp = rr(1.2, 3.2) * sc;
+      addP(
+        fx.x,
+        fx.y,
+        fx.z,
+        Math.cos(a) * sp,
+        rr(1, 3),
+        Math.sin(a) * sp,
+        rr(0.45, 0.75),
+        0.12 * sc,
+        0.06 * sc,
+        d.color,
+        c2,
+        1,
+        0.2,
+        0.8,
+        9,
+        SHAPE_SPARK,
+      );
+    }
+    for (let i = 0; i < 5; i++) {
+      const a = rnd() * TAU;
+      alphaP(
+        fx.x,
+        fx.y - 0.3,
+        fx.z,
+        Math.cos(a) * 0.8,
+        rr(-0.1, 0.3),
+        Math.sin(a) * 0.8,
+        rr(0.5, 0.8),
+        0.4 * sc,
+        1.2 * sc,
+        d.color,
+        c2,
+        0.45,
+        0,
+        2,
+        0,
+      );
+    }
   }
 
   function burstSmoke(fx: Fx): void {
@@ -1187,18 +1337,27 @@ export function createVfxSystem(options?: VfxSystemOptions): VfxSystem {
       const sweep = life * 0.6;
       const head = clamp01(fx.t / sweep);
       const e = head * (2 - head);
-      const a0 = fx.dir - 1.25;
-      const aHead = a0 + 2.5 * e;
+      const sg = fx.sweep;
+      const a0 = fx.dir - 1.25 * sg;
+      const aHead = a0 + 2.5 * e * sg;
       const n = 10;
       const fadeOut = fx.t <= sweep ? 1 : clamp01(1 - (fx.t - sweep) / (life * 0.9));
       for (let i = 0; i < n; i++) {
-        const a = Math.max(a0, aHead - i * 0.16);
+        const a = sg > 0 ? Math.max(a0, aHead - i * 0.16) : Math.min(a0, aHead + i * 0.16);
         pts[i * 3] = fx.x + Math.cos(a) * R;
-        pts[i * 3 + 1] = fx.y;
+        // A tilted arc rises toward one side: a diagonal slash instead of a flat one.
+        pts[i * 3 + 1] = Math.max(0.15, fx.y + Math.sin(a - fx.dir) * fx.tilt * R);
         pts[i * 3 + 2] = fx.z + Math.sin(a) * R;
       }
       ribbon(pts, n, w, w * 0.2, 0.95 * fadeOut * fx.fade, 0.05, d.color);
-      glow(pts[0] as number, fx.y, pts[2] as number, w * 1.3, d.color2 ?? d.color, 0.45 * fadeOut);
+      glow(
+        pts[0] as number,
+        pts[1] as number,
+        pts[2] as number,
+        w * 1.3,
+        d.color2 ?? d.color,
+        0.45 * fadeOut,
+      );
       return;
     }
     // attached: follow the target's world position

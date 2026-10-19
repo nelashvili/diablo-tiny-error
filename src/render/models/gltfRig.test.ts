@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { clipsForModel } from './gltfRig';
+import { GltfRig, clipSpec, clipsForModel, nextVariant } from './gltfRig';
 import type { LoadedAsset } from './loader';
+import type { ModelEntry } from '../types';
 
 function asset(pelvisY: number, animations: THREE.AnimationClip[] = []): LoadedAsset {
   const scene = new THREE.Group();
@@ -43,5 +44,70 @@ describe('clipsForModel', () => {
   it('passes the clips through when the model matches the library', () => {
     const clips = clipsForModel(lib, asset(0.917));
     expect(clips[0]).toBe(lib.animations[0]);
+  });
+});
+
+describe('attack and hit variants', () => {
+  const track = (v: number) => [new THREE.NumberKeyframeTrack('bone.position[x]', [0, 0.5, 1], [0, v, 0])];
+  const anim = asset(0.9, [
+    new THREE.AnimationClip('Idle', 1, track(0)),
+    new THREE.AnimationClip('Swing', 0.5, track(1)),
+    new THREE.AnimationClip('Combo', 2, track(2)),
+    new THREE.AnimationClip('Hurt', 0.4, track(3)),
+  ]);
+  anim.scene.add(Object.assign(new THREE.Object3D(), { name: 'bone' }));
+  const entry: ModelEntry = {
+    id: 'hero.test',
+    url: 'x.glb',
+    scale: 1,
+    clips: { idle: 'Idle', attack: 'Swing', 'attack.2': 'Combo@0.5-1.25', 'attack.3': 'Swing', hit: 'Hurt' },
+    placeholder: { shape: 'capsule', color: 0, height: 1, radius: 0.3 },
+  };
+  const playing = (rig: GltfRig) =>
+    (rig as unknown as { current: THREE.AnimationAction | null }).current?.getClip();
+
+  it('parses clip slices', () => {
+    expect(clipSpec('Swing')).toEqual({ name: 'Swing', from: 0, to: Infinity });
+    expect(clipSpec('Sword_Attack@0.3-1.1')).toEqual({ name: 'Sword_Attack', from: 0.3, to: 1.1 });
+  });
+
+  it('never picks the same variant twice in a row', () => {
+    let seed = 0.37;
+    const rnd = () => (seed = (seed * 9301 + 0.49297) % 1);
+    let prev = nextVariant(-1, 3, rnd);
+    for (let i = 0; i < 50; i++) {
+      const next = nextVariant(prev, 3, rnd);
+      expect(next).not.toBe(prev);
+      expect(next).toBeGreaterThanOrEqual(0);
+      expect(next).toBeLessThan(3);
+      prev = next;
+    }
+    expect(nextVariant(0, 1, rnd)).toBe(0);
+  });
+
+  it('alternates swings between the main clip and the sliced one (duplicates dropped)', () => {
+    const rig = new GltfRig(anim, entry);
+    const seen = new Set<string>();
+    let last = '';
+    for (let i = 0; i < 6; i++) {
+      rig.setMode('attack', 0, 1);
+      const clip = playing(rig)!;
+      expect(clip.name).not.toBe(last);
+      last = clip.name;
+      seen.add(clip.name);
+    }
+    expect(seen).toEqual(new Set(['Swing', 'Combo@0.5-1.25']));
+  });
+
+  it('replays a one-shot clip from the top; a single hit clip stays the same', () => {
+    const rig = new GltfRig(anim, entry);
+    rig.setMode('idle', 0, 1);
+    const idle = (rig as unknown as { current: THREE.AnimationAction }).current;
+    rig.setMode('idle', 0.4, 1);
+    expect((rig as unknown as { current: THREE.AnimationAction }).current).toBe(idle);
+    rig.setMode('hit', 0, 1);
+    expect(playing(rig)?.name).toBe('Hurt');
+    rig.setMode('hit', 0, 1);
+    expect(playing(rig)?.name).toBe('Hurt');
   });
 });
