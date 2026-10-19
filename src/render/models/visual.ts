@@ -61,6 +61,21 @@ const TRAIL_OFF = new THREE.Quaternion().setFromUnitVectors(
   new THREE.Vector3(0.75, -0.2, -0.65).normalize(),
 );
 /**
+ * Long and double-ended weapons can't trail out to the side like a saber: the far end would swing
+ * through the torso (and jetpack). They ride along the body instead, front end forward, up and a
+ * little inward (ahead of the body, where nothing is), back end low behind and out past the hip.
+ */
+const bodyDir = (x: number, y: number, z: number) =>
+  new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(x, y, z).normalize(),
+  );
+const TRAIL_LONG_MAIN = bodyDir(0.3, 0.35, 0.89);
+const TRAIL_LONG_OFF = bodyDir(-0.3, 0.35, 0.89);
+/** Long weapons at rest: a diagonal guard, top in front of the chest and the butt out past the legs. */
+const GUARD_LONG_MAIN = bodyDir(0.4, 0.8, 0.45);
+const GUARD_LONG_OFF = bodyDir(-0.4, 0.8, 0.45);
+/**
  * Shields (body frame): upright, facing out to the side while the hand is at the side and turning to
  * face forward as it comes across the body, held a little off the wrist, so the field neither cuts
  * through the hip and thigh nor through the chest.
@@ -330,11 +345,13 @@ export class Visual implements EntityVisual {
     const smooth = (w: number) => w * w * (3 - 2 * w);
     const q = att.object.quaternion.copy(HELD_Q);
     if (this.trail > 0) {
-      this.object.getWorldQuaternion(AIM_Q).multiply(off ? TRAIL_OFF : TRAIL_MAIN);
+      const trail = att.long ? (off ? TRAIL_LONG_OFF : TRAIL_LONG_MAIN) : off ? TRAIL_OFF : TRAIL_MAIN;
+      this.object.getWorldQuaternion(AIM_Q).multiply(trail);
       q.slerp(BLEND_Q.copy(AIM_PARENT).multiply(AIM_Q), smooth(this.trail));
     }
     if (this.guard > 0) {
-      this.object.getWorldQuaternion(AIM_Q).multiply(off ? GUARD_OFF : GUARD_MAIN);
+      const guard = att.long ? (off ? GUARD_LONG_OFF : GUARD_LONG_MAIN) : off ? GUARD_OFF : GUARD_MAIN;
+      this.object.getWorldQuaternion(AIM_Q).multiply(guard);
       q.slerp(BLEND_Q.copy(AIM_PARENT).multiply(AIM_Q), smooth(this.guard));
     }
   }

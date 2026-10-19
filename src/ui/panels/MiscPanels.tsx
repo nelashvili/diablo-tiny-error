@@ -301,28 +301,23 @@ function useTypewriter(text: string): { shown: string; done: boolean; skip: () =
   return { shown: done ? text : text.slice(0, n), done, skip: () => setN(text.length) };
 }
 
-/** A holo-comm conversation: hologram portrait, typed-out lines, and a list of replies. */
+/**
+ * A holo-comm conversation: hologram portrait, the whole speech typed out at once (click to skip),
+ * and every reply on screen from the start, so trading or healing never waits on paging through lines.
+ * Topics swap the speech in place; clicking the open topic again returns to the greeting.
+ */
 export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => void }) {
   const { data } = usePanelEnv();
   const dlg = data.dialogue?.() ?? null;
-  const [page, setPage] = useState(0);
   const [topic, setTopic] = useState<number | null>(null);
-  // A new conversation starts from its first line.
+  // A new conversation starts from its greeting.
   const convo = dlg ? `${dlg.npcId}:${dlg.lines.join()}` : '';
-  useEffect(() => {
-    setPage(0);
-    setTopic(null);
-  }, [convo]);
+  useEffect(() => setTopic(null), [convo]);
   const lines = dlg ? ((topic !== null ? dlg.topics?.[topic]?.lines : undefined) ?? dlg.lines) : [];
-  const text = t(lines[Math.min(page, lines.length - 1)] ?? '');
+  const text = lines.map((l) => t(l)).join('\n\n');
   const typed = useTypewriter(text);
   if (!dlg) return null;
   const name = t(dlg.nameKey);
-  const last = page >= lines.length - 1;
-  const openTopic = (i: number | null) => {
-    setTopic(i);
-    setPage(0);
-  };
   return (
     <PanelFrame id="dialogue" title={name} onClose={onClose} class="dte-dialogue">
       <div class="dte-dlg">
@@ -341,49 +336,33 @@ export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => vo
             {typed.shown}
             {!typed.done && <i class="dte-dlg-caret" />}
           </p>
-          {lines.length > 1 && (
-            <div class="dte-dlg-pages">
-              {lines.map((_, i) => (
-                <i key={i} class={i === page ? 'on' : ''} />
-              ))}
-            </div>
-          )}
           <div class="dte-dlg-opts">
-            {!last && (
+            {dlg.options.map((o) => (
               <button
-                class="dte-dlg-opt primary"
-                onClick={() => (typed.done ? setPage(page + 1) : typed.skip())}
+                key={o.id}
+                class="dte-dlg-opt action"
+                onClick={() => api.dispatch({ type: 'talk', npcId: dlg.npcId, option: o.id })}
               >
-                {t('ui.dlg.next')}
+                {t(o.labelKey)}
               </button>
+            ))}
+            {dlg.topics && dlg.topics.length > 0 && (
+              <div class="dte-dlg-topics">
+                {dlg.topics.map((tp, i) => (
+                  <button
+                    key={tp.labelKey}
+                    class={`dte-dlg-chip${i === topic ? ' on' : ''}`}
+                    aria-pressed={i === topic}
+                    onClick={() => setTopic(i === topic ? null : i)}
+                  >
+                    {t(tp.labelKey)}
+                  </button>
+                ))}
+              </div>
             )}
-            {last &&
-              topic === null &&
-              dlg.topics?.map((tp, i) => (
-                <button key={tp.labelKey} class="dte-dlg-opt" onClick={() => openTopic(i)}>
-                  {t(tp.labelKey)}
-                </button>
-              ))}
-            {last && topic !== null && (
-              <button class="dte-dlg-opt" onClick={() => openTopic(null)}>
-                {t('ui.dlg.back')}
-              </button>
-            )}
-            {last &&
-              dlg.options.map((o) => (
-                <button
-                  key={o.id}
-                  class="dte-dlg-opt action"
-                  onClick={() => api.dispatch({ type: 'talk', npcId: dlg.npcId, option: o.id })}
-                >
-                  {t(o.labelKey)}
-                </button>
-              ))}
-            {last && (
-              <button class="dte-dlg-opt bye" onClick={onClose}>
-                {t('ui.dlg.bye')}
-              </button>
-            )}
+            <button class="dte-dlg-opt bye" onClick={onClose}>
+              {t('ui.dlg.bye')}
+            </button>
           </div>
         </div>
       </div>

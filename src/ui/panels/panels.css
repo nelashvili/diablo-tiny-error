@@ -1947,6 +1947,9 @@
 }
 .dte-dialogue .dte-dlg-line {
   min-height: 3em;
+  max-height: 34vh;
+  overflow-y: auto;
+  white-space: pre-line;
   margin: 0 0 10px;
   font-size: 1.08em;
   line-height: 1.55;
@@ -1967,19 +1970,33 @@
     opacity: 0;
   }
 }
-.dte-dlg-pages {
+.dte-dlg-topics {
   display: flex;
-  gap: 5px;
-  margin: -2px 0 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0;
 }
-.dte-dlg-pages i {
-  width: 18px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(79, 195, 255, 0.2);
+.dte-dlg-chip {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid rgba(79, 195, 255, 0.25);
+  border-radius: 16px;
+  background: rgba(79, 195, 255, 0.05);
+  color: rgba(220, 234, 255, 0.85);
+  font: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+  touch-action: manipulation;
 }
-.dte-dlg-pages i.on {
-  background: var(--holo);
+.dte-dlg-chip:hover,
+.dte-dlg-chip:focus-visible {
+  background: var(--holo-soft);
+  outline: none;
+}
+.dte-dlg-chip.on {
+  border-color: var(--holo);
+  background: var(--holo-soft);
+  color: #fff;
 }
 .dte-dialogue .dte-dlg-opts {
   display: flex;

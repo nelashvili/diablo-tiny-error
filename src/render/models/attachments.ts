@@ -17,10 +17,13 @@ export interface Attachment {
   readonly grip?: 'raised' | 'aimed';
   /** Shields: braced facing out from the body instead of hanging off the wrist. */
   readonly shield?: boolean;
+  /** Reaches well past both sides of the hand (double sabers, pikes, staves): carried along the body. */
+  readonly long?: boolean;
   update(time: number): void;
 }
 
 const AIMED_KINDS = new Set<ItemKind>(['blaster', 'rifle']);
+const LONG_KINDS = new Set<ItemKind>(['spear', 'staff', 'javelin']);
 
 const BLADE_LEN = 0.95;
 const HILT_LEN = 0.26;
@@ -121,6 +124,7 @@ export function buildLitesaber(
   return {
     object: g,
     tilt: 1.1,
+    long: double,
     update(time) {
       const f = 1 + Math.sin(time * 38 + phase) * 0.06 + Math.sin(time * 11.3 + phase) * 0.05;
       for (const m of glows) m.scale.set(f * glowW, 1, f * glowW);
@@ -199,6 +203,7 @@ function fromAsset(asset: LoadedAsset, entry: ModelEntry, kind: ItemKind): Attac
     tilt: weapon ? 1.1 : null,
     grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised',
     shield: kind === 'shield',
+    long: LONG_KINDS.has(kind),
     update() {},
   };
 }
@@ -257,6 +262,7 @@ export function createAttachment(
     tilt,
     grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised',
     shield: kind === 'shield',
+    long: LONG_KINDS.has(kind),
     update() {},
   };
 }

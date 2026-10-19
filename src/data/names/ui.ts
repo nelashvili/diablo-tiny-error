@@ -189,7 +189,6 @@ export default {
   'ui.quest.pick': 'Pick a quest to read about it.',
 
   // dialogue
-  'ui.dlg.next': 'Next',
   'ui.dlg.bye': 'Goodbye',
 
   // merc

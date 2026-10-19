@@ -10,7 +10,7 @@ import { unit } from './rig';
 import { getGradientMap, glowMaterial } from './toon';
 import { helmetShapes, type HelmetStyle } from './headgear';
 
-export type ArmorStyle = 'trooper' | 'mando' | 'droid';
+export type ArmorStyle = 'trooper' | 'mando' | 'droid' | 'forge' | 'beast';
 
 export interface ArmorSpec {
   style: ArmorStyle;
@@ -18,7 +18,7 @@ export interface ArmorSpec {
   color: number;
   /** Secondary color (belts, jetpack, droid joints). */
   trim?: number;
-  /** Eye / lamp glow (droids). */
+  /** Eye / lamp glow (droids, beasts). */
   eye?: number;
 }
 
@@ -173,6 +173,150 @@ function droidLayout(spec: ArmorSpec, L: Lengths): Piece[] {
   return out;
 }
 
+/** A shape placed in a bone's segment frame. */
+function part(
+  bone: string,
+  geo: THREE.BufferGeometry,
+  pos: [number, number, number],
+  size: [number, number, number],
+  color: number,
+  rot?: [number, number, number],
+  glow = false,
+): Piece {
+  return { bone, geo, pos, size, color, rot, glow };
+}
+
+/**
+ * Hulking forge droid (Grizzwald): a rust-eaten barrel chest with a glowing furnace grille, heavy
+ * pauldrons, piston upper arms over thick forearms and shins, smokestacks on the back and a squat
+ * head with a lamp slit.
+ */
+function forgeLayout(spec: ArmorSpec, L: Lengths): Piece[] {
+  const rust = spec.color;
+  const dark = spec.trim ?? 0x3a2a20;
+  const fire = spec.eye ?? 0xff8a2a;
+  const c3 = L('spine_03');
+  const out: Piece[] = [
+    part('spine_03', unit.cylinder(), [0, c3 * 0.3, 0], [0.36, 0.42, 0.42], rust),
+    part('spine_03', unit.box(), [0, c3 * 0.62, 0], [0.38, 0.06, 0.38], dark),
+    part('spine_03', unit.box(), [0, c3 * 0.22, 0.2], [0.18, 0.14, 0.04], fire, undefined, true),
+    part('spine_03', unit.box(), [0, c3 * 0.27, 0.225], [0.21, 0.022, 0.03], dark),
+    part('spine_03', unit.box(), [0, c3 * 0.17, 0.225], [0.21, 0.022, 0.03], dark),
+    part('spine_01', unit.cylinder(), [0, L('spine_01') * 0.6, 0.01], [0.3, 0.22, 0.3], dark),
+    part('pelvis', unit.box(), [0, 0.02, 0], [0.32, 0.13, 0.26], rust),
+    // Smokestacks with ember-lit tops.
+    part('spine_03', unit.cylinder(), [0.11, c3 * 0.7, -0.22], [0.08, 0.34, 0.08], dark),
+    part('spine_03', unit.cylinder(), [-0.11, c3 * 0.7, -0.22], [0.08, 0.34, 0.08], dark),
+    part(
+      'spine_03',
+      unit.cylinder(),
+      [0.11, c3 * 0.7 + 0.175, -0.22],
+      [0.06, 0.02, 0.06],
+      fire,
+      undefined,
+      true,
+    ),
+    part(
+      'spine_03',
+      unit.cylinder(),
+      [-0.11, c3 * 0.7 + 0.175, -0.22],
+      [0.06, 0.02, 0.06],
+      fire,
+      undefined,
+      true,
+    ),
+    tube('neck_01', L('neck_01') + 0.04, 0, 1, 0.05, dark),
+    // Squat head sunk between the shoulders: a lamp slit and a riveted jaw.
+    part('Head', unit.box(), [0, 0.07, 0.03], [0.2, 0.15, 0.2], rust),
+    part('Head', unit.box(), [0, 0.1, 0.135], [0.15, 0.03, 0.02], fire, undefined, true),
+    part('Head', unit.box(), [0, 0.0, 0.08], [0.17, 0.05, 0.12], dark),
+  ];
+  for (const s of SIDES) {
+    out.push(
+      ball(`upperarm_${s}`, 0.03, 0.13, rust),
+      part(`upperarm_${s}`, unit.box(), [0, 0.06, 0], [0.3, 0.06, 0.26], dark),
+      tube(`upperarm_${s}`, L(`upperarm_${s}`), 0.1, 1, 0.055, dark),
+      ball(`lowerarm_${s}`, 0, 0.075, dark),
+      plate(
+        `lowerarm_${s}`,
+        [0, L(`lowerarm_${s}`) * 0.55, 0],
+        [0.15, L(`lowerarm_${s}`) * 0.85, 0.15],
+        rust,
+      ),
+      plate(`hand_${s}`, [0, 0.05, 0], [0.12, 0.12, 0.1], dark),
+      ball(`thigh_${s}`, 0.02, 0.09, dark),
+      plate(`thigh_${s}`, [0, L(`thigh_${s}`) * 0.5, 0], [0.14, L(`thigh_${s}`) * 0.85, 0.15], dark),
+      ball(`calf_${s}`, 0, 0.085, rust),
+      plate(`calf_${s}`, [0, L(`calf_${s}`) * 0.5, 0.01], [0.16, L(`calf_${s}`) * 0.85, 0.18], rust),
+      plate(`foot_${s}`, [0, L(`foot_${s}`) * 0.5, -0.02], [0.18, L(`foot_${s}`) * 1.5, 0.11], dark),
+    );
+  }
+  return out;
+}
+
+/**
+ * Moss Beast: a hunched swamp brute of lumpy moss over bark-dark hide, a hump bristling with moss
+ * spines (its quills), heavy forearms and fists, and a low tusked head with glowing eyes.
+ */
+function beastLayout(spec: ArmorSpec, L: Lengths): Piece[] {
+  const moss = spec.color;
+  const hide = spec.trim ?? 0x3a2a1a;
+  const eye = spec.eye ?? 0x9be36a;
+  const light = new THREE.Color(moss).offsetHSL(0.03, -0.1, 0.06).getHex();
+  const deep = new THREE.Color(moss).offsetHSL(-0.02, 0.02, -0.025).getHex();
+  const c3 = L('spine_03');
+  const out: Piece[] = [
+    part('spine_03', unit.sphere(), [0, c3 * 0.3, -0.03], [0.4, 0.46, 0.48], moss),
+    part('spine_03', unit.sphere(), [0, c3 * 0.62, -0.14], [0.38, 0.32, 0.36], deep),
+    part('spine_01', unit.sphere(), [0, L('spine_01') * 0.5, 0.05], [0.34, 0.34, 0.36], light),
+    part('pelvis', unit.sphere(), [0, 0, 0], [0.34, 0.22, 0.3], hide),
+    tube('neck_01', L('neck_01') + 0.04, 0, 1, 0.08, moss),
+    // Low, heavy head pushed forward: a wide jaw with tusks, glowing eyes under a brow.
+    part('Head', unit.sphere(), [0, 0.05, 0.06], [0.27, 0.22, 0.27], moss),
+    part('Head', unit.box(), [0, 0.11, 0.15], [0.22, 0.04, 0.06], deep),
+    part('Head', unit.box(), [0, -0.02, 0.12], [0.23, 0.08, 0.15], hide),
+    part('Head', unit.cone(), [0.075, 0.04, 0.19], [0.03, 0.08, 0.03], 0xe8dcc0),
+    part('Head', unit.cone(), [-0.075, 0.04, 0.19], [0.03, 0.08, 0.03], 0xe8dcc0),
+    { ...ball('Head', 0, 0.022, eye, true), pos: [0.06, 0.085, 0.175] },
+    { ...ball('Head', 0, 0.022, eye, true), pos: [-0.06, 0.085, 0.175] },
+  ];
+  // Moss spines along the hump and shoulders, leaning back.
+  const spines: [number, number, number][] = [
+    [0, 0.78, -0.24],
+    [0.12, 0.68, -0.25],
+    [-0.12, 0.68, -0.25],
+    [0.05, 0.5, -0.3],
+    [-0.06, 0.48, -0.3],
+    [0.2, 0.52, -0.18],
+    [-0.2, 0.52, -0.18],
+  ];
+  for (const [x, y, z] of spines)
+    out.push(part('spine_03', unit.cone(), [x, c3 * y, z], [0.07, 0.16, 0.07], light, [-0.9, 0, -x * 2]));
+  for (const s of SIDES) {
+    out.push(
+      ball(`upperarm_${s}`, 0.03, 0.13, deep),
+      tube(`upperarm_${s}`, L(`upperarm_${s}`), 0.1, 0.95, 0.075, moss),
+      ball(`lowerarm_${s}`, 0, 0.08, moss),
+      tube(`lowerarm_${s}`, L(`lowerarm_${s}`), 0.05, 1, 0.095, light),
+      ball(`hand_${s}`, 0.05, 0.08, hide),
+      part(`hand_${s}`, unit.cone(), [0.035, 0.13, 0.03], [0.025, 0.07, 0.025], 0xe8dcc0),
+      part(`hand_${s}`, unit.cone(), [-0.035, 0.13, 0.03], [0.025, 0.07, 0.025], 0xe8dcc0),
+      ball(`thigh_${s}`, 0.02, 0.095, moss),
+      tube(`thigh_${s}`, L(`thigh_${s}`), 0.05, 0.95, 0.092, moss),
+      ball(`calf_${s}`, 0, 0.09, deep),
+      tube(`calf_${s}`, L(`calf_${s}`), 0.05, 0.95, 0.075, hide),
+      plate(`foot_${s}`, [0, L(`foot_${s}`) * 0.5, -0.02], [0.16, L(`foot_${s}`) * 1.4, 0.09], hide),
+    );
+  }
+  return out;
+}
+
+const LAYOUTS: Partial<Record<ArmorStyle, (spec: ArmorSpec, L: Lengths) => Piece[]>> = {
+  droid: droidLayout,
+  forge: forgeLayout,
+  beast: beastLayout,
+};
+
 const vcMaterials = new Map<string, THREE.MeshToonMaterial>();
 /** Shared vertex-colored toon material (base color white, pieces carry their color). */
 export function vertexColorToon(color = 0xffffff): THREE.MeshToonMaterial {
@@ -200,7 +344,7 @@ const _c = new THREE.Color();
  * own meshes (droids).
  */
 export function buildArmor(model: THREE.Object3D, spec: ArmorSpec, hideBody: boolean): THREE.SkinnedMesh[] {
-  const layout = (L: Lengths) => (spec.style === 'droid' ? droidLayout(spec, L) : armorLayout(spec, L));
+  const layout = (L: Lengths) => (LAYOUTS[spec.style] ?? armorLayout)(spec, L);
   const out = bindPieces(model, layout, vertexColorToon(), 'Armor', spec.eye ?? 0x4fc3ff);
   if (hideBody)
     model.traverse((o) => {

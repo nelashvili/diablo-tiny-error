@@ -256,21 +256,10 @@ const ACTORS: ModelEntry[] = [
     armor: { style: 'trooper', color: 0xf2f2f4, trim: 0x2a2a30 },
     gear: { mainHand: 'hunturCarbine' },
   }),
-  {
-    // Moss Beast: a squat, mossy swamp brute (no axe; it spits quills).
-    id: 'mon.mossBeast',
-    url: M('monsters/orc'),
-    scale: 0.5,
-    clips: { ...QM_CLIPS },
-    bones: { ...QM_BONES },
-    placeholder: ph('capsule', 0x4f7a3a, 1.5, 0.5),
-    accent: 0x9be36a,
-    hide: ['Orc_Weapon'],
-    recolor: [
-      { hue: [60, 160], minSat: 0.2, color: 0x5d7a34 },
-      { hue: [170, 280], minSat: 0.2, color: 0x3a4a22 },
-    ],
-  },
+  // Moss Beast: a hunched, mossy swamp brute with spines on its hump (it spits them as quills).
+  uni('mon.mossBeast', 'peasantM', 0x4f7a3a, 0x9be36a, 1.12, {
+    armor: { style: 'beast', color: 0x4a6a30, trim: 0x4a3624, eye: 0xc8ff6a, hideBody: true },
+  }),
   // Nightsistah: Dathomir witch in crimson and black robes, chalk-white skin, no wizard hat.
   // Nightsistah: Dathomir witch in a crimson hooded robe.
   uni('mon.nightsistah', 'rangerF', 0x7a1a24, 0xc040ff, 0.92, {
@@ -314,22 +303,11 @@ const ACTORS: ModelEntry[] = [
     ],
     gear: { mainHand: 'trainingLitesaber', accent: 0xff2a2a },
   }),
-  {
-    // Grizzwald the Rusty Smith: a hulking, rust-eaten forge droyd.
-    id: 'mon.grizzwald',
-    url: M('monsters/robot'),
-    scale: 0.34,
-    clips: { ...ROBOT_CLIPS },
-    bones: { ...ROBOT_BONES },
-    placeholder: ph('capsule', 0x8a4a22, 1.8, 0.5),
-    accent: 0xff8a2a,
-    recolor: [
-      { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: 0xffa040, flat: 1 },
-      { hue: [0, 360], minSat: 0, minVal: 0.3, color: 0x9a5a2e },
-      { hue: [0, 360], minSat: 0, color: 0x3a2a20 },
-    ],
+  // Grizzwald the Rusty Smith: a hulking, rust-eaten forge droyd with a furnace in its chest.
+  uni('mon.grizzwald', 'peasantM', 0x8a4a22, 0xff8a2a, 1.3, {
+    armor: { style: 'forge', color: 0x8a4a26, trim: 0x33281f, eye: 0xff8a2a, hideBody: true },
     gear: { mainHand: 'doubleVibroAxe', accent: 0xff8a2a },
-  },
+  }),
   // Player summons
   battleDroid('mon.battleDroyd', 0xdcc690, 0x4fc3ff, 0.94),
   // Holo-Decoy: a blue hologram of the Bounty Huntur.

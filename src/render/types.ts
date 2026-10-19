@@ -87,7 +87,7 @@ export interface ModelEntry {
    * helmet for troopers and bounty hunters, or a whole B1-style droid with `hideBody`.
    */
   armor?: {
-    style: 'trooper' | 'mando' | 'droid';
+    style: 'trooper' | 'mando' | 'droid' | 'forge' | 'beast';
     color: number;
     trim?: number;
     eye?: number;

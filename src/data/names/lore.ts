@@ -6,7 +6,6 @@ export default {
   'ui.lore.lockedHint': 'Locked entries open as the story moves on.',
   'ui.lore.pick': 'Pick an entry to read it.',
   'ui.lore.new': 'New Holocron entry: {title}. Read it in the quest log.',
-  'ui.dlg.back': 'Back',
 
   'lore.kyburHeart.title': 'The Kybur Heart',
   'lore.kyburHeart.text':
