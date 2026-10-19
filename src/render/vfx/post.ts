@@ -75,11 +75,12 @@ export function createPostFx(
   const bloomSetSize = bloom.setSize.bind(bloom);
   let bloomDivisor = 1;
   bloom.setSize = (bw: number, bh: number) => bloomSetSize(bw / bloomDivisor, bh / bloomDivisor);
-  composer.addPass(bloom);
 
   // Painted look: Kuwahara on the lit image (before grading), radius by quality.
-  const makePaint = (r: number) =>
-    new ShaderPass({
+  // `step`: texels between samples (1 = dense kernel).
+  const paintStep = new Map<ShaderPass, number>();
+  const makePaint = (r: number, step: number) => {
+    const p = new ShaderPass({
       uniforms: {
         tDiffuse: { value: null },
         uTexel: { value: new THREE.Vector2(1 / (w * dpr), 1 / (h * dpr)) },
@@ -89,10 +90,15 @@ export function createPostFx(
       vertexShader: GRADE_VERT,
       fragmentShader: KUWAHARA_FRAG,
     });
-  const paintHigh = makePaint(3);
-  const paintMed = makePaint(2);
+    paintStep.set(p, step);
+    return p;
+  };
+  const paintHigh = makePaint(3, 1);
+  const paintMed = makePaint(2, 1);
   composer.addPass(paintHigh);
   composer.addPass(paintMed);
+  // Bloom after the paint pass: it reads the actor mask in alpha, which bloom's additive blend breaks.
+  composer.addPass(bloom);
 
   const cur: GradeParams = structuredClone(gradeFor(null));
   let tgt: GradeParams = cur;
@@ -125,9 +131,13 @@ export function createPostFx(
   sharpen.enabled = false;
   composer.addPass(sharpen);
   const setTexel = () => {
-    for (const p of [sharpen, paintHigh, paintMed])
-      (p.uniforms['uTexel']!.value as THREE.Vector2).set(1 / Math.max(1, w * dpr), 1 / Math.max(1, h * dpr));
+    for (const p of [sharpen, paintHigh, paintMed]) {
+      const k = paintStep.get(p) ?? 1;
+      (p.uniforms['uTexel']!.value as THREE.Vector2).set(k / Math.max(1, w * dpr), k / Math.max(1, h * dpr));
+    }
   };
+
+  setTexel();
 
   function applyUniforms(): void {
     const u = gradePass.uniforms as Record<string, { value: unknown }>;

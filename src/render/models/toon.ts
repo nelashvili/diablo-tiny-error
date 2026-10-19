@@ -31,10 +31,21 @@ toonLib.vertexShader = toonLib.vertexShader
   .replace('#include <common>', '#include <common>\nvarying vec3 vPaintP;\nvarying vec3 vPaintN;')
   .replace(
     '#include <skinning_vertex>',
-    `#include <skinning_vertex>
+    `
+#ifdef USE_RIM
+  // Actors: strokes keyed to the bind pose, so they stay painted on the body as it animates.
+  vec4 paintBindP = vec4( transformed, 1.0 );
+  vec3 paintBindN = objectNormal;
+#endif
+#include <skinning_vertex>
 {
+#ifdef USE_RIM
+  vec4 pp = paintBindP;
+  vec3 pn = paintBindN;
+#else
   vec4 pp = vec4( transformed, 1.0 );
   vec3 pn = objectNormal;
+#endif
 #ifdef USE_INSTANCING
   pp = instanceMatrix * pp;
   pn = mat3( instanceMatrix ) * pn;
@@ -49,6 +60,8 @@ toonLib.fragmentShader = toonLib.fragmentShader
     `#include <common>
 varying vec3 vPaintP;
 varying vec3 vPaintN;
+// Brush jitter of the light/shadow terminator (see getGradientIrradiance), set per fragment in main.
+float paintEdge;
 float paintHash( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
 float paintNoise( vec2 p ) {
   vec2 i = floor( p ); vec2 f = fract( p ); vec2 u = f * f * ( 3.0 - 2.0 * f );
@@ -63,15 +76,24 @@ float paintStrokes( vec2 p ) {
   )
   .replace(
     '#include <alphamap_fragment>',
-    `#ifndef NO_PAINT
+    `paintEdge = 0.0;
+#ifndef NO_PAINT
 {
   vec3 bw = pow( abs( normalize( vPaintN ) ), vec3( 4.0 ) );
   bw /= bw.x + bw.y + bw.z + 1e-5;
-  float st = paintStrokes( vPaintP.zy ) * bw.x + paintStrokes( vPaintP.xz ) * bw.y + paintStrokes( vPaintP.xy ) * bw.z;
 #ifdef USE_RIM
-  diffuseColor.rgb *= 0.94 + 0.12 * st;
+  // Finer strokes on bodies (a character is under two units tall).
+  vec3 pq = vPaintP * 2.6;
+#else
+  vec3 pq = vPaintP;
+#endif
+  float st = paintStrokes( pq.zy ) * bw.x + paintStrokes( pq.xz ) * bw.y + paintStrokes( pq.xy ) * bw.z;
+#ifdef USE_RIM
+  diffuseColor.rgb *= 0.9 + 0.2 * st;
+  paintEdge = ( st - 0.5 ) * 0.55;
 #else
   diffuseColor.rgb *= 0.86 + 0.28 * st;
+  paintEdge = ( st - 0.5 ) * 0.3;
 #endif
 }
 #endif
@@ -86,7 +108,22 @@ toonLib.fragmentShader = toonLib.fragmentShader.replace(
   outgoingLight += vec3( 0.26, 0.28, 0.34 ) * rimF * ( 0.35 + 0.65 * diffuseColor.rgb );
 }
 #endif
-#include <opaque_fragment>`,
+#include <opaque_fragment>
+// Paint mask in the scene target's alpha, read by the screen paint pass: actors 0 (they stay crisp),
+// already-painted ground 0.35 (a light touch: the full filter turns its texture into square mosaic).
+#if defined( USE_RIM ) && defined( OPAQUE )
+  gl_FragColor.a = 0.0;
+#elif defined( NO_PAINT ) && defined( OPAQUE )
+  gl_FragColor.a = 0.35;
+#endif`,
+);
+// Ragged, brushed light/shadow edges: the toon ramp lookup is nudged by the stroke pattern.
+toonLib.fragmentShader = toonLib.fragmentShader.replace(
+  '#include <gradientmap_pars_fragment>',
+  THREE.ShaderChunk.gradientmap_pars_fragment.replace(
+    'float dotNL = dot( normal, lightDirection );',
+    'float dotNL = dot( normal, lightDirection ) + paintEdge;',
+  ),
 );
 
 /**

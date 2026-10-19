@@ -197,28 +197,36 @@ uniform sampler2D tDiffuse;
 uniform vec2 uTexel;
 uniform float uMix;
 varying vec2 vUv;
+// Alpha carries the paint mask from the scene pass (toon.ts): 0 = character, kept crisp (its
+// material paints itself) and ignored by its neighbours so it doesn't smear outward; otherwise the
+// amount of filter (painted ground gets a light touch).
 void main() {
   vec4 src = texture2D(tDiffuse, vUv);
+  if (src.a < 0.02) { gl_FragColor = vec4(src.rgb, 1.0); return; }
   vec3 mean[4];
   float var[4];
   for (int q = 0; q < 4; q++) {
     vec2 dir = vec2(q == 0 || q == 2 ? -1.0 : 1.0, q < 2 ? -1.0 : 1.0);
     vec3 s = vec3(0.0);
     vec3 s2 = vec3(0.0);
+    float n = 0.0;
     for (int j = 0; j <= KUWAHARA_R; j++)
       for (int i = 0; i <= KUWAHARA_R; i++) {
-        vec3 c = texture2D(tDiffuse, vUv + dir * vec2(float(i), float(j)) * uTexel).rgb;
-        s += c;
-        s2 += c * c;
+        vec4 c = texture2D(tDiffuse, vUv + dir * vec2(float(i), float(j)) * uTexel);
+        float w = step(0.02, c.a);
+        s += c.rgb * w;
+        s2 += c.rgb * c.rgb * w;
+        n += w;
       }
-    float n = float((KUWAHARA_R + 1) * (KUWAHARA_R + 1));
+    n = max(n, 1e-3);
     mean[q] = s / n;
     vec3 v = s2 / n - mean[q] * mean[q];
-    var[q] = dot(v, vec3(0.299, 0.587, 0.114));
+    // Quadrants mostly covered by a character count as busy, so the filter looks away from them.
+    var[q] = dot(v, vec3(0.299, 0.587, 0.114)) + (n < 2.0 ? 1.0 : 0.0);
   }
   vec3 best = mean[0];
   float bv = var[0];
   for (int q = 1; q < 4; q++) if (var[q] < bv) { bv = var[q]; best = mean[q]; }
-  gl_FragColor = vec4(mix(src.rgb, best, uMix), src.a);
+  gl_FragColor = vec4(mix(src.rgb, best, uMix * clamp(src.a, 0.0, 1.0)), 1.0);
 }
 `;

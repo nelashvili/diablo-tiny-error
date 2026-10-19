@@ -3,7 +3,7 @@
  * Query: ?mode=attack (freeze a mode), ?cols=8, ?zoom=1, ?only=hero.yediKnight,mon.jawwa (just those,
  * without the extra demo actors and tiles), ?nohelm, ?armor=helm,chest,gloves,boots (armor item ids worn
  * by the heroes, e.g. trooperHelm,trooperArmor,heavyGloves,heavyBoots), ?view=front|side|back|iso
- * (camera azimuth), ?paused (no animation loop: drive it with window.__pose(mode, t) for screenshots).
+ * (camera azimuth), ?main=<item base> (hero main hand), ?paused (no animation loop: drive it with window.__pose(mode, t) for screenshots).
  */
 import * as THREE from 'three';
 import { MODEL_CATALOG } from '../src/render/assets/catalog';
@@ -119,6 +119,7 @@ for (const id of ids) {
     if (id.endsWith('forseAdept')) v.setAttachment('offHand', 'item.energyShield');
     if (id.endsWith('bountyHuntur')) v.setAttachment('mainHand', 'item.blasterPistol');
     if (id.endsWith('yediKnight') && !params.has('nohelm')) v.setAttachment('head', 'item.battleHelm');
+    if (params.has('main')) v.setAttachment('mainHand', `item.${params.get('main')}`);
     if (params.has('chest')) v.setAttachment('chest', `item.${params.get('chest')}`);
     const armor = (params.get('armor') ?? '').split(',');
     (['head', 'body', 'arms', 'legs'] as const).forEach((part, i) =>

@@ -68,3 +68,16 @@ describe('Visual armor items', () => {
     expect(blade.y).toBeGreaterThan(0.4);
   });
 });
+
+describe('Visual shooting', () => {
+  it('plays shot skills (the throw slot) as a shot while holding a gun', () => {
+    const { r } = rig(false);
+    const modes: string[] = [];
+    r.setMode = (m) => void modes.push(m);
+    const v = new Visual(env, r);
+    v.setMode('throw', 0);
+    v.setAttachment('mainHand', 'item.scoutBlastur');
+    v.setMode('throw', 0);
+    expect(modes.slice(-2)).toEqual(['throw', 'attack']);
+  });
+});

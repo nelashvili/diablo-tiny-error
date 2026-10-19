@@ -158,7 +158,8 @@ const WEAPON_COLORS: Partial<Record<ItemKind, [number, number]>> = {
 };
 
 /** Held length (before HELD_WEAPON_SCALE) that loaded gun models are normalized to. */
-const ASSET_WEAPON_LENGTH: Partial<Record<ItemKind, number>> = { blaster: 0.7, rifle: 1.25 };
+// Before the 1.35x held scale: a sidearm ~0.55 and a long gun ~1.1 units on a ~1.7-unit hero.
+const ASSET_WEAPON_LENGTH: Partial<Record<ItemKind, number>> = { blaster: 0.42, rifle: 0.82 };
 /** Fraction of the gun's length, from the back, where the hand grips it. */
 const GRIP_AT = 0.3;
 const FLIP_Z = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI);

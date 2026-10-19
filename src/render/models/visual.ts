@@ -38,6 +38,17 @@ export const AIMED_WEAPON_POSE = new THREE.Euler(0, Math.PI / 2, 0);
 const AIM_LOCAL = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
 const AIM_Q = new THREE.Quaternion();
 /**
+ * Guns outside the shooting poses (running, casting, flinching...): "low ready", barrel pitched down
+ * and turned out to the hand's side, so it can't spear the thigh the way a level barrel did.
+ */
+function lowReady(side: 1 | -1): THREE.Quaternion {
+  return new THREE.Quaternion().setFromEuler(new THREE.Euler(0.95, 0.4 * side, 0, 'YXZ')).multiply(AIM_LOCAL);
+}
+const LOW_MAIN = lowReady(-1);
+const LOW_OFF = lowReady(1);
+/** Modes that aim the gun level (the shooter clips raise the hand for these). */
+const AIM_MODES: ReadonlySet<ActorMode> = new Set<ActorMode>(['idle', 'attack', 'block']);
+/**
  * Sabers while moving (body frame, model faces +Z, right hand at -X): blade trailing low behind and
  * out to the side, so the run clip's arm swing can't push it through the hood or torso.
  */
@@ -114,6 +125,8 @@ export class Visual implements EntityVisual {
   private trail = 0;
   /** 0 = ready stance, 1 = blade held in the body-frame guard (idle, cast, ...). */
   private guard = 0;
+  /** 0 = gun aimed level, 1 = held at low ready. */
+  private lowered = 0;
   private readonly baseMats = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
 
   constructor(
@@ -174,6 +187,9 @@ export class Visual implements EntityVisual {
   }
 
   setMode(mode: ActorMode, t: number, speedMul = 1): void {
+    // Shot skills use D2's "throw" animation slot; with a gun in hand that's a shot, not an overhand
+    // throw (javelins and darts thrown without a gun keep the throw).
+    if (mode === 'throw' && this.attached.get('mainHand')?.att.grip === 'aimed') mode = 'attack';
     this.mode = mode;
     this.modeT = t;
     this.speedMul = speedMul;
@@ -262,6 +278,8 @@ export class Visual implements EntityVisual {
     this.trail = Math.min(1, Math.max(0, this.trail + (moving ? step : -step)));
     const guarding = GUARD_MODES.has(this.mode);
     this.guard = Math.min(1, Math.max(0, this.guard + (guarding ? step : -step)));
+    const lowering = !AIM_MODES.has(this.mode) && !(this.mode as string).startsWith('attack');
+    this.lowered = Math.min(1, Math.max(0, this.lowered + (lowering ? step : -step)));
     for (const slot of SLOTS) {
       const a = this.attached.get(slot);
       if (!a) continue;
@@ -328,8 +346,10 @@ export class Visual implements EntityVisual {
   private aim(slot: AttachSlot, att: Attachment): void {
     const sock = this.rig.socket(slot);
     sock.updateWorldMatrix(true, false);
+    const w = this.lowered * this.lowered * (3 - 2 * this.lowered);
+    BLEND_Q.copy(AIM_LOCAL).slerp(slot === 'offHand' ? LOW_OFF : LOW_MAIN, w);
     this.object.getWorldQuaternion(AIM_Q);
-    AIM_Q.multiply(AIM_LOCAL);
+    AIM_Q.multiply(BLEND_Q);
     sock.getWorldQuaternion(AIM_PARENT).invert();
     att.object.quaternion.copy(AIM_PARENT.multiply(AIM_Q));
   }
