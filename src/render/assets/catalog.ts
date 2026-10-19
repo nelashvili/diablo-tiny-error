@@ -258,7 +258,7 @@ const ACTORS: ModelEntry[] = [
   }),
   // Moss Beast: a hunched, mossy swamp brute with spines on its hump (it spits them as quills).
   uni('mon.mossBeast', 'peasantM', 0x4f7a3a, 0x9be36a, 1.12, {
-    armor: { style: 'beast', color: 0x4a6a30, trim: 0x4a3624, eye: 0xc8ff6a, hideBody: true },
+    armor: { style: 'beast', color: 0x5e5a36, trim: 0x3e2e1e, eye: 0xc8ff6a, hideBody: true },
   }),
   // Nightsistah: Dathomir witch in crimson and black robes, chalk-white skin, no wizard hat.
   // Nightsistah: Dathomir witch in a crimson hooded robe.

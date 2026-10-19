@@ -255,15 +255,18 @@ function forgeLayout(spec: ArmorSpec, L: Lengths): Piece[] {
 }
 
 /**
- * Moss Beast: a hunched swamp brute of lumpy moss over bark-dark hide, a hump bristling with moss
- * spines (its quills), heavy forearms and fists, and a low tusked head with glowing eyes.
+ * Moss Beast: a hunched swamp brute, mud-olive hide under green moss on the hump and shoulders (so it
+ * stands out on grass), a hump bristling with moss spines (its quills), heavy forearms and fists, and
+ * a low tusked head with glowing eyes.
  */
 function beastLayout(spec: ArmorSpec, L: Lengths): Piece[] {
   const moss = spec.color;
   const hide = spec.trim ?? 0x3a2a1a;
   const eye = spec.eye ?? 0x9be36a;
-  const light = new THREE.Color(moss).offsetHSL(0.03, -0.1, 0.06).getHex();
-  const deep = new THREE.Color(moss).offsetHSL(-0.02, 0.02, -0.025).getHex();
+  const light = new THREE.Color(moss).offsetHSL(0.01, -0.05, 0.07).getHex();
+  /** Moss growing on the hump and shoulders, and its brighter spines. */
+  const deep = 0x5f8a34;
+  const spine = 0x8fb04a;
   const c3 = L('spine_03');
   const out: Piece[] = [
     part('spine_03', unit.sphere(), [0, c3 * 0.3, -0.03], [0.4, 0.46, 0.48], moss),
@@ -291,7 +294,7 @@ function beastLayout(spec: ArmorSpec, L: Lengths): Piece[] {
     [-0.2, 0.52, -0.18],
   ];
   for (const [x, y, z] of spines)
-    out.push(part('spine_03', unit.cone(), [x, c3 * y, z], [0.07, 0.16, 0.07], light, [-0.9, 0, -x * 2]));
+    out.push(part('spine_03', unit.cone(), [x, c3 * y, z], [0.07, 0.16, 0.07], spine, [-0.9, 0, -x * 2]));
   for (const s of SIDES) {
     out.push(
       ball(`upperarm_${s}`, 0.03, 0.13, deep),

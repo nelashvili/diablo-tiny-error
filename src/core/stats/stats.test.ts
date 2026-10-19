@@ -73,6 +73,9 @@ describe('formulas', () => {
     expect(blockChanceFinal(30, 45, 20)).toBe(22); // 30*30/40 = 22.5
     expect(blockChanceFinal(0, 100, 1)).toBe(0);
     expect(blockChanceFinal(30, 10, 20)).toBe(0);
+    // A fresh hero (clvl 1, dex 20, starting shield) is not at the cap: levels 1-2 count as 3.
+    expect(blockChanceFinal(30, 20, 1)).toBe(25);
+    expect(blockChanceFinal(30, 20, 3)).toBe(25);
   });
   it('resist and chances', () => {
     expect(applyResist(100, 50)).toBe(50);

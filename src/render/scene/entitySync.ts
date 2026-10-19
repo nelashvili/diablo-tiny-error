@@ -464,8 +464,9 @@ export class EntitySync {
       else if (k === 'burn' && tint === TINT_NONE) tint = TINT_BURN;
     }
     if (tint === TINT_NONE && e.kind === 'monster') {
+      // Bosses wear their own models and colors; a tint would wash them out (Grizzwald went flat orange).
       if (e.rank === 'champion') tint = TINT_CHAMPION;
-      else if (e.rank === 'unique' || e.rank === 'boss') tint = TINT_UNIQUE;
+      else if (e.rank === 'unique') tint = TINT_UNIQUE;
     }
     if (tint !== r.tint) {
       r.tint = tint;

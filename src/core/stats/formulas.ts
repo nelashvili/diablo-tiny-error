@@ -82,10 +82,16 @@ export function hitChance(ar: number, def: number, alvl: number, dlvl: number): 
 
 export const MAX_BLOCK = 75;
 
-/** D2 final block %: floor(shieldBlock * (dex - 15) / (clvl * 2)), capped at 75. */
+/** Levels below this count as this level in the block formula. */
+export const BLOCK_MIN_LEVEL = 3;
+
+/**
+ * D2 final block %: floor(shieldBlock * (dex - 15) / (clvl * 2)), capped at 75. Levels 1-2 count as 3:
+ * otherwise a fresh hero with the starting shield sat at the 75% cap and Act I barely touched them.
+ */
 export function blockChanceFinal(rawBlock: number, dex: number, clvl: number): number {
   if (rawBlock <= 0) return 0;
-  const v = Math.floor((rawBlock * Math.max(0, dex - 15)) / (Math.max(1, clvl) * 2));
+  const v = Math.floor((rawBlock * Math.max(0, dex - 15)) / (Math.max(BLOCK_MIN_LEVEL, clvl) * 2));
   return Math.max(0, Math.min(MAX_BLOCK, v));
 }
 
