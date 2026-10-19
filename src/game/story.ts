@@ -2,7 +2,7 @@
  * Quest-aware NPC dialogue. Each quest has a giver who briefs the hero on the current step;
  * once the quest is done, its giver (or the NPC it is reported to) thanks the hero exactly once.
  */
-import type { LevelDef, QuestDef } from '@/data/schema';
+import type { LevelDef, LoreDef, QuestDef } from '@/data/schema';
 import type { DefId, EntityId } from '@/core/types';
 import type { StoryHud } from '@/ui/types';
 import type { QuestStateMap } from '@/core/quests/engine';
@@ -20,6 +20,13 @@ export const QUEST_GIVER: Record<DefId, DefId> = {
 function reportsTo(q: QuestDef): DefId | undefined {
   const last = q.steps[q.steps.length - 1];
   return last?.on.event === 'talkTo' ? last.on.npc : undefined;
+}
+
+/** A story line plus its continuation pages (`key.2`, `key.3`, ...) when they exist. */
+function withPages(key: string, has: (key: string) => boolean): string[] {
+  const out = [key];
+  for (let i = 2; has(`${key}.${i}`); i++) out.push(`${key}.${i}`);
+  return out;
 }
 
 export interface StoryTalk {
@@ -41,14 +48,14 @@ export function storyTalk(
     if (!p?.completed || p.debriefed) continue;
     const by = reportsTo(q) ?? QUEST_GIVER[q.id];
     const key = `story.${q.id}.done`;
-    if (by === npc && has(key)) return { lines: [key], debrief: q.id };
+    if (by === npc && has(key)) return { lines: withPages(key, has), debrief: q.id };
   }
   // Then a briefing on the giver's first unfinished quest.
   for (const q of quests) {
     if (QUEST_GIVER[q.id] !== npc || state[q.id]?.completed) continue;
     const step = state[q.id]?.step ?? q.steps[0]?.id;
     const key = `story.${q.id}.${step}`;
-    if (step && has(key)) return { lines: [key] };
+    if (step && has(key)) return { lines: withPages(key, has) };
   }
   return null;
 }
@@ -136,4 +143,16 @@ export function nextHop(from: DefId, to: DefId, levels: readonly LevelDef[]): De
     }
   }
   return null;
+}
+
+/**
+ * Whether a Holocron entry is open. A quest counts as started once it has progress or it is the
+ * first unfinished quest (the one the hero has been briefed on).
+ */
+export function loreUnlocked(def: LoreDef, quests: readonly QuestDef[], state: QuestStateMap): boolean {
+  if (!def.unlock) return true;
+  const { quest, when } = def.unlock;
+  const p = state[quest];
+  if (when === 'done') return !!p?.completed;
+  return !!p || quests.find((q) => !state[q.id]?.completed)?.id === quest;
 }

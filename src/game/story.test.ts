@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DB } from '@/data/db';
 import { hasName } from '@/data/names';
-import { QUEST_GIVER, nextHop, stepLevel, storyHud, storyTalk } from './story';
+import { QUEST_GIVER, loreUnlocked, nextHop, stepLevel, storyHud, storyTalk } from './story';
+import type { QuestStateMap } from '@/core/quests/engine';
 
 const quests = [...DB.quests.values()].filter((q) => q.act === 1);
 
@@ -19,7 +20,7 @@ describe('story dialogue', () => {
   });
 
   it('a giver briefs the current step of their first unfinished quest', () => {
-    expect(storyTalk('medicAkarra', quests, {})?.lines).toEqual(['story.a1q1.enter']);
+    expect(storyTalk('medicAkarra', quests, {})?.lines).toEqual(['story.a1q1.enter', 'story.a1q1.enter.2']);
     const state = { a1q1: { step: 'clear', completed: false, rewardClaimed: false } };
     expect(storyTalk('medicAkarra', quests, state)?.lines).toEqual(['story.a1q1.clear']);
   });
@@ -29,9 +30,12 @@ describe('story dialogue', () => {
       a1q1: { step: '', completed: true, rewardClaimed: true },
     } as Record<string, { step: string; completed: boolean; rewardClaimed: boolean; debriefed?: boolean }>;
     const thanks = storyTalk('medicAkarra', quests, state);
-    expect(thanks).toEqual({ lines: ['story.a1q1.done'], debrief: 'a1q1' });
+    expect(thanks).toEqual({ lines: ['story.a1q1.done', 'story.a1q1.done.2'], debrief: 'a1q1' });
     state.a1q1!.debriefed = true;
-    expect(storyTalk('medicAkarra', quests, state)?.lines).toEqual(['story.a1q3.enter']);
+    expect(storyTalk('medicAkarra', quests, state)?.lines).toEqual([
+      'story.a1q3.enter',
+      'story.a1q3.enter.2',
+    ]);
   });
 
   it('the rescued master thanks the hero; NPCs with no quest use their banter', () => {
@@ -93,5 +97,40 @@ describe('story dialogue', () => {
       questKey: 'quest.actComplete',
       stepKey: 'story.actDone.step',
     });
+  });
+});
+
+describe('Holocron unlocks', () => {
+  const quests = [...DB.quests.values()].filter((q) => q.act === 1);
+  const lore = [...DB.lore.values()];
+  const open = (state: QuestStateMap) => lore.filter((l) => loreUnlocked(l, quests, state)).map((l) => l.id);
+
+  it('starts with the backstory and the first quest entry', () => {
+    const ids = open({});
+    expect(ids).toContain('kyburHeart');
+    expect(ids).toContain('tuskins');
+    expect(ids).not.toContain('jawwas');
+    expect(ids).not.toContain('blackBox');
+  });
+
+  it('opens entries as quests start and finish', () => {
+    const done = { step: 'done', completed: true, rewardClaimed: true };
+    const ids = open({ a1q1: done, a1q2: done });
+    expect(ids).toContain('jawwas');
+    expect(ids).toContain('blackBox');
+    expect(ids).toContain('yoduh');
+    expect(ids).not.toContain('theError');
+  });
+
+  it('every entry and NPC topic has text', () => {
+    for (const l of lore) {
+      expect(hasName(l.title), l.title).toBe(true);
+      expect(hasName(l.text), l.text).toBe(true);
+    }
+    for (const n of DB.npcs.values())
+      for (const tp of n.topics ?? []) {
+        expect(hasName(tp.label), tp.label).toBe(true);
+        for (const k of tp.lines) expect(hasName(k), k).toBe(true);
+      }
   });
 });

@@ -49,6 +49,7 @@ export function App({ game }: { game: Game }): JSX.Element {
       dialogue: () => game.dialogueView(),
       vendor: () => game.vendorView(),
       quests: () => game.questView(),
+      lore: () => game.loreView(),
       stash: () => game.stashView(),
     }),
     [game],

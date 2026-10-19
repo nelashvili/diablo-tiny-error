@@ -3,7 +3,8 @@
  * frame loop. Level travel (exits, waypoints, recall, respawn) is queued and applied between ticks.
  */
 import { DB } from '@/data/db';
-import { storyHud, storyTalk } from './story';
+import { loreUnlocked, storyHud, storyTalk } from './story';
+import { t } from '@/data/names';
 import type { ClassId, DefId, Vec2 } from '@/core/types';
 import { SimWorld, type SimSystem } from '@/core/sim/world';
 import { FixedLoop } from '@/core/sim/loop';
@@ -39,7 +40,7 @@ import { QuestTracker } from './quests';
 import { isVendor, repairCost } from '@/core/player/vendor';
 import { STASH_GRID } from '@/core/player/inventory';
 import { emptyGrid } from '@/core/items/grid';
-import type { QuestLogView, StashView, VendorView } from '@/ui/panels/services';
+import type { LoreView, QuestLogView, StashView, VendorView } from '@/ui/panels/services';
 import type { DialogueView, WaypointView } from '@/ui/panels/services';
 import type { ActId } from '@/core/types';
 
@@ -179,6 +180,21 @@ export class Game {
     return this.quests.view((this.levels.current?.act ?? 1) as ActId);
   }
 
+  loreView(): LoreView {
+    const act = this.levels.current?.act ?? 1;
+    const quests = this.quests.activeQuests();
+    return {
+      entries: [...DB.lore.values()]
+        .filter((l) => l.act === act)
+        .map((l) => ({
+          id: l.id,
+          titleKey: l.title,
+          textKey: l.text,
+          unlocked: loreUnlocked(l, quests, this.quests.state),
+        })),
+    };
+  }
+
   // ------------------------------------------------------------------ start / save
 
   async listCharacters() {
@@ -204,6 +220,7 @@ export class Game {
 
   private resetWorld(): void {
     const w = this.world;
+    this.loreOpen = null;
     w.entities.clear();
     w.localPlayerId = null;
     w.level = null;
@@ -443,9 +460,26 @@ export class Game {
   private storyKey = '';
 
   /** Refresh the HUD's objective line and turn-in markers (only when they change). */
+  /** Holocron entries already open (null until the first check after loading a hero). */
+  private loreOpen: Set<string> | null = null;
+
+  /** Announce Holocron entries that the story just unlocked. */
+  private checkLore(): void {
+    const quests = this.quests.activeQuests();
+    const open = [...DB.lore.values()].filter((l) => loreUnlocked(l, quests, this.quests.state));
+    const first = this.loreOpen === null;
+    const seen = (this.loreOpen ??= new Set());
+    for (const l of open) {
+      if (seen.has(l.id)) continue;
+      seen.add(l.id);
+      if (!first) this.world.emit({ type: 'toast', textKey: 'ui.lore.new', params: { title: t(l.title) } });
+    }
+  }
+
   private updateStoryHud(): void {
     const sig = this.ui.api.store.story;
     if (!sig) return;
+    this.checkLore();
     const npcs: { id: number; defId: string }[] = [];
     let hostilesLeft = 0;
     for (const e of this.world.entities.values()) {
@@ -640,6 +674,7 @@ export class Game {
         nameKey: def?.name ?? npc.defId,
         lines: story?.lines ?? def?.dialogue ?? [e.lineKey],
         options: isVendor(npc) ? [{ id: 'trade', labelKey: 'ui.dlg.trade' }] : [],
+        topics: def?.topics?.map((tp) => ({ labelKey: tp.label, lines: tp.lines })) ?? [],
       };
       this.ui.api.store.interactNpc.value = npc.id;
       openPanel(this.ui.api, 'dialogue');

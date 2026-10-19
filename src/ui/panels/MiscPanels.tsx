@@ -1,5 +1,5 @@
 /** Stash, vendor, workshop (cube), waypoints, quests, dialogue, hireling, options and game menu. */
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { PlayerEntity } from '../../core/sim/entities';
 import type { ActId } from '../../core/types';
@@ -8,7 +8,8 @@ import { EquipSlotView, ItemGrid, PanelFrame, Tabs, Creditz } from './common';
 import { useCtl } from './ctl';
 import { Icon } from './icons';
 import { OptionsForm } from './OptionsForm';
-import { usePanelEnv, type QuestState } from './services';
+import { usePanelEnv, type LoreView, type QuestState } from './services';
+import type { JSX } from 'preact';
 
 type P = { api: UiApi; player: PlayerEntity; onClose?: () => void };
 
@@ -157,6 +158,69 @@ const QUEST_ICON: Record<QuestState, string> = {
 
 export function QuestPanel({ onClose }: { onClose?: () => void }) {
   const { data } = usePanelEnv();
+  const [view, setView] = useState<'quests' | 'lore'>('quests');
+  const lore = data.lore?.() ?? null;
+  const switcher = lore && (
+    <Tabs
+      class="dte-quest-view"
+      value={view}
+      onChange={setView}
+      tabs={[
+        { id: 'quests', label: t('ui.lore.quests') },
+        { id: 'lore', label: t('ui.lore.tab'), badge: lore.entries.filter((e) => e.unlocked).length },
+      ]}
+    />
+  );
+  if (view === 'lore' && lore)
+    return (
+      <PanelFrame id="quests" title={t('ui.lore.tab')} onClose={onClose}>
+        {switcher}
+        <Holocron lore={lore} />
+      </PanelFrame>
+    );
+  return <QuestLog onClose={onClose} switcher={switcher} />;
+}
+
+/** Holocron: a list of backstory entries; locked ones show as ???. */
+function Holocron({ lore }: { lore: LoreView }) {
+  const [sel, setSel] = useState<string | null>(null);
+  const open = lore.entries.filter((e) => e.unlocked);
+  const cur = lore.entries.find((e) => e.id === sel && e.unlocked) ?? open[open.length - 1] ?? null;
+  return (
+    <div class="dte-lore">
+      <div class="dte-lore-list">
+        {lore.entries.map((e) => (
+          <button
+            key={e.id}
+            class={`dte-lore-item ${e.unlocked ? '' : 'locked'} ${cur?.id === e.id ? 'sel' : ''}`}
+            disabled={!e.unlocked}
+            onClick={() => setSel(e.id)}
+          >
+            {e.unlocked ? t(e.titleKey) : t('ui.lore.locked')}
+          </button>
+        ))}
+      </div>
+      <div class="dte-lore-text">
+        {cur ? (
+          <>
+            <h3>{t(cur.titleKey)}</h3>
+            {t(cur.textKey)
+              .split('\n\n')
+              .map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+          </>
+        ) : (
+          <p class="dte-dim">{t('ui.lore.pick')}</p>
+        )}
+        {lore.entries.some((e) => !e.unlocked) && <p class="dte-dim">{t('ui.lore.lockedHint')}</p>}
+      </div>
+    </div>
+  );
+}
+
+function QuestLog({ onClose, switcher }: { onClose?: () => void; switcher: JSX.Element | null }) {
+  const { data } = usePanelEnv();
   const ql = data.quests?.() ?? null;
   const [act, setAct] = useState<ActId | null>(null);
   const [sel, setSel] = useState<string | null>(null);
@@ -166,6 +230,7 @@ export function QuestPanel({ onClose }: { onClose?: () => void }) {
   const selected = quests.find((q) => q.id === sel) ?? quests.find((q) => q.state === 'active') ?? null;
   return (
     <PanelFrame id="quests" title={t('ui.panel.quests')} onClose={onClose}>
+      {switcher}
       {!ql ? (
         <div class="dte-empty">{t('ui.quest.none')}</div>
       ) : (
@@ -220,9 +285,17 @@ export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => vo
   const { data } = usePanelEnv();
   const dlg = data.dialogue?.() ?? null;
   const [page, setPage] = useState(0);
+  const [topic, setTopic] = useState<number | null>(null);
+  // A new conversation starts from its first line.
+  const convo = dlg ? `${dlg.npcId}:${dlg.lines.join()}` : '';
+  useEffect(() => {
+    setPage(0);
+    setTopic(null);
+  }, [convo]);
   if (!dlg) return null;
   const name = t(dlg.nameKey);
-  const last = page >= dlg.lines.length - 1;
+  const lines = (topic !== null ? dlg.topics?.[topic]?.lines : undefined) ?? dlg.lines;
+  const last = page >= lines.length - 1;
   return (
     <PanelFrame id="dialogue" title={name} onClose={onClose} class="dte-dialogue">
       <div class="dte-dlg">
@@ -230,11 +303,36 @@ export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => vo
           {dlg.portrait ? <img src={dlg.portrait} alt="" /> : <span>{name.charAt(0)}</span>}
         </div>
         <div class="dte-dlg-main">
-          <p class="dte-dlg-line">{t(dlg.lines[Math.min(page, dlg.lines.length - 1)] ?? '')}</p>
+          <p class="dte-dlg-line">{t(lines[Math.min(page, lines.length - 1)] ?? '')}</p>
           <div class="dte-dlg-opts">
             {!last && (
               <button class="dte-btn primary" onClick={() => setPage(page + 1)}>
                 {t('ui.dlg.next')} ›
+              </button>
+            )}
+            {last &&
+              topic === null &&
+              dlg.topics?.map((tp, i) => (
+                <button
+                  key={tp.labelKey}
+                  class="dte-btn dte-dlg-topic"
+                  onClick={() => {
+                    setTopic(i);
+                    setPage(0);
+                  }}
+                >
+                  {t(tp.labelKey)}
+                </button>
+              ))}
+            {last && topic !== null && (
+              <button
+                class="dte-btn"
+                onClick={() => {
+                  setTopic(null);
+                  setPage(0);
+                }}
+              >
+                ‹ {t('ui.dlg.back')}
               </button>
             )}
             {last &&

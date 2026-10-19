@@ -68,4 +68,32 @@ export default {
   'story.a1q5.boss': "He's down there. Count Dooky. Watch out for the red saber, and for his terrible puns.",
   'story.a1q5.done':
     'Dooky is finished and Endoor can breathe again. But Yoduh says The Error has already moved on, toward a desert world. Rest up, hero. That was only the first act.',
+
+  // Continuation pages (`.2`) shown after the first line.
+  'story.a1q1.enter.2':
+    "Careful out there. Tuskins don't belong on Endoor, which makes them twice as grumpy as usual. And they were already very grumpy.",
+  'story.a1q1.done.2':
+    "Between us, I don't think they came here on purpose. Something dragged them across the galaxy. I'd like to know what. Check the Holocron when you have a moment; I've been keeping notes.",
+  'story.a1q2.enter.2':
+    'If anything on that ship still works, the Jawwas will sell it by sundown. Ship logs especially. I want that black box.',
+  'story.a1q2.boss.2':
+    'He leads from the back, surrounded by scrap droyds. Clear the droyds and he runs out of friends fast.',
+  'story.a1q2.done.2':
+    "Wait. I know that registry. That's a Yedi courier. Kip Typo's courier. The Padawon who went down to the Heart. Whatever happened in that temple, Kip ran from it.",
+  'story.a1q3.enter.2':
+    "Yoduh is the only one who really understands that crystal. Without him, we're poking a bomb with a stick. Bring him back.",
+  'story.a1q3.boss.2':
+    'The Ewokz say Grizzwald used to forge parts for their village. Then one night he woke up rusty and angry, and started forging cages instead.',
+  'story.a1q3.done.2':
+    'Blamed young Kip, Dooky has. Wrong, he is. One mistake, everyone makes. Feed on blame, The Error does. Hmm. Much to do, we have.',
+  'story.a1q4.enter.2':
+    'Whisper to the stars, the Syth do, through that tower. Know our every move, they will, while it stands.',
+  'story.a1q4.done.2':
+    "Found a message, did you? 'Tell the Desert.' Hmm. Tatoonie, they mean. Worry about that later, we will. First, the Count.",
+  'story.a1q5.temple.2':
+    "Yoduh says Dooky was a Yedi once. Kip's own teacher. Don't let that make you go easy on him.",
+  'story.a1q5.undercroft.2':
+    "The deeper you go, the closer you get to the Heart. If the air starts spelling things wrong, you're on the right track.",
+  'story.a1q5.done.2':
+    "And Kip? If that kid is still out there, we're going to find them. Everybody gets one mistake. That's in the Allowance charter. Page one.",
 } satisfies Record<string, string>;

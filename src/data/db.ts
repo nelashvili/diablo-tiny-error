@@ -11,6 +11,7 @@ import type {
   GemDef,
   ItemBaseDef,
   LevelDef,
+  LoreDef,
   MercDef,
   MissileDef,
   MonsterDef,
@@ -61,6 +62,7 @@ export const DB = {
   npcs: table<NpcDef>('npc', import.meta.glob(['./npcs/*.ts', '!**/*.test.ts'], { eager: true })),
   quests: table<QuestDef>('quest', import.meta.glob(['./quests/*.ts', '!**/*.test.ts'], { eager: true })),
   mercs: table<MercDef>('merc', import.meta.glob(['./mercs/*.ts', '!**/*.test.ts'], { eager: true })),
+  lore: table<LoreDef>('lore', import.meta.glob(['./lore/*.ts', '!**/*.test.ts'], { eager: true })),
   vfx: table<VfxDef>('vfx', import.meta.glob(['./vfx/*.ts', '!**/*.test.ts'], { eager: true })),
 };
 

@@ -379,6 +379,19 @@ export interface NpcDef {
   roles: ('vendor' | 'smith' | 'healer' | 'respec' | 'mercs' | 'quest' | 'gamble' | 'stash' | 'waypoint')[];
   vendorTable?: DefId;
   dialogue: NameKey[];
+  /** "Ask about..." conversation topics: a button label and the lines the NPC answers with. */
+  topics?: { label: NameKey; lines: NameKey[] }[];
+}
+
+/** A Holocron (lore) entry: backstory the hero can read, unlocked by story progress. */
+export interface LoreDef {
+  id: DefId;
+  act: ActId;
+  title: NameKey;
+  /** Body text; paragraphs separated by a blank line. */
+  text: NameKey;
+  /** Opens when this quest starts or is finished; open from the start without it. */
+  unlock?: { quest: DefId; when: 'started' | 'done' };
 }
 
 export interface QuestDef {

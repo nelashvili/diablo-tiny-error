@@ -1739,3 +1739,70 @@
     transition: none !important;
   }
 }
+
+/* Quest log / Holocron switch and the Holocron reader. */
+.dte-quest-view {
+  margin-bottom: 10px;
+}
+.dte-lore {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr;
+  gap: 10px;
+  min-height: 260px;
+}
+.dte-lore-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.dte-lore-item {
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.dte-lore-item.sel {
+  border-color: var(--ui-border-hi);
+  color: var(--ui-border-hi);
+}
+.dte-lore-item.locked {
+  opacity: 0.45;
+  cursor: default;
+  font-style: italic;
+}
+.dte-lore-text {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.dte-lore-text h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-title);
+  font-size: 1em;
+  color: var(--ui-border-hi);
+}
+.dte-lore-text p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.dte-dlg-topic {
+  font-style: italic;
+}
+@media (max-width: 560px) {
+  .dte-lore {
+    grid-template-columns: 1fr;
+  }
+  .dte-lore-list {
+    max-height: 22vh;
+  }
+}

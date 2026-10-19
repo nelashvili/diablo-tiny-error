@@ -94,6 +94,13 @@ export interface DialogueView {
   portrait?: string;
   lines: string[];
   options: { id: string; labelKey: string }[];
+  /** "Ask about..." topics: a button label and the lines answered with. */
+  topics?: { labelKey: string; lines: string[] }[];
+}
+
+/** Holocron (lore) entries of the current act, in reading order. */
+export interface LoreView {
+  entries: { id: DefId; titleKey: string; textKey: string; unlocked: boolean }[];
 }
 
 export interface MercView {
@@ -116,6 +123,7 @@ export interface PanelDataSource {
   vendor?(): VendorView | null;
   waypoints?(): WaypointView | null;
   quests?(): QuestLogView | null;
+  lore?(): LoreView | null;
   dialogue?(): DialogueView | null;
   merc?(): MercView | null;
 }
