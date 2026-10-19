@@ -96,6 +96,7 @@ export function mixLight(a: EnvLightDef, b: EnvLightDef, t: number, out: EnvLigh
   out.playerLight = mixHex(a.playerLight, b.playerLight, t);
   out.playerLightI = lerp(a.playerLightI, b.playerLightI, t);
   out.mapLights = lerp(a.mapLights ?? 1, b.mapLights ?? 1, t);
+  out.mist = lerp(a.mist ?? 0, b.mist ?? 0, t);
   // Clear air blends as fog of the other side's color pushed out past the screen.
   const fa = a.fog ?? b.fog;
   const fb = b.fog ?? a.fog;

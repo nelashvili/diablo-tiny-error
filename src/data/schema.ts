@@ -394,6 +394,8 @@ export interface EnvLightDef {
    * Night and mist shrink it; it never fully hides the world (render/scene/fog FOG_MAX).
    */
   fog?: { color: number; near: number; far: number };
+  /** Low ground mist drifting around ankles, 0..1 (default none). */
+  mist?: number;
 }
 
 /** Visual weather (render/scene/weather). Storm = heavy rain with lightning. */

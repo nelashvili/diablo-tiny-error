@@ -25,6 +25,7 @@ const FOREST_DAWN: EnvLightDef = {
   mapLights: 1.3,
   // Morning mist.
   fog: { color: 0xb8b0b8, near: 9, far: 28 },
+  mist: 0.6,
 };
 const FOREST_DUSK: EnvLightDef = {
   sky: 0xc8b8b0,
@@ -37,6 +38,7 @@ const FOREST_DUSK: EnvLightDef = {
   playerLightI: 11,
   mapLights: 1.5,
   fog: { color: 0x584440, near: 13, far: 32 },
+  mist: 0.2,
 };
 // Night stays readable: a bright blue moon, a stronger hero light and brighter torches.
 const FOREST_NIGHT: EnvLightDef = {
@@ -51,6 +53,7 @@ const FOREST_NIGHT: EnvLightDef = {
   mapLights: 1.9,
   // The dark closes in around the hero (D2's light radius).
   fog: { color: 0x0a1424, near: 8, far: 22 },
+  mist: 0.3,
 };
 
 const forest = (
@@ -100,7 +103,14 @@ const envs: EnvDef[] = [
       { kind: 'storm', weight: 1 },
     ],
     grade: 'mist',
-    day: { ...FOREST_DAY, sky: 0xc8e8d8, hemi: 1.05, sunI: 1.9, fog: { color: 0xa8c8b8, near: 11, far: 30 } },
+    day: {
+      ...FOREST_DAY,
+      sky: 0xc8e8d8,
+      hemi: 1.05,
+      sunI: 1.9,
+      fog: { color: 0xa8c8b8, near: 11, far: 30 },
+      mist: 0.4,
+    },
     cycle: forest(),
   },
   {
@@ -154,10 +164,11 @@ const envs: EnvDef[] = [
       sunI: 1.6,
       bg: 0x060c08,
       fog: { color: 0x1c2c22, near: 10, far: 26 },
+      mist: 0.35,
     },
     cycle: forest(
-      { hemi: 0.8, sunI: 1.3 },
-      { hemi: 0.85, sunI: 0.9, fog: { color: 0x08100c, near: 7, far: 20 } },
+      { hemi: 0.8, sunI: 1.3, mist: 0.6 },
+      { hemi: 0.85, sunI: 0.9, fog: { color: 0x08100c, near: 7, far: 20 }, mist: 0.5 },
     ),
   },
   {
@@ -175,10 +186,11 @@ const envs: EnvDef[] = [
       hemi: 1.1,
       sunI: 1.6,
       fog: { color: 0xa0b8b0, near: 6, far: 22 },
+      mist: 0.9,
     },
     cycle: forest(
-      { hemi: 1.0, fog: { color: 0x9aa8a8, near: 6, far: 22 } },
-      { sky: 0x6a90a8, hemi: 0.95, fog: { color: 0x1a2a34, near: 6, far: 20 } },
+      { hemi: 1.0, fog: { color: 0x9aa8a8, near: 6, far: 22 }, mist: 1 },
+      { sky: 0x6a90a8, hemi: 0.95, fog: { color: 0x1a2a34, near: 6, far: 20 }, mist: 0.9 },
     ),
   },
   {
@@ -204,6 +216,8 @@ const envs: EnvDef[] = [
       sunI: 1.2,
       playerLightI: 11,
       fog: { color: 0x05060c, near: 8, far: 23 },
+      // Cold air pooled on the crypt floor.
+      mist: 0.22,
     },
   },
 ];

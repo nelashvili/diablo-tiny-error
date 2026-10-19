@@ -19,6 +19,7 @@ import { SceneLighting, SUN_DIR, presetFor } from './scene/lighting';
 import { EnvironmentClock, keyLightDir, parseTimeParam } from './scene/environment';
 import { NO_FOG, installWorldFog } from './scene/fog';
 import { WeatherFx } from './scene/weather';
+import { GroundMist } from './scene/mist';
 import {
   WETTING,
   applyWeather,
@@ -120,6 +121,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const keyDir = new THREE.Vector3();
   let clock = 0;
   const weather = new WeatherFx();
+  const mist = new GroundMist();
+  const mistColor = new THREE.Color();
+  const mistTint = new THREE.Color();
   const weatherState: WeatherState = { kind: 'clear', intensity: 0, flash: 0 };
   let pinnedWeather: WeatherKind | null = null;
   let weatherOn = true;
@@ -128,7 +132,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const entityRoot = new THREE.Group();
   entityRoot.name = 'entities';
   const sync = new EntitySync(entityRoot, visuals, vfx);
-  scene.add(lighting.group, entityRoot, vfx.root, weather.group);
+  scene.add(lighting.group, entityRoot, vfx.root, weather.group, mist.group);
 
   let gl: THREE.WebGLRenderer | null = null;
   let post: PostFx | null = null;
@@ -239,6 +243,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     if (!fr) {
       weather.update(weatherAt(null, clock, null, weatherState), 0, 0, clock);
       GROUND_WETNESS.value = 0;
+      mist.update(0, 0, 0, 0, clock);
       return false;
     }
     weatherAt(weatherOn ? env.def : null, clock, pinnedWeather, weatherState);
@@ -254,6 +259,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     (scene.background as THREE.Color).setHex(fr.light.bg);
     const f = fr.light.fog;
     fog.color.setHex(f?.color ?? fr.light.bg);
+    // Mist: the fog's color lifted a little toward the sky, so it reads as lit vapor.
+    mistColor.setHex(f?.color ?? fr.light.bg).lerp(mistTint.setHex(fr.light.sky), 0.3);
+    mist.update(fr.light.mist ?? 0, mistColor.getHex(), iso.target.x, iso.target.z, clock);
     fog.near = f?.near ?? NO_FOG.near;
     fog.far = f?.far ?? NO_FOG.far;
     post?.setGradeParams(fr.grade);
@@ -409,6 +417,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       post?.setQuality(q);
       vfx.setQuality(q);
       weather.setQuality(q);
+      mist.setQuality(q);
     },
 
     setScreenShake(enabled) {
@@ -459,6 +468,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       vfx.dispose();
       lighting.dispose();
       weather.dispose();
+      mist.dispose();
       post?.dispose();
       post = null;
       gl?.dispose();

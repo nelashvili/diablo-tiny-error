@@ -106,6 +106,20 @@ describe('EnvironmentClock', () => {
     expect(mid.far).toBeGreaterThan(night.far);
   });
 
+  it('ground mist thickens at dawn and blends between phases', () => {
+    const c = new EnvironmentClock();
+    c.setEnv(outdoor, null);
+    c.pinned = 0.3;
+    const day = c.eval(0)!.light.mist!;
+    c.pinned = 0.02;
+    const dawn = c.eval(0)!.light.mist!;
+    expect(dawn).toBeGreaterThan(day);
+    c.pinned = 0.05;
+    const mid = c.eval(0)!.light.mist!;
+    expect(mid).toBeLessThan(dawn);
+    expect(mid).toBeGreaterThan(day);
+  });
+
   it('without an EnvDef it defers to the fallback', () => {
     const c = new EnvironmentClock();
     c.setEnv(null, 'endoor.forest');
@@ -120,8 +134,10 @@ describe('environment data', () => {
     }
     for (const e of DB.environments.values()) {
       expect(GRADES[e.grade], e.id).toBeDefined();
-      for (const l of [e.day, ...(e.cycle ? Object.values(e.cycle) : [])])
+      for (const l of [e.day, ...(e.cycle ? Object.values(e.cycle) : [])]) {
         if (l.fog) expect(l.fog.near, e.id).toBeLessThan(l.fog.far);
+        if (l.mist !== undefined) expect(l.mist >= 0 && l.mist <= 1, e.id).toBe(true);
+      }
     }
   });
 
