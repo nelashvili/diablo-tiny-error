@@ -162,6 +162,8 @@ function groundMaterial(
   const m = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: getGradientMap() });
   // Below high quality: one texture sample per layer (no anti-tiling second sample).
   if (quality !== 'high') m.defines = { ...m.defines, GROUND_SIMPLE: '' };
+  // The ground textures are painted already: skip the generic brush strokes.
+  m.defines = { ...m.defines, NO_PAINT: '' };
   m.name = 'Ground';
   const L = set.layers;
   const uniforms = {

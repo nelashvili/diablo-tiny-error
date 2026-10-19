@@ -11,7 +11,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import type { QualityLevel } from '../types';
-import { GRADE_FRAG, GRADE_VERT, SHARPEN_FRAG } from '../shaders/vfx';
+import { GRADE_FRAG, GRADE_VERT, KUWAHARA_FRAG, SHARPEN_FRAG } from '../shaders/vfx';
 import { OutlineRenderPass } from './outlinePass';
 
 export interface PostFx {
@@ -77,6 +77,23 @@ export function createPostFx(
   bloom.setSize = (bw: number, bh: number) => bloomSetSize(bw / bloomDivisor, bh / bloomDivisor);
   composer.addPass(bloom);
 
+  // Painted look: Kuwahara on the lit image (before grading), radius by quality.
+  const makePaint = (r: number) =>
+    new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        uTexel: { value: new THREE.Vector2(1 / (w * dpr), 1 / (h * dpr)) },
+        uMix: { value: 0.75 },
+      },
+      defines: { KUWAHARA_R: r },
+      vertexShader: GRADE_VERT,
+      fragmentShader: KUWAHARA_FRAG,
+    });
+  const paintHigh = makePaint(3);
+  const paintMed = makePaint(2);
+  composer.addPass(paintHigh);
+  composer.addPass(paintMed);
+
   const cur: GradeParams = structuredClone(gradeFor(null));
   let tgt: GradeParams = cur;
   const gradePass = new ShaderPass({
@@ -107,11 +124,10 @@ export function createPostFx(
   });
   sharpen.enabled = false;
   composer.addPass(sharpen);
-  const setTexel = () =>
-    (sharpen.uniforms['uTexel']!.value as THREE.Vector2).set(
-      1 / Math.max(1, w * dpr),
-      1 / Math.max(1, h * dpr),
-    );
+  const setTexel = () => {
+    for (const p of [sharpen, paintHigh, paintMed])
+      (p.uniforms['uTexel']!.value as THREE.Vector2).set(1 / Math.max(1, w * dpr), 1 / Math.max(1, h * dpr));
+  };
 
   function applyUniforms(): void {
     const u = gradePass.uniforms as Record<string, { value: unknown }>;
@@ -128,6 +144,8 @@ export function createPostFx(
     bloomDivisor = quality === 'medium' ? 2 : 1;
     scenePass.samples = quality === 'high' ? 4 : 0;
     smaa.enabled = quality !== 'high';
+    paintHigh.enabled = quality === 'high';
+    paintMed.enabled = quality === 'medium';
     composer.setSize(w, h);
   }
   applyQuality();

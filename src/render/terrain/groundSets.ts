@@ -46,7 +46,7 @@ const SETS: { match: RegExp; set: GroundSet }[] = [
     match: /town/i,
     set: {
       layers: [
-        L('grass', 3, 0xd8e0c0),
+        L('grass', 3, 0x9eaa7e),
         L('cobble', 2.5, 0xd8d0c4),
         L('dirt', 4, 0xe8dcc8),
         L('dirtCracked', 3),
@@ -97,8 +97,8 @@ const SETS: { match: RegExp; set: GroundSet }[] = [
 
 /** Default: Endoor forest (grass fields, dirt paths). */
 const FOREST: GroundSet = {
-  layers: [L('grass', 3, 0xd0dcb8), L('dirt', 4, 0xe0d0b8), L('sand', 4, 0xe8dcc0), L('dirtCracked', 3)],
-  variation: L('grassDark', 5, 0xc0d4a8),
+  layers: [L('grass', 3, 0x9aa87a), L('dirt', 4, 0xe0d0b8), L('sand', 4, 0xe8dcc0), L('dirtCracked', 3)],
+  variation: L('grassDark', 5, 0xc4d4a4),
   kindLayer: OUTDOOR_KINDS,
   water: [0x3f8fb0, 0x14405a],
 };

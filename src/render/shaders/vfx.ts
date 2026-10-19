@@ -158,6 +158,10 @@ void main() {
   vec2 q = vUv - 0.5;
   float v = 1.0 - smoothstep(0.2, 0.85, length(q * vec2(1.0, 0.9)) * 1.25);
   col *= mix(1.0 - uVignette, 1.0, v);
+  // Canvas grain: a faint static weave in screen space, like paint on textured paper.
+  vec2 fc = gl_FragCoord.xy;
+  float weave = sin(fc.x * 1.7) * sin(fc.y * 1.7) * 0.5 + fract(sin(dot(floor(fc * 0.5), vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+  col *= 1.0 + weave * 0.025;
   gl_FragColor = vec4(max(col, 0.0), c.a);
 }
 `;
@@ -180,5 +184,41 @@ void main() {
   vec3 wgt = -amp * mix(0.125, 0.2, uAmount);
   vec3 col = (c.rgb + (n + s + e + w) * wgt) / (1.0 + 4.0 * wgt);
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
+}
+`;
+
+/**
+ * Kuwahara "oil paint" filter: each pixel takes the mean of whichever of its four (R+1)² quadrants is
+ * least varied, so flat areas melt into brush-like patches while edges stay sharp. R comes from a
+ * define (KUWAHARA_R) so the loops unroll; luminance variance picks the quadrant.
+ */
+export const KUWAHARA_FRAG = /* glsl */ `
+uniform sampler2D tDiffuse;
+uniform vec2 uTexel;
+uniform float uMix;
+varying vec2 vUv;
+void main() {
+  vec4 src = texture2D(tDiffuse, vUv);
+  vec3 mean[4];
+  float var[4];
+  for (int q = 0; q < 4; q++) {
+    vec2 dir = vec2(q == 0 || q == 2 ? -1.0 : 1.0, q < 2 ? -1.0 : 1.0);
+    vec3 s = vec3(0.0);
+    vec3 s2 = vec3(0.0);
+    for (int j = 0; j <= KUWAHARA_R; j++)
+      for (int i = 0; i <= KUWAHARA_R; i++) {
+        vec3 c = texture2D(tDiffuse, vUv + dir * vec2(float(i), float(j)) * uTexel).rgb;
+        s += c;
+        s2 += c * c;
+      }
+    float n = float((KUWAHARA_R + 1) * (KUWAHARA_R + 1));
+    mean[q] = s / n;
+    vec3 v = s2 / n - mean[q] * mean[q];
+    var[q] = dot(v, vec3(0.299, 0.587, 0.114));
+  }
+  vec3 best = mean[0];
+  float bv = var[0];
+  for (int q = 1; q < 4; q++) if (var[q] < bv) { bv = var[q]; best = mean[q]; }
+  gl_FragColor = vec4(mix(src.rgb, best, uMix), src.a);
 }
 `;

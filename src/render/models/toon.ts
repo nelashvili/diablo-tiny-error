@@ -22,6 +22,60 @@ export function getGradientMap(): THREE.DataTexture {
 // Rim light: toon materials compiled with the USE_RIM define add a soft cool light along their
 // silhouette (view-facing edges), which separates characters from the ground under the iso camera.
 const toonLib = THREE.ShaderLib['toon']!;
+
+// Painted look: every toon surface (unless NO_PAINT) gets procedural brush strokes in world space,
+// projected along the three axes and blended by the surface normal, so walls, props and bodies read
+// as hand-painted rather than flat-filled. Pure ALU (no texture), stable under camera motion.
+toonLib.vertexShader = toonLib.vertexShader
+  .replace('#include <common>', '#include <common>\nvarying vec3 vPaintP;\nvarying vec3 vPaintN;')
+  .replace(
+    '#include <skinning_vertex>',
+    `#include <skinning_vertex>
+{
+  vec4 pp = vec4( transformed, 1.0 );
+  vec3 pn = objectNormal;
+#ifdef USE_INSTANCING
+  pp = instanceMatrix * pp;
+  pn = mat3( instanceMatrix ) * pn;
+#endif
+  vPaintP = ( modelMatrix * pp ).xyz;
+  vPaintN = normalize( mat3( modelMatrix ) * pn );
+}`,
+  );
+toonLib.fragmentShader = toonLib.fragmentShader
+  .replace(
+    '#include <common>',
+    `#include <common>
+varying vec3 vPaintP;
+varying vec3 vPaintN;
+float paintHash( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+float paintNoise( vec2 p ) {
+  vec2 i = floor( p ); vec2 f = fract( p ); vec2 u = f * f * ( 3.0 - 2.0 * f );
+  return mix( mix( paintHash( i ), paintHash( i + vec2( 1.0, 0.0 ) ), u.x ),
+              mix( paintHash( i + vec2( 0.0, 1.0 ) ), paintHash( i + 1.0 ), u.x ), u.y );
+}
+// Streaky noise: long thin dabs along a slanted stroke direction, two sizes.
+float paintStrokes( vec2 p ) {
+  vec2 q = mat2( 0.8, -0.6, 0.6, 0.8 ) * p;
+  return paintNoise( vec2( q.x * 2.0, q.y * 8.0 ) ) * 0.6 + paintNoise( vec2( q.x * 4.3, q.y * 17.0 ) + 7.3 ) * 0.4;
+}`,
+  )
+  .replace(
+    '#include <alphamap_fragment>',
+    `#ifndef NO_PAINT
+{
+  vec3 bw = pow( abs( normalize( vPaintN ) ), vec3( 4.0 ) );
+  bw /= bw.x + bw.y + bw.z + 1e-5;
+  float st = paintStrokes( vPaintP.zy ) * bw.x + paintStrokes( vPaintP.xz ) * bw.y + paintStrokes( vPaintP.xy ) * bw.z;
+#ifdef USE_RIM
+  diffuseColor.rgb *= 0.94 + 0.12 * st;
+#else
+  diffuseColor.rgb *= 0.86 + 0.28 * st;
+#endif
+}
+#endif
+#include <alphamap_fragment>`,
+  );
 toonLib.fragmentShader = toonLib.fragmentShader.replace(
   '#include <opaque_fragment>',
   `#ifdef USE_RIM
