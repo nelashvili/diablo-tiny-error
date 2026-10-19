@@ -206,6 +206,8 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       gl.toneMappingExposure = 1.0;
       gl.shadowMap.type = THREE.PCFShadowMap;
       gl.shadowMap.autoUpdate = true;
+      // Count every pass of a frame (the composer renders several), reset once per frame in render().
+      gl.info.autoReset = false;
       touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       post = postFactory(gl, scene, iso.camera);
       dpr = window.devicePixelRatio || 1;
@@ -247,6 +249,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
 
     render(view, events, alpha, realDt) {
       if (!gl || !post) return;
+      gl.info.reset();
       const dt = Math.min(Math.max(realDt, 0), 0.1);
       sync.sync(view, alpha, dt, rect);
       const lid = view.localPlayerId;
