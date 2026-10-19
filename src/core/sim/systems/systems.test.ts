@@ -731,3 +731,51 @@ describe('out-of-combat regeneration', () => {
     expect(player.life).toBeGreaterThan(hurt + player.stats.lifeMax * 0.05);
   });
 });
+
+describe('balance rules', () => {
+  const hit = (n: number) => ({
+    outcome: 'hit' as const,
+    damage: { physical: n },
+    total: n,
+    crit: false,
+    crushed: false,
+    effects: [],
+    lifeStolen: 0,
+    manaStolen: 0,
+  });
+
+  it('an attack that misses still counts as combat (no out-of-combat regen mid-fight)', async () => {
+    const { applyAttackResult } = await import('./damage');
+    const { outOfCombat } = await import('./regen');
+    const { world, run, player } = setup();
+    run(Math.ceil(5 * 25));
+    expect(outOfCombat(world, player)).toBe(true);
+    applyAttackResult(world, undefined, player, { ...hit(0), outcome: 'miss', damage: {}, total: 0 });
+    expect(outOfCombat(world, player)).toBe(false);
+  });
+
+  it('bosses are chilled, not frozen', () => {
+    const { world } = setup();
+    const boss = spawnTestMonster(world, { pos: { x: 20, y: 20 }, life: 500, rank: 'boss' });
+    expect(applyEffect(world, boss, { kind: 'freeze', durationSec: 2 })).toBe(true);
+    expect(boss.effects.some((e) => e.spec.kind === 'freeze')).toBe(false);
+    expect(boss.effects.some((e) => e.spec.kind === 'chill')).toBe(true);
+    expect(boss.mode).not.toBe('frozen');
+  });
+
+  it('a flinched hero keeps their footing for a moment (no stun-lock)', async () => {
+    const { applyAttackResult, HERO_POISE_SEC } = await import('./damage');
+    const { world, run, player } = setup();
+    player.life = player.stats.lifeMax;
+    const big = Math.ceil(player.stats.lifeMax / 10);
+    applyAttackResult(world, undefined, player, hit(big));
+    expect(player.mode).toBe('hit');
+    run(15); // recovered
+    expect(player.mode).not.toBe('hit');
+    applyAttackResult(world, undefined, player, hit(big));
+    expect(player.mode).not.toBe('hit');
+    run(Math.ceil(HERO_POISE_SEC * 25) + 5);
+    applyAttackResult(world, undefined, player, hit(big));
+    expect(player.mode).toBe('hit');
+  });
+});

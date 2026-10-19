@@ -37,6 +37,14 @@ export function healActor(world: SimWorld, a: Actor, amount: number): number {
   return got;
 }
 
+/**
+ * After a flinch, heroes and mercs keep their footing this long: hits still land, but a fast or
+ * hard-hitting enemy (Count Dooky) can't chain flinches into a stun-lock that cancels every swing.
+ */
+export const HERO_POISE_SEC = 0.8;
+const poiseUntil = new WeakMap<Actor, number>();
+const poised = (world: SimWorld, a: Actor): boolean => (poiseUntil.get(a) ?? -1) > world.time;
+
 function enterRecovery(a: Actor, kind: 'hit' | 'block'): void {
   if (a.mode === 'stunned' || a.mode === 'frozen' || a.mode === 'dying' || a.mode === 'dead') return;
   cancelAction(a);
@@ -177,7 +185,11 @@ export function applyAttackResult(
   // Hit recovery: D2 triggers when a hit takes >= 1/12 of max life; bosses never flinch.
   if (defender.life > 0 && !monsterIsBoss(defender)) {
     const threshold = defender.stats.lifeMax / 12;
-    if (dealt >= threshold && lifeBefore > 0) enterRecovery(defender, 'hit');
+    if (dealt >= threshold && lifeBefore > 0 && !poised(world, defender)) {
+      enterRecovery(defender, 'hit');
+      if (defender.kind === 'player' || defender.kind === 'merc')
+        poiseUntil.set(defender, world.time + recoveryDuration(defender) + HERO_POISE_SEC);
+    }
   }
   return dealt;
 }

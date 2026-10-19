@@ -33,6 +33,8 @@ export interface Build {
   /** Buffs/warcries to keep up (cast when missing). */
   buffs?: string[];
   shield?: boolean;
+  /** Ranged: step away from foes that get close (players kite, imperfectly). */
+  kite?: boolean;
 }
 
 export interface Gear {
@@ -41,7 +43,12 @@ export interface Gear {
 
 const SLOTS: EquipSlot[] = ['head', 'body', 'gloves', 'boots', 'belt'] as EquipSlot[];
 
-function bestBase(pred: (b: ItemBaseDef) => boolean, lvl: number, p: PlayerEntity): ItemBaseDef | undefined {
+function bestBase(
+  pred: (b: ItemBaseDef) => boolean,
+  lvl: number,
+  p: PlayerEntity,
+  score: (b: ItemBaseDef) => number = (b) => b.qlvl,
+): ItemBaseDef | undefined {
   const s = p.stats;
   const ok = [...DB.items.values()].filter(
     (b) =>
@@ -51,7 +58,7 @@ function bestBase(pred: (b: ItemBaseDef) => boolean, lvl: number, p: PlayerEntit
       (b.req.dexterity ?? 0) <= s.dexterity &&
       (b.req.level ?? 0) <= lvl,
   );
-  ok.sort((a, b) => b.qlvl - a.qlvl);
+  ok.sort((a, b) => score(b) - score(a));
   return ok[0];
 }
 
@@ -85,7 +92,13 @@ export function makeHero(world: SimWorld, b: Build, level: number, gear: Gear, s
   recomputeStats(p, world.difficulty);
   const rng = new Rng(seed);
   const q = gear.quality;
-  const w = bestBase((x) => !!x.weaponClass && b.weapon.includes(x.weaponClass), level, p);
+  const w = bestBase(
+    (x) => !!x.weaponClass && b.weapon.includes(x.weaponClass),
+    level,
+    p,
+    // Players wield the hardest hitter they can.
+    (x) => (((x.damage?.min ?? 0) + (x.damage?.max ?? 0)) / 2) * (x.speed ?? 1),
+  );
   if (w) p.equipment.mainHand = createItem(w.id, { ilvl: level, quality: q }, rng);
   for (const slot of SLOTS) {
     const a = bestBase(
@@ -220,6 +233,8 @@ export function fight(
   });
   const rng = new Rng(world.tick + 17);
   const lastCast = new Map<string, number>();
+  let kiteUntil = 0;
+  let nextKite = 0;
   let t = 0;
   for (; t < maxTicks; t++) {
     const alive = foes.filter((f) => f.alive);
@@ -249,6 +264,26 @@ export function fight(
           bd = d;
           tgt = f;
         }
+      }
+      if (t < kiteUntil) {
+        loop.step();
+        world.drainFrameEvents();
+        continue;
+      }
+      if (b.kite && bd < 2.5 && t >= nextKite) {
+        const dx = p.pos.x - tgt.pos.x;
+        const dy = p.pos.y - tgt.pos.y;
+        const l = Math.hypot(dx, dy) || 1;
+        const c = (v: number) => Math.max(3, Math.min(57, v));
+        world.commands.push({
+          type: 'moveTo',
+          pos: { x: c(p.pos.x + (dx / l) * 4), y: c(p.pos.y + (dy / l) * 4) },
+        });
+        kiteUntil = t + 18;
+        nextKite = t + 18 + TICK * 1.5;
+        loop.step();
+        world.drainFrameEvents();
+        continue;
       }
       const buff = (b.buffs ?? []).find((id) => {
         if ((p.skills[id] ?? 0) <= 0 || getSkillBlockReason(world, p, id) === 'mana') return false;

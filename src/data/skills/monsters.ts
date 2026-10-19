@@ -104,7 +104,7 @@ export default [
     damage: { storm: { min: 2, max: 6 } },
     element: 'storm',
     missile: 'm_stormBolt',
-    cooldownSec: 1.2,
+    cooldownSec: 1.5,
   }),
   mk({
     id: 'm_nightBolt',
@@ -112,10 +112,11 @@ export default [
     d2Analog: 'Dark Shaman Bolt',
     anim: 'cast',
     vfx: 'vfx.cast.plasma',
-    damage: { plasma: { min: 4, max: 9 } },
+    // Bolts never miss (no attack roll), so they hit softer and less often than a swing.
+    damage: { plasma: { min: 3, max: 7 } },
     element: 'plasma',
     missile: 'm_darkBolt',
-    cooldownSec: 1.6,
+    cooldownSec: 2,
   }),
   mk({
     id: 'm_dookyNova',

@@ -13,6 +13,7 @@ export const BUILDS: Build[] = [
   },
   {
     name: 'huntur.blastur',
+    kite: true,
     classId: 'bountyHuntur',
     stats: [1, 2, 2, 0],
     weapon: ['blasturPistol', 'blasturRifle'],
@@ -29,6 +30,7 @@ export const BUILDS: Build[] = [
   },
   {
     name: 'adept.plasma',
+    kite: true,
     classId: 'forseAdept',
     stats: [0, 0, 3, 2],
     weapon: ['forseStaff'],
@@ -38,6 +40,7 @@ export const BUILDS: Build[] = [
   },
   {
     name: 'adept.storm',
+    kite: true,
     classId: 'forseAdept',
     stats: [0, 0, 3, 2],
     weapon: ['forseStaff'],
@@ -47,6 +50,7 @@ export const BUILDS: Build[] = [
   },
   {
     name: 'adept.cryo',
+    kite: true,
     classId: 'forseAdept',
     stats: [0, 0, 3, 2],
     weapon: ['forseStaff'],

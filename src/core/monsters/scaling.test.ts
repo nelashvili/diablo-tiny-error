@@ -45,3 +45,12 @@ describe('monster level scaling', () => {
     }
   });
 });
+
+describe('rankMultFor', () => {
+  it('scales a boss on an ordinary model as a superunique, above a unique', async () => {
+    const { rankMultFor, RANK_MULT } = await import('./scaling');
+    expect(rankMultFor({ flags: {} }, 'boss')).toBe(RANK_MULT.superunique);
+    expect(rankMultFor({ flags: { boss: true } }, 'boss')).toBe(RANK_MULT.boss);
+    expect(RANK_MULT.superunique.life).toBeGreaterThan(RANK_MULT.unique.life);
+  });
+});
