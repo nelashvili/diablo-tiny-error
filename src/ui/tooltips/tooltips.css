@@ -105,6 +105,10 @@
 .dte-tip-line.s-base {
   color: var(--ui-text);
 }
+.dte-tip-line.s-dps {
+  color: var(--q-unique, #e8c06a);
+  font-weight: 700;
+}
 .dte-tip-line.s-mod {
   color: var(--q-magic);
 }

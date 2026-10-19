@@ -101,10 +101,20 @@ describe('melee AI', () => {
 });
 
 describe('ranged AI', () => {
+  it('a shooter fights hand to hand when the hero is right next to it', () => {
+    const w = testWorld();
+    const m = createMonster(w, 'normtrooper', { x: 30.5, y: 30.5 }, 3, 'normal');
+    const hero = addHero(w, { x: 31.4, y: 30.5 });
+    sim(w)(10);
+    expect(start).toHaveBeenCalledWith(w, m, 'attack', expect.objectContaining({ id: hero.id }));
+    expect(start.mock.calls.some((c) => c[2] === 'm_blastur')).toBe(false);
+    expect(dist(m.pos, { x: 30.5, y: 30.5 })).toBeLessThan(0.2);
+  });
+
   it('normtrooper kites away when crowded, then shoots from range', () => {
     const w = testWorld();
     const m = createMonster(w, 'normtrooper', { x: 30.5, y: 30.5 }, 3, 'normal');
-    const hero = addHero(w, { x: 32.5, y: 30.5 });
+    const hero = addHero(w, { x: 33, y: 30.5 });
     const step = sim(w);
     step(10);
     expect(m.moveTarget).toBeDefined();

@@ -1,5 +1,6 @@
 import { t } from '../../data/names';
 import type { PlayerEntity } from '../../core/sim/entities';
+import { heroDps } from '../../core/player/weapon';
 import type { Difficulty } from '../../core/types';
 import type { UiApi } from '../types';
 import { HoldButton, PanelFrame } from './common';
@@ -45,7 +46,10 @@ export function CharacterPanel(props: {
   const alloc = (stat: AttrId, amount: number) =>
     api.dispatch({ type: 'allocateStat', stat, amount: Math.min(amount, p.statPointsUnspent) });
   const sideInfo: Record<AttrId, [string, string][]> = {
-    strength: [[t('ui.char.damage'), range(st.physMin, st.physMax)]],
+    strength: [
+      [t('ui.char.damage'), range(st.physMin, st.physMax)],
+      [t('ui.char.dpsShort'), `${Math.round(heroDps(p))}`],
+    ],
     dexterity: [
       [t('ui.stat.attackRating'), `${Math.round(st.attackRating)}`],
       [t('ui.stat.defense'), `${Math.round(st.defense)}`],
@@ -136,6 +140,10 @@ export function CharacterPanel(props: {
       <div class="dte-stat-cols">
         <div class="dte-stat-block">
           <h3>{t('ui.char.offense')}</h3>
+          <div class="dte-dps" title={t('ui.char.dpsHint')}>
+            <span>{t('ui.char.dps')}</span>
+            <b>{Math.round(heroDps(p))}</b>
+          </div>
           <Row label={t('ui.stat.attackRating')} value={Math.round(st.attackRating)} />
           <Row label={t('ui.char.damage')} value={range(st.physMin, st.physMax)} />
           {elemental.map((k) => (

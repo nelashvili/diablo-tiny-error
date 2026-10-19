@@ -2064,3 +2064,23 @@
     animation: none;
   }
 }
+
+/* Headline damage-per-second figure at the top of the Attack block. */
+.dte-dps {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 2px 0 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(232, 192, 106, 0.35);
+  border-radius: 6px;
+  background: rgba(232, 192, 106, 0.08);
+}
+.dte-dps span {
+  color: var(--ui-text-dim);
+}
+.dte-dps b {
+  color: #e8c06a;
+  font-size: 1.35em;
+}

@@ -419,7 +419,7 @@ describe('describeItem', () => {
     );
     b.mods.push({ stat: 'fhr', op: 'flat', value: 10 });
     const lines = compareItems(a, b);
-    expect(lines.find((l) => l.text.includes('Avg Damage'))!.style).toBe('better');
+    expect(lines.find((l) => l.text.includes('Damage per second'))!.style).toBe('better');
     expect(lines.find((l) => l.text.includes('Attack Speed'))!.style).toBe('better');
     expect(lines.find((l) => l.text.includes('Hit Recovery'))!.style).toBe('worse');
     expect(compareItems(a, undefined).length).toBeGreaterThan(0);

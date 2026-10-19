@@ -7,7 +7,7 @@ import { DB } from '../../data/db';
 import { evalLevel } from '../../data/levelScaled';
 import type { SkillDef } from '../../data/schema';
 import { angleTo } from '../math';
-import { getEquippedWeapon } from '../player/weapon';
+import { getEquippedWeapon, UNARMED_SPEED } from '../player/weapon';
 import { isActor, type ActionState, type Actor } from '../sim/entities';
 import { dealAttack } from '../sim/systems/damage';
 import { getSlowFactor } from '../sim/systems/effects';
@@ -132,7 +132,7 @@ function timingFor(actor: Actor, def: SkillDef, level: number): Timing {
   else if (def.anim === 'cast') base = DEFAULT_CAST_SEC / Math.max(0.1, actor.stats.castSpeedMul);
   else {
     const w = getEquippedWeapon(actor);
-    const perSec = w ? w.speed : actor.kind === 'player' ? 1.6 : 1 / DEFAULT_MONSTER_ATTACK_SEC;
+    const perSec = w ? w.speed : actor.kind === 'player' ? UNARMED_SPEED : 1 / DEFAULT_MONSTER_ATTACK_SEC;
     base = 1 / (perSec * Math.max(0.1, actor.stats.attackSpeedMul));
   }
   const duration = Math.max(MIN_ACTION_SEC, base * (hits > 1 ? hits * 0.8 : 1));

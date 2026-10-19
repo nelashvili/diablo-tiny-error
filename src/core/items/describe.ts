@@ -1,5 +1,5 @@
 import { DB } from '../../data/db';
-import { MELEE_MASTERY } from '../player/weapon';
+import { MELEE_MASTERY, weaponDps } from '../player/weapon';
 import { hasName, t } from '../../data/names';
 import type { Modifier, StatId } from '../stats/types';
 import type { ClassId, ItemQuality } from '../types';
@@ -138,7 +138,9 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
     const key = ranged ? 'item.damage.ranged' : w.twoHanded ? 'item.damage.2h' : 'item.damage.1h';
     push(t(key, { min: w.min, max: w.max }), 'base');
     push(t('item.speed', { v: w.speed.toFixed(2) }), 'base');
-    if (!ranged && w.weaponClass !== 'javelin' && w.weaponClass !== 'throwingDisc')
+    const melee = !ranged && w.weaponClass !== 'javelin' && w.weaponClass !== 'throwingDisc';
+    push(t('item.dps', { v: itemDps(item).toFixed(1) }), 'dps');
+    if (melee)
       push(
         t('item.meleeMastery', {
           dmg: MELEE_MASTERY.enhancedDamage,
@@ -204,6 +206,20 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
   return { name, ...(baseName ? { baseName } : {}), quality: item.quality, lines };
 }
 
+/** A weapon's own damage per second (0 for non-weapons), counting its flat damage mods and the melee bonus. */
+export function itemDps(item: ItemInstance): number {
+  const w = weaponInfo(item);
+  if (!w) return 0;
+  const flat = item.mods.reduce(
+    (n, m) => (m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage') ? n + m.value : n),
+    0,
+  );
+  const melee = !RANGED_CLASSES.has(w.weaponClass);
+  return weaponDps(w.min + flat / 2, w.max + flat / 2, w.speed, melee);
+}
+
+const RANGED_CLASSES = new Set<string>(['blasturPistol', 'blasturRifle', 'javelin', 'throwingDisc']);
+
 function summarize(item: ItemInstance): { avg: number; def: number; stats: Map<string, Modifier> } {
   const w = weaponInfo(item);
   const stats = new Map<string, Modifier>();
@@ -214,7 +230,7 @@ function summarize(item: ItemInstance): { avg: number; def: number; stats: Map<s
     if (cur) cur.value += m.value;
     else stats.set(key, { ...m });
   }
-  return { avg: w ? (w.min + w.max) / 2 : 0, def: itemDefense(item), stats };
+  return { avg: w ? itemDps(item) : 0, def: itemDefense(item), stats };
 }
 
 /** Compare candidate `a` against currently equipped `b`: green/red delta lines. */

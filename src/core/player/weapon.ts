@@ -63,3 +63,32 @@ export function getEquippedWeapon(actor: Actor): EquippedWeapon | undefined {
     dexBonus: info.dexBonus,
   };
 }
+
+/** Attacks per second with no weapon equipped. */
+export const UNARMED_SPEED = 1.6;
+
+/**
+ * Average damage per second of the hero's basic attack against one target, before the target's
+ * defense and resistances: damage x attack rate, with critical hits doubling the physical part.
+ * Matches the attack timing in skills/runtime (weapon speed x attack speed).
+ */
+export function heroDps(actor: Actor): number {
+  const st = actor.stats;
+  const w = getEquippedWeapon(actor);
+  const perSec = (w ? w.speed : UNARMED_SPEED) * Math.max(0.1, st.attackSpeedMul);
+  const raw = st.raw ?? {};
+  const ds = Math.min(100, raw.deadlyStrike ?? 0) / 100;
+  const cs = Math.min(100, raw.criticalStrike ?? 0) / 100;
+  const crit = 1 - (1 - ds) * (1 - cs);
+  let hit = ((st.physMin + st.physMax) / 2) * (1 + crit);
+  for (const e of Object.values(st.elemental ?? {})) hit += (e.min + e.max) / 2;
+  return hit * perSec;
+}
+
+/**
+ * Damage per second of a weapon on its own (its damage x its speed), with the melee bonus
+ * included so a saber and a blaster compare fairly.
+ */
+export function weaponDps(min: number, max: number, speed: number, melee: boolean): number {
+  return ((min + max) / 2) * speed * (melee ? 1 + MELEE_MASTERY.enhancedDamage / 100 : 1);
+}

@@ -446,11 +446,33 @@ function meleeLike(ctx: Ctx, m: MonsterEntity, def: MonsterDef, target: Actor): 
   }
 }
 
+/** Gap (tiles, edge to edge) at which shooters stop backing off and fight hand to hand. */
+export const CLOSE_QUARTERS = 1.2;
+
+/**
+ * A shooter with its prey right next to it doesn't back away (which only drags the fight along):
+ * it holds its ground and strikes with a melee blow (rifle butt, staff, claws).
+ */
+function closeQuarters(ctx: Ctx, m: MonsterEntity, target: Actor): boolean {
+  if (dist(m.pos, target.pos) - target.radius - m.radius > CLOSE_QUARTERS) return false;
+  const bb = m.ai;
+  bb.kiteUntil = 0;
+  stop(m);
+  face(m, target.pos);
+  if (ctx.time < getNum(bb, 'nextAttackTry') || !canUseSkill(ctx.world, m, 'attack')) return true;
+  if (startSkill(ctx.world, m, 'attack', { id: target.id, pos: { x: target.pos.x, y: target.pos.y } }))
+    bb.state = 'attack';
+  else bb.nextAttackTry = ctx.time + 0.3;
+  return true;
+}
+
 function rangedLike(ctx: Ctx, m: MonsterEntity, def: MonsterDef, target: Actor, kiteFrac: number): void {
   const bb = m.ai;
   const skill = def.skills?.[0]?.skill ?? 'attack';
   const range = attackRange(m, def, skill);
   const d = dist(m.pos, target.pos);
+
+  if (closeQuarters(ctx, m, target)) return;
 
   if (ctx.time < getNum(bb, 'kiteUntil') && bb.kiteTo) {
     goTo(ctx, m, bb.kiteTo as Vec2, true);
