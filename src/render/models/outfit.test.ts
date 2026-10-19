@@ -38,3 +38,15 @@ describe('armor outfits', () => {
     expect(head[2]!.minVal).toBeGreaterThanOrEqual(0.12);
   });
 });
+
+describe('headgear styles', () => {
+  it('every helm is worn as a helmet or a hood', async () => {
+    const { headgearStyle } = await import('./outfit');
+    const helms = [...DB.items.values()].filter((b) => b.armorClass === 'helm');
+    expect(helms.length).toBeGreaterThan(0);
+    for (const h of helms) expect(['trooper', 'mando', 'hood']).toContain(headgearStyle(h.id));
+    expect(headgearStyle('trooperHelm')).toBe('trooper');
+    expect(headgearStyle('yediHood')).toBe('hood');
+    expect(headgearStyle('battleVisor')).toBe('mando');
+  });
+});

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { ActorMode } from '../../core/sim/entities';
+import type { HeadgearStyle } from './outfit';
 
 export type AttachSlot = 'mainHand' | 'offHand' | 'head' | 'chest';
 
@@ -14,6 +15,11 @@ export interface Rig {
   socket(slot: AttachSlot): THREE.Object3D;
   /** Rotation (about X) applied to long-axis attachments so they point forward from the hand. */
   readonly handTilt: number;
+  /**
+   * Rigs that dress the body for helm and body-armor items (instead of hanging item models on
+   * sockets): put on a helm look (`null` takes it off). Adds/removes meshes in `bodyMeshes`.
+   */
+  wearHeadgear?(style: HeadgearStyle | null, color: number): void;
   dispose(): void;
 }
 

@@ -115,6 +115,9 @@ function armorLayout(spec: ArmorSpec, L: Lengths): Piece[] {
       tube(`lowerarm_${s}`, L(`lowerarm_${s}`), 0.15, 0.9, 0.048, main),
       tube(`thigh_${s}`, L(`thigh_${s}`), 0.04, 0.96, 0.118, main),
       tube(`calf_${s}`, L(`calf_${s}`), 0.04, 0.95, 0.095, main),
+      // Knee and elbow caps hide where the rigid tubes meet when the joint bends.
+      ball(`calf_${s}`, 0.0, 0.112, trim),
+      ball(`lowerarm_${s}`, 0.0, 0.058, trim),
       plate(`foot_${s}`, [0, L(`foot_${s}`) * 0.45, -0.01], [0.12, L(`foot_${s}`) * 1.35, 0.1], trim),
     );
   }
@@ -172,12 +175,13 @@ function droidLayout(spec: ArmorSpec, L: Lengths): Piece[] {
 
 const vcMaterials = new Map<string, THREE.MeshToonMaterial>();
 /** Shared vertex-colored toon material (base color white, pieces carry their color). */
-function vertexColorToon(): THREE.MeshToonMaterial {
-  let m = vcMaterials.get('vc');
+export function vertexColorToon(color = 0xffffff): THREE.MeshToonMaterial {
+  const key = `vc${color}`;
+  let m = vcMaterials.get(key);
   if (!m) {
-    m = new THREE.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: getGradientMap() });
+    m = new THREE.MeshToonMaterial({ color, vertexColors: true, gradientMap: getGradientMap() });
     m.name = 'ArmorVC';
-    vcMaterials.set('vc', m);
+    vcMaterials.set(key, m);
   }
   return m;
 }
@@ -196,6 +200,35 @@ const _c = new THREE.Color();
  * own meshes (droids).
  */
 export function buildArmor(model: THREE.Object3D, spec: ArmorSpec, hideBody: boolean): THREE.SkinnedMesh[] {
+  const layout = (L: Lengths) => (spec.style === 'droid' ? droidLayout(spec, L) : armorLayout(spec, L));
+  const out = bindPieces(model, layout, vertexColorToon(), 'Armor', spec.eye ?? 0x4fc3ff);
+  if (hideBody)
+    model.traverse((o) => {
+      if ((o as THREE.SkinnedMesh).isSkinnedMesh && !out.includes(o as THREE.SkinnedMesh)) o.visible = false;
+    });
+  return out;
+}
+
+/**
+ * A helmet alone (worn helm items), skinned to the Head bone. Its vertex colors are white for the
+ * shell, so `material.color` paints it; visor and metal keep their dark tones. The model must be in
+ * its rest pose.
+ */
+export function buildHelmet(
+  model: THREE.Object3D,
+  style: 'trooper' | 'mando',
+  material: THREE.Material,
+): THREE.SkinnedMesh | null {
+  return bindPieces(model, () => helmet(style, 0xffffff), material, 'Helmet_Worn', 0)[0] ?? null;
+}
+
+function bindPieces(
+  model: THREE.Object3D,
+  layout: (L: Lengths) => Piece[],
+  solidMat: THREE.Material,
+  name: string,
+  glowColor: number,
+): THREE.SkinnedMesh[] {
   const own: THREE.SkinnedMesh[] = [];
   model.traverse((o) => {
     if ((o as THREE.SkinnedMesh).isSkinnedMesh) own.push(o as THREE.SkinnedMesh);
@@ -217,7 +250,7 @@ export function buildArmor(model: THREE.Object3D, spec: ArmorSpec, hideBody: boo
   // Model front (+Z) in world space, for each bone's segment frame.
   const front = new THREE.Vector3(0, 0, 1).applyQuaternion(model.getWorldQuaternion(_q)).normalize();
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(_q).normalize();
-  const pieces = spec.style === 'droid' ? droidLayout(spec, lengths) : armorLayout(spec, lengths);
+  const pieces = layout(lengths);
 
   const solid: THREE.BufferGeometry[] = [];
   const glowing: THREE.BufferGeometry[] = [];
@@ -279,8 +312,7 @@ export function buildArmor(model: THREE.Object3D, spec: ArmorSpec, hideBody: boo
     host.parent?.add(mesh);
     out.push(mesh);
   };
-  make(solid, vertexColorToon(), 'Armor');
-  make(glowing, glowMaterial(spec.eye ?? 0x4fc3ff), 'Armor_Glow');
-  if (hideBody) for (const o of own) o.visible = false;
+  make(solid, solidMat, name);
+  make(glowing, glowMaterial(glowColor), `${name}_Glow`);
   return out;
 }

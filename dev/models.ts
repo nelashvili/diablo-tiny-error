@@ -2,7 +2,8 @@
  * Dev harness for render/models. Open /dev/models.html via `npm run dev`.
  * Query: ?mode=attack (freeze a mode), ?cols=8, ?zoom=1, ?only=hero.yediKnight,mon.jawwa (just those,
  * without the extra demo actors and tiles), ?nohelm, ?armor=helm,chest,gloves,boots (armor item ids worn
- * by the heroes, e.g. trooperHelm,trooperArmor,heavyGloves,heavyBoots).
+ * by the heroes, e.g. trooperHelm,trooperArmor,heavyGloves,heavyBoots), ?view=front|side|back|iso
+ * (camera azimuth), ?paused (no animation loop: drive it with window.__pose(mode, t) for screenshots).
  */
 import * as THREE from 'three';
 import { MODEL_CATALOG } from '../src/render/assets/catalog';
@@ -62,6 +63,15 @@ const fixedMode = params.get('mode') as ActorMode | null;
 const cols = Number(params.get('cols') ?? 8);
 const zoom = Number(params.get('zoom') ?? 1.15);
 const only = (params.get('only') ?? '').split(',').filter(Boolean);
+const view = params.get('view') ?? 'iso';
+/** Camera direction (x, z) from the subject for ?view. */
+const VIEW_DIR: Record<string, [number, number]> = {
+  iso: [1, 1],
+  front: [0, 1],
+  side: [1, 0],
+  back: [0, -1],
+  left: [-1, 0],
+};
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
@@ -109,6 +119,7 @@ for (const id of ids) {
     if (id.endsWith('forseAdept')) v.setAttachment('offHand', 'item.energyShield');
     if (id.endsWith('bountyHuntur')) v.setAttachment('mainHand', 'item.blasterPistol');
     if (id.endsWith('yediKnight') && !params.has('nohelm')) v.setAttachment('head', 'item.battleHelm');
+    if (params.has('chest')) v.setAttachment('chest', `item.${params.get('chest')}`);
     const armor = (params.get('armor') ?? '').split(',');
     (['head', 'body', 'arms', 'legs'] as const).forEach((part, i) =>
       v.setOutfit?.(part, armorLook(armor[i])),
@@ -158,7 +169,10 @@ function resize() {
   renderer.setSize(w, h, false);
   const cx = maxX / 2;
   const cz = maxZ / 2;
-  camera.position.set(cx + 30, 30 * 0.82 + (only.length ? 0.8 : 0), cz + 30);
+  const [vx, vz] = VIEW_DIR[view] ?? [1, 1];
+  const vl = Math.hypot(vx, vz);
+  const elev = view === 'iso' ? 30 * 0.82 : 12;
+  camera.position.set(cx + (vx / vl) * 42, elev + (only.length ? 0.8 : 0), cz + (vz / vl) * 42);
   camera.lookAt(cx, only.length ? 0.8 : 0, cz);
   const span = (Math.hypot(maxX, maxZ) / 2 + (only.length ? 1.6 : 1)) / zoom;
   const aspect = w / h;
@@ -171,10 +185,25 @@ function resize() {
 addEventListener('resize', resize);
 resize();
 
+if (params.has('paused')) {
+  // Pose every model at `t` seconds into `mode`, stepping in small increments so blends settle.
+  (window as unknown as { __pose: (m: ActorMode, t: number) => void }).__pose = (m, t) => {
+    // Reset through another mode, then jump to just before t and play the last 0.25s so fades settle.
+    const lead = Math.min(t, 0.4);
+    for (const e of visuals) {
+      e.v.setMode(m === 'idle' ? 'walk' : 'idle', 0, 1);
+      e.v.update(0);
+      e.v.setMode(m, t - lead, 1);
+      for (let s = 0; s < lead - 1e-6; s += 1 / 60) e.v.update(1 / 60);
+    }
+    renderer.render(scene, camera);
+  };
+}
 const clock = new THREE.Timer();
 let modeIdx = 0;
 let modeClock = 0;
 renderer.setAnimationLoop(() => {
+  if (params.has('paused')) return;
   clock.update();
   const dt = Math.min(clock.getDelta(), 0.05);
   modeClock += dt;

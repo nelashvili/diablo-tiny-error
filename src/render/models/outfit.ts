@@ -75,6 +75,28 @@ for (const line of ARMOR_LINES) {
   });
 }
 
+export type HeadgearStyle = 'trooper' | 'mando' | 'hood';
+
+/** Worn shape of each helm line (keyed by the line's normal-tier id). */
+const LINE_HEADGEAR: Record<string, HeadgearStyle> = {
+  flightCap: 'trooper',
+  trooperHelm: 'trooper',
+  battleVisor: 'mando',
+  yediHood: 'hood',
+  yediCowl: 'hood',
+  yediMask: 'hood',
+};
+const HEADGEAR = new Map<string, HeadgearStyle>();
+for (const line of ARMOR_LINES) {
+  const style = LINE_HEADGEAR[camel(line.names[0])];
+  if (style) for (const name of line.names) HEADGEAR.set(camel(name), style);
+}
+
+/** How a helm item is worn on the universal rig (unknown helms: a trooper-style helmet). */
+export function headgearStyle(baseId: string): HeadgearStyle {
+  return HEADGEAR.get(baseId) ?? 'trooper';
+}
+
 export function armorLook(baseId: string | undefined): ArmorLook | null {
   return baseId ? (LOOKS.get(baseId) ?? null) : null;
 }

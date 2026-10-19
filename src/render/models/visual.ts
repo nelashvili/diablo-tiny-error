@@ -6,7 +6,7 @@ import { createAttachment, type Attachment } from './attachments';
 import type { AttachSlot, Rig } from './rig';
 import { recolorMaterial, variantMaterial } from './toon';
 import { isLitesaberId } from './helpers';
-import { outfitPartOf, outfitRules, type OutfitPart } from './outfit';
+import { armorLook, headgearStyle, outfitPartOf, outfitRules, type OutfitPart } from './outfit';
 import type { ArmorLookRef } from '../types';
 import type { ModelEntry } from '../types';
 import type { LoadedAsset } from './loader';
@@ -43,12 +43,48 @@ const AIM_Q = new THREE.Quaternion();
  */
 const TRAIL_MAIN = new THREE.Quaternion().setFromUnitVectors(
   new THREE.Vector3(0, 1, 0),
-  new THREE.Vector3(-0.5, -0.35, -0.8).normalize(),
+  new THREE.Vector3(-0.75, -0.2, -0.65).normalize(),
 );
 const TRAIL_OFF = new THREE.Quaternion().setFromUnitVectors(
   new THREE.Vector3(0, 1, 0),
-  new THREE.Vector3(0.5, -0.35, -0.8).normalize(),
+  new THREE.Vector3(0.75, -0.2, -0.65).normalize(),
 );
+/**
+ * Shields (body frame): upright, facing out to the side while the hand is at the side and turning to
+ * face forward as it comes across the body, held a little off the wrist, so the field neither cuts
+ * through the hip and thigh nor through the chest.
+ */
+const BRACE_OUT = -0.05;
+const BRACE_V = new THREE.Vector3();
+const BRACE_S = new THREE.Vector3();
+const BRACE_X = new THREE.Vector3();
+const BRACE_Y = new THREE.Vector3(0, 1, 0);
+const BRACE_Z = new THREE.Vector3();
+const BRACE_M = new THREE.Matrix4();
+const BRACE_INV = new THREE.Matrix4();
+/**
+ * Blades while not swinging (idle, casting, flinching, throwing): held forward and up, a little out
+ * to the side. The hand-frame ready pose follows each clip's wrist, and the non-sword clips hold the
+ * hand so that pose laid the blade across the hips and back.
+ */
+const GUARD_MAIN = new THREE.Quaternion().setFromUnitVectors(
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(-0.3, 0.6, 0.75).normalize(),
+);
+const GUARD_OFF = new THREE.Quaternion().setFromUnitVectors(
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0.3, 0.6, 0.75).normalize(),
+);
+/** Modes whose blade is posed in the body frame (the rest swing it with the hand). */
+const GUARD_MODES: ReadonlySet<ActorMode> = new Set<ActorMode>([
+  'idle',
+  'cast',
+  'throw',
+  'hit',
+  'stunned',
+  'frozen',
+]);
+const BLEND_Q = new THREE.Quaternion();
 const HELD_Q = new THREE.Quaternion().setFromEuler(HELD_WEAPON_POSE);
 /** Seconds to blend between the ready stance and the running trail. */
 const TRAIL_BLEND_SEC = 0.15;
@@ -76,6 +112,8 @@ export class Visual implements EntityVisual {
   private readonly outfit = new Map<OutfitPart, ArmorLookRef>();
   /** 0 = ready stance, 1 = saber trailing (walk/run). */
   private trail = 0;
+  /** 0 = ready stance, 1 = blade held in the body-frame guard (idle, cast, ...). */
+  private guard = 0;
   private readonly baseMats = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
 
   constructor(
@@ -99,7 +137,7 @@ export class Visual implements EntityVisual {
     this.object.add(rig.root);
     this.collect();
     rig.setMode(this.mode, this.modeT, this.speedMul);
-    for (const [slot, a] of this.attached) this.mount(slot, a.att);
+    for (const [slot, a] of this.attached) this.mount(slot, a.att, a.modelId);
     this.applyLook();
   }
 
@@ -108,7 +146,24 @@ export class Visual implements EntityVisual {
     for (const m of this.rig.bodyMeshes) if (!m.userData.noTint) this.baseMats.set(m, m.material);
   }
 
-  private mount(slot: AttachSlot, att: Attachment): void {
+  /** Rigs that dress for armor wear the helm and skip the chest item (the outfit shows it). */
+  private dressed(slot: AttachSlot): boolean {
+    return (slot === 'head' || slot === 'chest') && this.rig.wearHeadgear !== undefined;
+  }
+
+  private wear(modelId: string | null): void {
+    if (!this.rig.wearHeadgear) return;
+    const base = modelId?.replace(/^item\./, '') ?? '';
+    this.rig.wearHeadgear(base ? headgearStyle(base) : null, armorLook(base)?.primary ?? 0xd8d8d8);
+    this.collect();
+    this.applyLook();
+  }
+
+  private mount(slot: AttachSlot, att: Attachment, modelId?: string): void {
+    if (this.dressed(slot)) {
+      if (slot === 'head') this.wear(modelId ?? null);
+      return;
+    }
     const sock = this.rig.socket(slot);
     const held = att.tilt !== null && (slot === 'mainHand' || slot === 'offHand');
     if (!held) att.object.rotation.set(0, 0, 0);
@@ -135,6 +190,7 @@ export class Visual implements EntityVisual {
       if (modelId !== null && prev.modelId === modelId && prev.accent === accent) return;
       this.rig.socket(slot).remove(prev.att.object);
       this.attached.delete(slot);
+      if (slot === 'head' && this.dressed(slot)) this.wear(null);
     }
     if (modelId === null) return;
     const entry = this.env.entryFor(modelId);
@@ -142,7 +198,7 @@ export class Visual implements EntityVisual {
     const att = createAttachment(slot, modelId, accent, entry, asset);
     const state = { modelId, accent, att };
     this.attached.set(slot, state);
-    this.mount(slot, att);
+    this.mount(slot, att, modelId);
     // Show the procedural shape now; hot-swap to the glTF item model once it loads.
     if (!asset && entry?.url && this.env.loadAsset) {
       void this.env.loadAsset(modelId).then((loaded) => {
@@ -150,7 +206,7 @@ export class Visual implements EntityVisual {
         this.rig.socket(slot).remove(att.object);
         const next = createAttachment(slot, modelId, accent, entry, loaded);
         this.attached.set(slot, { modelId, accent, att: next });
-        this.mount(slot, next);
+        if (!this.dressed(slot)) this.mount(slot, next, modelId);
       });
     }
   }
@@ -204,30 +260,65 @@ export class Visual implements EntityVisual {
     const moving = this.mode === 'walk' || this.mode === 'run';
     const step = dt / TRAIL_BLEND_SEC;
     this.trail = Math.min(1, Math.max(0, this.trail + (moving ? step : -step)));
+    const guarding = GUARD_MODES.has(this.mode);
+    this.guard = Math.min(1, Math.max(0, this.guard + (guarding ? step : -step)));
     for (const slot of SLOTS) {
       const a = this.attached.get(slot);
       if (!a) continue;
       const hand = (slot === 'mainHand' || slot === 'offHand') && this.rig.handTilt === 0;
-      if (hand && a.att.grip === 'aimed') this.aim(slot, a.att);
-      else if (hand && isLitesaberId(a.modelId)) this.trailSaber(slot, a.att);
+      if (hand && a.att.shield) this.brace(slot, a.att);
+      else if (hand && a.att.grip === 'aimed') this.aim(slot, a.att);
+      else if (hand && (isLitesaberId(a.modelId) || a.att.tilt !== null)) this.trailSaber(slot, a.att);
       a.att.update(this.time);
     }
   }
 
-  /** Blend a held saber between its ready pose (hand frame) and the trailing pose (body frame). */
+  /** Hold a shield out from the body (see BRACE_*). */
+  private brace(slot: AttachSlot, att: Attachment): void {
+    const sock = this.rig.socket(slot);
+    sock.updateWorldMatrix(true, false);
+    this.object.updateWorldMatrix(true, false);
+    const side = slot === 'offHand' ? 1 : -1;
+    // Hand position in the body frame: how far out to its own side it is.
+    BRACE_V.setFromMatrixPosition(sock.matrixWorld).applyMatrix4(
+      BRACE_INV.copy(this.object.matrixWorld).invert(),
+    );
+    const out = THREE.MathUtils.smoothstep(BRACE_V.x * side, 0.05, 0.22);
+    BRACE_Z.set(0.85 * side * out, 0, 0.5 + 0.5 * (1 - out)).normalize();
+    BRACE_X.crossVectors(BRACE_Y, BRACE_Z);
+    BRACE_M.makeBasis(BRACE_X, BRACE_Y, BRACE_Z);
+    this.object.getWorldQuaternion(AIM_Q);
+    sock.getWorldQuaternion(AIM_PARENT).invert();
+    // Offset along the facing, expressed in the socket's (scaled) frame.
+    BRACE_V.copy(BRACE_Z).multiplyScalar(BRACE_OUT).applyQuaternion(AIM_Q).applyQuaternion(AIM_PARENT);
+    sock.getWorldScale(BRACE_S);
+    att.object.position.copy(BRACE_V.divide(BRACE_S));
+    att.object.quaternion.copy(AIM_PARENT).multiply(AIM_Q.multiply(BLEND_Q.setFromRotationMatrix(BRACE_M)));
+  }
+
+  /**
+   * Blend a held blade between its ready pose (hand frame), the running trail and the standing guard
+   * (both body frame), so rigid blades don't cut through the body in clips made for empty hands.
+   */
   private trailSaber(slot: AttachSlot, att: Attachment): void {
-    if (this.trail <= 0) {
+    if (this.trail <= 0 && this.guard <= 0) {
       att.object.quaternion.copy(HELD_Q);
       return;
     }
     const sock = this.rig.socket(slot);
     sock.updateWorldMatrix(true, false);
-    this.object.getWorldQuaternion(AIM_Q);
-    AIM_Q.multiply(slot === 'offHand' ? TRAIL_OFF : TRAIL_MAIN);
     sock.getWorldQuaternion(AIM_PARENT).invert();
-    const trailing = AIM_PARENT.multiply(AIM_Q);
-    const t = this.trail * this.trail * (3 - 2 * this.trail);
-    att.object.quaternion.slerpQuaternions(HELD_Q, trailing, t);
+    const off = slot === 'offHand';
+    const smooth = (w: number) => w * w * (3 - 2 * w);
+    const q = att.object.quaternion.copy(HELD_Q);
+    if (this.trail > 0) {
+      this.object.getWorldQuaternion(AIM_Q).multiply(off ? TRAIL_OFF : TRAIL_MAIN);
+      q.slerp(BLEND_Q.copy(AIM_PARENT).multiply(AIM_Q), smooth(this.trail));
+    }
+    if (this.guard > 0) {
+      this.object.getWorldQuaternion(AIM_Q).multiply(off ? GUARD_OFF : GUARD_MAIN);
+      q.slerp(BLEND_Q.copy(AIM_PARENT).multiply(AIM_Q), smooth(this.guard));
+    }
   }
 
   /**

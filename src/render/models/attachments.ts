@@ -15,6 +15,8 @@ export interface Attachment {
   readonly tilt: number | null;
   /** How a held weapon sits in the hand: raised like a sword, or aimed forward like a gun. */
   readonly grip?: 'raised' | 'aimed';
+  /** Shields: braced facing out from the body instead of hanging off the wrist. */
+  readonly shield?: boolean;
   update(time: number): void;
 }
 
@@ -195,6 +197,7 @@ function fromAsset(asset: LoadedAsset, entry: ModelEntry, kind: ItemKind): Attac
     object: wrap,
     tilt: weapon ? 1.1 : null,
     grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised',
+    shield: kind === 'shield',
     update() {},
   };
 }
@@ -248,5 +251,11 @@ export function createAttachment(
   if (slot === 'head' || slot === 'chest') tilt = null;
   const wrap = new THREE.Group();
   wrap.add(shape);
-  return { object: wrap, tilt, grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised', update() {} };
+  return {
+    object: wrap,
+    tilt,
+    grip: AIMED_KINDS.has(kind) ? 'aimed' : 'raised',
+    shield: kind === 'shield',
+    update() {},
+  };
 }

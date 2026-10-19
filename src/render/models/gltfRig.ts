@@ -8,7 +8,8 @@ import type { LoadedAsset } from './loader';
 import type { AttachSlot, Rig } from './rig';
 import { enableRim, recolorMaterial } from './toon';
 import { replaceHelmet } from './headgear';
-import { buildArmor } from './armor';
+import { buildArmor, buildHelmet, vertexColorToon } from './armor';
+import type { HeadgearStyle } from './outfit';
 
 const FADE = 0.15;
 
@@ -74,6 +75,14 @@ export class GltfRig implements Rig {
   private readonly model: THREE.Object3D;
   private readonly procedural: boolean;
   private readonly sockets: Record<AttachSlot, THREE.Object3D>;
+  /** Set on universal-rig humans without built-in armor: helms are worn, not socketed. */
+  readonly wearHeadgear?: (style: HeadgearStyle | null, color: number) => void;
+  /** Hoods and hair with their default visibility (helmets hide them). */
+  private readonly headParts: { obj: THREE.Object3D; visible: boolean }[] = [];
+  /** Bone rest transforms (helmets are fitted in the rest pose). */
+  private readonly rest: { o: THREE.Object3D; p: THREE.Vector3; q: THREE.Quaternion; s: THREE.Vector3 }[] =
+    [];
+  private worn: { key: string; mesh: THREE.Mesh | null } | null = null;
 
   /** `anims`: the shared animation library when the entry names one (its clips replace the model's). */
   constructor(asset: LoadedAsset, entry: ModelEntry, anims: LoadedAsset | null = null) {
@@ -83,6 +92,7 @@ export class GltfRig implements Rig {
     const hidden = new Set((entry.hide ?? []).map((n) => THREE.PropertyBinding.sanitizeNodeName(n)));
     this.model.traverse((o) => {
       if (hidden.has(THREE.PropertyBinding.sanitizeNodeName(o.name))) o.visible = false;
+      if (/hood|^hair/i.test(o.name)) this.headParts.push({ obj: o, visible: o.visible });
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.userData.rawMaterial = mesh.material; // pre-palette material, for armor outfits
@@ -100,6 +110,13 @@ export class GltfRig implements Rig {
     if (entry.armor) {
       const parts = buildArmor(this.model, entry.armor, entry.armor.hideBody ?? false);
       this.bodyMeshes.push(...parts.filter((m) => m.name !== 'Armor_Glow'));
+    }
+    if (entry.anims && !entry.armor && !entry.helmet && entry.bones?.head) {
+      this.model.traverse((o) => {
+        if ((o as THREE.Bone).isBone)
+          this.rest.push({ o, p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() });
+      });
+      this.wearHeadgear = (style, color) => this.putOnHeadgear(style, color);
     }
     // Actors get the rim light (outfit recolors start from rawMaterial, so mark that too).
     for (const mesh of this.bodyMeshes) {
@@ -212,6 +229,54 @@ export class GltfRig implements Rig {
       this.currentMode = mode;
     }
     if (this.current) this.current.timeScale = mode === 'frozen' ? 0 : sp;
+  }
+
+  /** Hood: the model's own hood mesh (hair tucked in). Helmets: a fitted skinned helmet. */
+  private putOnHeadgear(style: HeadgearStyle | null, color: number): void {
+    const key = style ? `${style}:${color}` : '';
+    if ((this.worn?.key ?? '') === key) return;
+    if (this.worn?.mesh) {
+      this.worn.mesh.removeFromParent();
+      this.worn.mesh.geometry.dispose();
+      const i = this.bodyMeshes.indexOf(this.worn.mesh);
+      if (i >= 0) this.bodyMeshes.splice(i, 1);
+    }
+    const worn: { key: string; mesh: THREE.Mesh | null } = { key, mesh: null };
+    this.worn = style ? worn : null;
+    const hood = this.headParts.filter((p) => /hood/i.test(p.obj.name));
+    const hair = this.headParts.filter((p) => /^hair/i.test(p.obj.name));
+    for (const p of this.headParts) p.obj.visible = p.visible;
+    if (!style) return;
+    if (style === 'hood') {
+      // Without a hood of its own the character just keeps its hair (the palette shows the item).
+      if (!hood.length) return;
+      for (const p of hood) p.obj.visible = true;
+      for (const p of hair) p.obj.visible = false;
+      return;
+    }
+    for (const p of [...hood, ...hair]) p.obj.visible = false;
+    const mat = vertexColorToon(color);
+    enableRim(mat);
+    // Fit in the rest pose, then put the animated pose back.
+    const now = this.rest.map(
+      ({ o }) => [o.position.clone(), o.quaternion.clone(), o.scale.clone()] as const,
+    );
+    for (const r of this.rest) {
+      r.o.position.copy(r.p);
+      r.o.quaternion.copy(r.q);
+      r.o.scale.copy(r.s);
+    }
+    const mesh = buildHelmet(this.model, style, mat);
+    this.rest.forEach(({ o }, i) => {
+      const [p, q, s] = now[i]!;
+      o.position.copy(p);
+      o.quaternion.copy(q);
+      o.scale.copy(s);
+    });
+    if (!mesh) return;
+    mesh.userData.rawMaterial = mat;
+    worn.mesh = mesh;
+    this.bodyMeshes.push(mesh);
   }
 
   update(dt: number): void {
