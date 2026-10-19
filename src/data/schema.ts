@@ -396,6 +396,9 @@ export interface EnvLightDef {
   fog?: { color: number; near: number; far: number };
 }
 
+/** Visual weather (render/scene/weather). Storm = heavy rain with lightning. */
+export type WeatherKind = 'clear' | 'rain' | 'storm' | 'snow' | 'ash' | 'embers' | 'spores' | 'sand';
+
 /** A level's look: referenced by LevelDef.ambientLight. Purely visual, never read by the sim. */
 export interface EnvDef {
   id: DefId;
@@ -405,6 +408,8 @@ export interface EnvDef {
   day: EnvLightDef;
   /** Outdoor levels: present = the level follows the day/night clock. */
   cycle?: { dawn: EnvLightDef; dusk: EnvLightDef; night: EnvLightDef };
+  /** Weather that comes and goes over time, by relative weight. Omit for none (indoors). */
+  weather?: { kind: WeatherKind; weight: number }[];
 }
 
 export interface NpcDef {

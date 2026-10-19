@@ -165,6 +165,10 @@ export class EnvironmentClock {
     this.base = gradeFor(env?.grade ?? gradeKey);
   }
 
+  get def(): EnvDef | null {
+    return this.env;
+  }
+
   get cycles(): boolean {
     return !!this.env?.cycle;
   }

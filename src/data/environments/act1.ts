@@ -77,6 +77,10 @@ const UNDERGROUND: EnvLightDef = {
 const envs: EnvDef[] = [
   {
     id: 'outpost',
+    weather: [
+      { kind: 'clear', weight: 7 },
+      { kind: 'rain', weight: 3 },
+    ],
     grade: 'outpost',
     day: {
       ...FOREST_DAY,
@@ -90,12 +94,21 @@ const envs: EnvDef[] = [
   },
   {
     id: 'mist',
+    weather: [
+      { kind: 'clear', weight: 5 },
+      { kind: 'rain', weight: 3 },
+      { kind: 'storm', weight: 1 },
+    ],
     grade: 'mist',
     day: { ...FOREST_DAY, sky: 0xc8e8d8, hemi: 1.05, sunI: 1.9, fog: { color: 0xa8c8b8, near: 11, far: 30 } },
     cycle: forest(),
   },
   {
     id: 'smoke',
+    weather: [
+      { kind: 'ash', weight: 6 },
+      { kind: 'clear', weight: 4 },
+    ],
     grade: 'smoke',
     day: {
       ...FOREST_DAY,
@@ -109,6 +122,11 @@ const envs: EnvDef[] = [
   },
   {
     id: 'embers',
+    weather: [
+      { kind: 'embers', weight: 6 },
+      { kind: 'rain', weight: 2 },
+      { kind: 'clear', weight: 2 },
+    ],
     grade: 'embers',
     day: {
       ...FOREST_DAY,
@@ -121,6 +139,12 @@ const envs: EnvDef[] = [
   },
   {
     id: 'gloom',
+    weather: [
+      { kind: 'clear', weight: 4 },
+      { kind: 'rain', weight: 3 },
+      { kind: 'storm', weight: 2 },
+      { kind: 'spores', weight: 1 },
+    ],
     grade: 'gloom',
     day: {
       ...FOREST_DAY,
@@ -138,6 +162,11 @@ const envs: EnvDef[] = [
   },
   {
     id: 'fog',
+    weather: [
+      { kind: 'spores', weight: 4 },
+      { kind: 'rain', weight: 4 },
+      { kind: 'clear', weight: 2 },
+    ],
     grade: 'fog',
     day: {
       ...FOREST_DAY,

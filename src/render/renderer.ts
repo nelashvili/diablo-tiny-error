@@ -18,6 +18,9 @@ import { dressingFor, propVariants, scatterFor } from './map/dressing';
 import { SceneLighting, SUN_DIR, presetFor } from './scene/lighting';
 import { EnvironmentClock, keyLightDir, parseTimeParam } from './scene/environment';
 import { NO_FOG, installWorldFog } from './scene/fog';
+import { WeatherFx } from './scene/weather';
+import { applyWeather, parseWeatherParam, weatherAt, type WeatherState } from './scene/weatherState';
+import type { WeatherKind } from '../data/schema';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
@@ -105,10 +108,13 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const env = new EnvironmentClock();
   const keyDir = new THREE.Vector3();
   let clock = 0;
+  const weather = new WeatherFx();
+  const weatherState: WeatherState = { kind: 'clear', intensity: 0, flash: 0 };
+  let pinnedWeather: WeatherKind | null = null;
   const entityRoot = new THREE.Group();
   entityRoot.name = 'entities';
   const sync = new EntitySync(entityRoot, visuals, vfx);
-  scene.add(lighting.group, entityRoot, vfx.root);
+  scene.add(lighting.group, entityRoot, vfx.root, weather.group);
 
   let gl: THREE.WebGLRenderer | null = null;
   let post: PostFx | null = null;
@@ -213,10 +219,16 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     }
   };
 
-  /** Light the scene for the current time of day. False when the level has no EnvDef. */
+  /** Light the scene for the current time of day and weather. False when the level has no EnvDef. */
   const applyEnvironment = (): boolean => {
     const fr = env.eval(clock);
-    if (!fr) return false;
+    if (!fr) {
+      weather.update(weatherAt(null, clock, null, weatherState), 0, 0, clock);
+      return false;
+    }
+    weatherAt(env.def, clock, pinnedWeather, weatherState);
+    applyWeather(fr.light, fr.grade, weatherState);
+    weather.update(weatherState, iso.target.x, iso.target.z, clock);
     lighting.apply(fr.light);
     lighting.setKeyDir(keyLightDir(fr.f, SUN_DIR, keyDir));
     (scene.background as THREE.Color).setHex(fr.light.bg);
@@ -259,6 +271,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         env.pinned = parseTimeParam(q.get('time'));
         const len = Number(q.get('daylen'));
         if (len > 0) env.dayLength = len;
+        pinnedWeather = parseWeatherParam(q.get('weather'));
       }
       if (import.meta.env.DEV && cv.parentElement) stats = new StatsOverlay(cv.parentElement);
     },
@@ -321,7 +334,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         snapCamera = false;
       }
       iso.update(lp.x, lp.z, dt);
-      if (env.cycles) applyEnvironment();
+      if (env.def) applyEnvironment();
       iso.groundBounds(3.5, rect);
       lighting.follow(iso.target.x, iso.target.z, lp.x, lp.z, dt);
       iso.groundCorners(2, viewCorners);
@@ -375,6 +388,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       applyPixelRatio();
       post?.setQuality(q);
       vfx.setQuality(q);
+      weather.setQuality(q);
     },
 
     setScreenShake(enabled) {
@@ -417,6 +431,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       map = null;
       vfx.dispose();
       lighting.dispose();
+      weather.dispose();
       post?.dispose();
       post = null;
       gl?.dispose();
