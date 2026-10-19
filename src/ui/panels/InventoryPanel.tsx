@@ -52,6 +52,14 @@ export function InventoryPanel({
           </button>
         </div>
         <div class="dte-weapon-tabs right">
+          <button
+            class={`dte-wtab ${api.store.openPanels.value.includes('hero') ? 'active' : ''}`}
+            title={t('ui.hero.open')}
+            aria-label={t('ui.hero.open')}
+            onClick={() => api.togglePanel('hero')}
+          >
+            <Icon name="hero" size={18} />
+          </button>
           <button class="dte-wtab" title={swapLabel} onClick={() => api.dispatch({ type: 'swapWeapons' })}>
             <Icon name="swap" size={18} />
           </button>

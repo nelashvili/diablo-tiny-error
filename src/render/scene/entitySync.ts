@@ -3,7 +3,7 @@ import type { EntityId } from '../../core/types';
 import type { WorldView } from '../../core/sim/world';
 import type { Entity, EntityKind } from '../../core/sim/entities';
 import type { EntityVisual, VfxSystem, VisualFactory } from '../types';
-import { armorLook } from '../models/outfit';
+import { applyDress, dressOf, type Dress } from '../models/dress';
 import { getModelEntry } from '../assets/catalog';
 import { DB } from '../../data/db';
 import { MotionBuffer, type MotionSample } from './interp';
@@ -72,11 +72,10 @@ interface Rec {
   tint: number;
   highlighted: boolean;
   handle: { stop(): void } | null;
+  /** Monster/NPC gear: main hand model id ('-' = none, '' = not applied yet). */
   equip0: string;
-  equip1: string;
-  equip2: string;
-  equip3: string;
-  outfitKey: string;
+  /** What a player's or merc's equipment currently shows. */
+  dress: Dress | null;
   /** Main-hand weapon is ranged (attack mode plays the shoot clip). */
   ranged: boolean;
   x: number;
@@ -396,10 +395,7 @@ export class EntitySync {
       highlighted: false,
       handle,
       equip0: '',
-      equip1: '',
-      equip2: '',
-      equip3: '',
-      outfitKey: '',
+      dress: null,
       ranged: false,
       x: 0,
       z: 0,
@@ -567,41 +563,14 @@ export class EntitySync {
     eq: Readonly<Record<string, { base: string; quality?: string }>>,
     emptyHand = false,
   ): void {
-    const mi = emptyHand ? undefined : eq['mainHand'];
-    const oi = eq['offHand'];
-    const m = mi ? itemModelId(mi.base, mi.quality) : '';
-    const o = oi ? itemModelId(oi.base, oi.quality) : '';
-    const h = eq['head']?.base ?? '';
-    const c = eq['chest']?.base ?? '';
-    if (m !== r.equip0) {
-      r.equip0 = m;
+    const d = dressOf(eq, emptyHand);
+    if (d.mainHand !== r.dress?.mainHand) {
+      const mi = emptyHand ? undefined : eq['mainHand'];
       const wc = mi ? DB.items.get(mi.base)?.weaponClass : undefined;
       r.ranged = !!wc && RANGED_WEAPON_CLASSES.has(wc);
-      v.setAttachment('mainHand', m || null);
     }
-    if (o !== r.equip1) {
-      r.equip1 = o;
-      v.setAttachment('offHand', o || null);
-    }
-    if (h !== r.equip2) {
-      r.equip2 = h;
-      v.setAttachment('head', h ? `item.${h}` : null);
-    }
-    if (c !== r.equip3) {
-      r.equip3 = c;
-      v.setAttachment('chest', c ? `item.${c}` : null);
-    }
-    // Armor reshapes the hero's colors per body part (cooler looks at higher lines/tiers).
-    const g = eq['gloves']?.base ?? '';
-    const b = eq['boots']?.base ?? '';
-    const outfitKey = `${h}|${c}|${g}|${b}`;
-    if (v.setOutfit && outfitKey !== r.outfitKey) {
-      r.outfitKey = outfitKey;
-      v.setOutfit('head', armorLook(h));
-      v.setOutfit('body', armorLook(c));
-      v.setOutfit('arms', armorLook(g));
-      v.setOutfit('legs', armorLook(b));
-    }
+    applyDress(v, d, r.dress);
+    r.dress = d;
   }
 
   /** Topmost pickable entity near the pointer. Priority items > monsters > npcs > objects. */

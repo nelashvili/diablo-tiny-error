@@ -20,6 +20,7 @@ import { playerToSave, saveToPlayerInit, newCharacterSave, defaultSettings } fro
 import type { CharacterSave, Settings } from '@/core/save/types';
 import { createRenderer, type RenderController } from '@/render/renderer';
 import { createItemIcons, type ItemIconSource } from '@/render/icons/itemIcons';
+import { createHeroPreview, type HeroPreview } from '@/render/preview/heroPreview';
 import { createAudioSystem, type FullAudioSystem, type LoopHandle } from '@/audio';
 import { AUDIO_CATALOG } from '@/render/assets/audio';
 import {
@@ -61,6 +62,7 @@ export class Game {
   renderer!: RenderController;
   /** Rendered inventory item art (lazy; its own small WebGL context). */
   readonly itemIcons: ItemIconSource = createItemIcons();
+  private preview: HeroPreview | null | undefined;
   audio!: FullAudioSystem;
   input!: InputManager;
   private loop: FixedLoop;
@@ -108,6 +110,12 @@ export class Game {
     const id = this.world.localPlayerId;
     return id != null ? (this.world.get(id) as PlayerEntity | undefined) : undefined;
   }
+
+  /** The Hero screen's 3D hero (created on first open; its own WebGL context). */
+  readonly heroPreview = (): HeroPreview | null => {
+    if (this.preview === undefined) this.preview = createHeroPreview();
+    return this.preview;
+  };
 
   async init(): Promise<void> {
     const s = this.ui.api.store.settings.value;

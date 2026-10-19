@@ -65,6 +65,7 @@ export const GLYPHS: Record<string, Glyph> = {
   sort: { d: 'M4 6h16M4 12h10M4 18h5M18 13v8M15 18l3 3 3-3' },
   star: { d: 'M12 2l3 7h7l-6 4 2 8-6-5-6 5 2-8-6-4h7z', fill: true },
   swap: { d: 'M4 8h14l-3-3M20 16H6l3 3' },
+  hero: { d: 'M12 2a3 3 0 1 1 0 6a3 3 0 1 1 0-6zM7 22v-6l-2-1 1-5 3-1h6l3 1 1 5-2 1v6M10 22v-6M14 22v-6' },
 };
 
 export function Icon({ name, size = 24, cls }: { name: string; size?: number | string; cls?: string }) {

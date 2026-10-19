@@ -16,6 +16,7 @@ import { CharacterPanel } from './CharacterPanel';
 import { HeldGhost, Tabs } from './common';
 import { CtlContext, PanelCtl, RING_SLOTS, useCtl as ctlFromContext, type TipState } from './ctl';
 import { Icon } from './icons';
+import { HeroPanel } from './HeroPanel';
 import { InventoryPanel } from './InventoryPanel';
 import { activeTab, arrangePanels, compactTabs, isCompact, TRADE_PANELS, topPanel } from './layout';
 import {
@@ -133,6 +134,8 @@ export function Panels(props: PanelsProps) {
         return <InventoryPanel api={api} player={player} onClose={c} />;
       case 'character':
         return <CharacterPanel api={api} player={player} difficulty={difficulty} onClose={c} />;
+      case 'hero':
+        return <HeroPanel player={player} onClose={c} />;
       case 'skills':
         return <SkillTreePanel api={api} player={player} onClose={c} />;
       case 'quests':

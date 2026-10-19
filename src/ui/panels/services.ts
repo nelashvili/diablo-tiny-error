@@ -28,6 +28,21 @@ export interface PanelServices {
   itemIcon?(baseId: DefId, onReady: () => void): string | null;
   /** Speak these lines aloud (recorded voices), replacing any current speech; [] stops it. */
   speak?(lineKeys: readonly string[]): void;
+  /** The live 3D hero for the Hero screen, or null without WebGL. */
+  heroPreview?(): HeroPreviewView | null;
+}
+
+export type HeroPose = 'idle' | 'walk' | 'attack' | 'cast';
+
+/** A rendered hero the Hero screen mounts (render/preview/heroPreview implements it). */
+export interface HeroPreviewView {
+  readonly canvas: HTMLCanvasElement;
+  show(modelId: string, equipment: Equipment): void;
+  setPose(pose: HeroPose): void;
+  turn(rad: number): void;
+  setAutoSpin(on: boolean): void;
+  resize(width: number, height: number): void;
+  setActive(on: boolean): void;
 }
 
 const QUALITY_PRICE: Record<ItemQuality, number> = {

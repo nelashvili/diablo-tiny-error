@@ -39,6 +39,7 @@ export const DEFAULT_KEYBINDINGS: KeyBindings = {
   KeyI: { kind: 'panel', id: 'inventory' },
   KeyB: { kind: 'panel', id: 'inventory' },
   KeyC: { kind: 'panel', id: 'character' },
+  KeyH: { kind: 'panel', id: 'hero' },
   KeyK: { kind: 'panel', id: 'skills' },
   KeyT: { kind: 'recall' },
   KeyQ: { kind: 'panel', id: 'quests' },

@@ -59,6 +59,7 @@ export function App({ game }: { game: Game }): JSX.Element {
   const services = useMemo(
     () => ({
       itemIcon: game.itemIcons.get,
+      heroPreview: game.heroPreview,
       price: itemValue,
       speak: (keys: readonly string[]) => game.speak(keys),
     }),

@@ -14,6 +14,8 @@ import type { DefId, EntityId, Vec2 } from '../core/types';
 export type PanelId =
   | 'inventory'
   | 'character'
+  /** The hero model wearing the current equipment. */
+  | 'hero'
   | 'skills'
   | 'quests'
   | 'map'

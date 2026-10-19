@@ -2101,3 +2101,60 @@
   color: #e8c06a;
   font-size: 1.35em;
 }
+
+/* ------------------------------------------------------------------ hero */
+.p-hero {
+  width: min(380px, calc(100vw - 24px));
+}
+.p-hero .dte-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dte-hero-stage {
+  position: relative;
+  height: min(480px, calc(100vh - 260px));
+  min-height: 240px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background:
+    radial-gradient(55% 45% at 50% 40%, rgba(110, 150, 255, 0.2), transparent 75%),
+    linear-gradient(180deg, rgba(20, 26, 48, 0.7), rgba(8, 10, 18, 0.85));
+  cursor: grab;
+  touch-action: none;
+  overflow: hidden;
+}
+.dte-hero-stage:active {
+  cursor: grabbing;
+}
+.dte-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dte-hero-none {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+}
+.dte-hero-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dte-hero-bar .dte-btn.active {
+  border-color: var(--ui-border-hi);
+}
+.compact .p-hero .dte-hero-stage {
+  height: auto;
+  flex: 1;
+}
+.compact .p-hero .dte-panel-body {
+  height: 100%;
+}
