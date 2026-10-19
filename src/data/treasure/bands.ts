@@ -1,27 +1,33 @@
 /**
  * Banded equipment / gem / stim treasure classes (D2 weap3/armo3 analog): `tc.weap.N` lists the weapon
- * bases with qlvl in (N-24, N], weighted toward higher qlvl. Refs to the unbanded id (`tc.weap`) resolve in
- * core/loot to the highest band <= item level.
+ * bases with qlvl in (N-W, N], weighted toward higher qlvl, so drops climb with the area level. The window
+ * W is narrow early (one band per level up to 12) so each new area brings new bases. Refs to the unbanded
+ * id (`tc.weap`) resolve in core/loot to the highest band <= item level.
  */
 import { GEM_COLORS, GEM_GRADES, gemId } from '../gems/_gemTable';
 import type { ItemBaseDef, TreasureClassDef } from '../schema';
 import armor from '../items/armor';
 import weapons from '../items/weapons';
 
-const BANDS = [1, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84];
+const BANDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 21, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84];
+
+/** Width of a band's qlvl window. */
+const bandWindow = (band: number): number => Math.min(24, Math.max(8, band));
 
 function banded(prefix: string, bases: ItemBaseDef[]): TreasureClassDef[] {
   return BANDS.map((band) => {
-    let pool = bases.filter((b) => b.qlvl <= band && b.qlvl > band - 24);
+    const w = bandWindow(band);
+    let pool = bases.filter((b) => b.qlvl <= band && b.qlvl > band - w);
     if (pool.length === 0) pool = bases.filter((b) => b.qlvl <= band);
     return {
       id: `${prefix}.${band}`,
       picks: 1,
       noDrop: 0,
-      entries: pool.map((b) => ({
-        ref: b.id,
-        weight: Math.max(1, b.qlvl - (band - 24) + 1) * (b.classOnly ? 0.5 : 1),
-      })),
+      entries: pool.map((b) => {
+        // 1 at the bottom of the window up to w at the band's level, squared to favor newer bases
+        const near = Math.max(1, b.qlvl - (band - w));
+        return { ref: b.id, weight: near * near * (b.classOnly ? 0.5 : 1) };
+      }),
     };
   });
 }

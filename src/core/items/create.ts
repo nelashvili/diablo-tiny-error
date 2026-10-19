@@ -115,6 +115,26 @@ function rollSockets(base: ItemBaseDef, quality: ItemQuality, ilvl: number, rng:
   return rng.int(1, Math.max(1, cap));
 }
 
+/** Chance a dropped white weapon/armor is Superior: higher when it drops above its own level. */
+export function superiorChance(base: ItemBaseDef, ilvl: number): number {
+  return Math.min(0.3, Math.max(0.06, 0.06 + 0.03 * (ilvl - base.qlvl)));
+}
+
+/**
+ * Maybe turn a plain dropped white item into a Superior one: weapons get 5-15% (more at higher item
+ * levels) enhanced damage, armor the same as enhanced defense. Returns whether it did.
+ */
+export function rollSuperior(item: ItemInstance, rng: Rng): boolean {
+  const base = DB.items.get(item.base);
+  if (!base || item.quality !== 'normal' || !isGear(base)) return false;
+  const stat = base.damage ? 'enhancedDamage' : base.defense ? 'defense' : null;
+  if (!stat || !rng.chance(superiorChance(base, item.ilvl))) return false;
+  const top = Math.min(30, 15 + Math.floor(item.ilvl / 4));
+  item.superior = true;
+  item.mods.push({ stat, op: 'percent', value: rng.int(5, top), source: 'superior' });
+  return true;
+}
+
 /** Create an item instance of a base (rolling affixes/defense/sockets according to quality). */
 export function createItem(baseId: DefId, opts: CreateItemOpts, rng: Rng): ItemInstance {
   const base = req(DB.items, baseId, 'item base');

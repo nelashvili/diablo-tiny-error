@@ -123,7 +123,7 @@ const levels: LevelDef[] = [
     gen: 'preset',
     genParams: { template: 'ewokVillage', npcs: ['masterYoduh'], questObject: 'obj.captiveCage' },
     tileset: 'endoor.forest',
-    monsterLevel: ml(6, 41, 72),
+    monsterLevel: ml(5, 40, 71),
     monsters: ['mossBeast', 'nightsistah', 'tuskinRaider'],
     density: 0.9,
     champions: { min: 1, max: 2 },

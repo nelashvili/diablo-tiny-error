@@ -17,7 +17,7 @@ describe('createMonster', () => {
     const w = testWorld();
     const a = createMonster(w, 'scrapDroyd', P, 1, 'normal');
     const b = createMonster(w, 'scrapDroyd', P, 20, 'normal');
-    expect(b.stats.lifeMax).toBeGreaterThan(a.stats.lifeMax * 10);
+    expect(b.stats.lifeMax).toBeGreaterThan(a.stats.lifeMax * 5);
     w.difficulty = 'legend';
     const c = createMonster(w, 'scrapDroyd', P, 20, 'normal');
     expect(c.stats.lifeMax).toBeGreaterThan(b.stats.lifeMax * 2);

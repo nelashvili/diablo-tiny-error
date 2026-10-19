@@ -164,3 +164,44 @@ describe('quality & magic find', () => {
     expect(rollQuality(DB.items.get('baktaStim')!, 99, 999, undefined, rng)).toBe('normal');
   });
 });
+
+describe('level-scaled drops', () => {
+  const sample = (ilvl: number, n = 400) => {
+    const rng = new Rng(11);
+    const items = [];
+    for (let i = 0; i < n; i++)
+      items.push(
+        ...rollDrops(
+          {
+            treasureClass: 'tc.equip',
+            monsterLevel: ilvl,
+            magicFind: 0,
+            goldFind: 0,
+            players: 1,
+            rank: 'normal',
+          },
+          rng,
+        ).items,
+      );
+    return items;
+  };
+  const avgQlvl = (items: { base: string }[]) =>
+    items.reduce((s, it) => s + (DB.items.get(it.base)?.qlvl ?? 0), 0) / items.length;
+
+  it('climbs with each early area level', () => {
+    expect(resolveTreasure('tc.weap', 5)?.id).toBe('tc.weap.5');
+    expect(avgQlvl(sample(5))).toBeGreaterThan(avgQlvl(sample(2)) + 1);
+    expect(avgQlvl(sample(10))).toBeGreaterThan(avgQlvl(sample(5)) + 1.5);
+  });
+
+  it('rolls some Superior whites with a percent bonus', () => {
+    const sup = sample(8).filter((it) => it.superior);
+    expect(sup.length).toBeGreaterThan(10);
+    for (const it of sup) {
+      expect(it.quality).toBe('normal');
+      const m = it.mods.find((x) => x.source === 'superior')!;
+      expect(m.op).toBe('percent');
+      expect(m.value).toBeGreaterThanOrEqual(5);
+    }
+  });
+});

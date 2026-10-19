@@ -12,9 +12,12 @@ export const MAX_HARD_POINTS = 20;
 
 export type StatKey = 'strength' | 'dexterity' | 'vitality' | 'energy';
 
+/** Acts are much shorter than D2's, so kills are worth more to keep the hero level with the areas. */
+export const XP_SCALE = 2;
+
 /** XP a monster of `level` is worth before the player-level penalty. */
 export function monsterXp(def: Pick<MonsterDef, 'xp'> | undefined, level: number, rank = 'normal'): number {
-  const base = (def?.xp ?? 5) * 1.2 ** Math.max(0, level - 1);
+  const base = (def?.xp ?? 5) * XP_SCALE * 1.2 ** Math.max(0, level - 1);
   const mult = rank === 'champion' ? 3 : rank === 'unique' ? 4 : 1;
   return Math.max(1, Math.round(base * mult));
 }

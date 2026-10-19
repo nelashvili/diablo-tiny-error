@@ -26,10 +26,14 @@ function buildTable(anchors: Anchors): readonly number[] {
   return out;
 }
 
+// The early stretch is gentle: a hero's damage grows slowly over the first ten levels, so a steeper
+// curve made Act I a wall right after the Crash Site.
 const LIFE = buildTable([
   [1, 1],
-  [10, 8],
-  [20, 22],
+  [5, 1.7],
+  [10, 3.2],
+  [15, 5.5],
+  [20, 10],
   [30, 48],
   [40, 95],
   [50, 170],
@@ -53,8 +57,9 @@ const ATTACK_RATING = buildTable([
 ]);
 const DAMAGE = buildTable([
   [1, 1],
-  [10, 4],
-  [20, 9],
+  [5, 1.6],
+  [10, 2.6],
+  [20, 7],
   [30, 16],
   [50, 36],
   [70, 70],

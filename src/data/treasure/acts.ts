@@ -21,7 +21,13 @@ const RANKS: {
   w: [number, number, number, number];
   q: Q;
 }[] = [
-  { rank: 'normal', picks: 1, noDrop: 60, w: [20, 12, 14, 2], q: { unique: 0, set: 0, rare: 0, magic: 0 } },
+  {
+    rank: 'normal',
+    picks: 1,
+    noDrop: 60,
+    w: [20, 12, 14, 2],
+    q: { unique: 0, set: 0, rare: 60, magic: 160 },
+  },
   {
     rank: 'champion',
     picks: 2,

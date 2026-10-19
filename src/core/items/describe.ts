@@ -119,7 +119,7 @@ function itemName(item: ItemInstance): { name: string; baseName?: string } {
     case 'inferior':
       return { name: t('item.q.inferior', { base: baseText }) };
     default:
-      return { name: baseText };
+      return { name: item.superior ? t('item.q.superior', { base: baseText }) : baseText };
   }
 }
 

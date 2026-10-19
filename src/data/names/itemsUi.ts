@@ -45,6 +45,7 @@ const suffixes = [
 
 const out: Record<string, string> = {
   'item.q.inferior': 'Crude {base}',
+  'item.q.superior': 'Superior {base}',
   'item.q.ethereal': 'Ethereal',
   'item.damage.1h': 'One-Hand Damage: {min} to {max}',
   'item.damage.2h': 'Two-Hand Damage: {min} to {max}',

@@ -33,6 +33,8 @@ export interface ItemInstance {
   identified: boolean;
   /** Upgrade level +0..+5 from the smith. */
   upgrade?: number;
+  /** A white item with a small built-in bonus (D2 "Superior"). */
+  superior?: boolean;
 }
 
 /** D2-style grid container (inventory 10x4, stash 10x10, cube 3x4). */

@@ -1,6 +1,6 @@
 import { DB } from '../../data/db';
 import type { ItemBaseDef, TreasureClassDef } from '../../data/schema';
-import { createItem } from '../items/create';
+import { createItem, rollSuperior } from '../items/create';
 import { isGear, setCandidates, uniqueCandidates } from '../items/lookup';
 import type { ItemInstance } from '../items/types';
 import type { Rng } from '../rng';
@@ -129,7 +129,9 @@ export function rollDrops(ctx: DropContext, rng: Rng): DropResult {
     const base = DB.items.get(baseId);
     if (!base) return;
     const quality = rollQuality(base, ilvl, ctx.magicFind, mods, rng);
-    result.items.push(createItem(baseId, { quality, ilvl }, rng));
+    const item = createItem(baseId, { quality, ilvl }, rng);
+    rollSuperior(item, rng);
+    result.items.push(item);
   };
 
   const roll = (tcId: string, inherited: QualityMods | undefined, depth: number): void => {

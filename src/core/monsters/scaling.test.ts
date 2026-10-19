@@ -20,7 +20,8 @@ describe('monster level scaling', () => {
 
   it('spot checks', () => {
     expect(levelMultipliers(1).life).toBe(1);
-    expect(levelMultipliers(10).life).toBeCloseTo(8, 5);
+    expect(levelMultipliers(10).life).toBeCloseTo(3.2, 5);
+    expect(levelMultipliers(5).damage).toBeCloseTo(1.6, 5);
     expect(levelMultipliers(85).life).toBeCloseTo(600, 5);
     expect(levelMultipliers(30).damage).toBeCloseTo(16, 5);
   });
