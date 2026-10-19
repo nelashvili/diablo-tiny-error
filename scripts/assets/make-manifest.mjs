@@ -8,6 +8,21 @@ import { SFX } from './sfx-table.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const PUB = path.join(ROOT, 'public/assets');
 const sources = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/assets/models-sources.json'), 'utf8'));
+const texSources = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'scripts/assets/textures-sources.json'), 'utf8'),
+);
+const TEXTURE_PACKS = {
+  drummyfish: {
+    pack: '4 hand painted ground textures (+ extras)',
+    author: 'drummyfish',
+    homepage: 'https://opengameart.org/content/4-hand-painted-ground-textures',
+  },
+  luminous: {
+    pack: 'Simple seamless dirt and sand tiles',
+    author: 'LuminousDragonGames',
+    homepage: 'https://opengameart.org/node/69941',
+  },
+};
 
 const CC0 = { license: 'CC0-1.0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' };
 const KAYKIT = (repo, pack, itch) => ({
@@ -120,6 +135,20 @@ for (const file of walk(PUB).sort()) {
       source: `${modelSource(src).repo}  (${src.split('/').slice(1).join('/')})`,
       ...modelSource(src),
       modifications: mods.join('; '),
+    });
+  } else if (rel.startsWith('textures/')) {
+    const src = texSources[rel];
+    if (!src) throw new Error(`no source recorded for ${rel}`);
+    const info = TEXTURE_PACKS[src.split('/')[1]];
+    entries.push({
+      path: p,
+      bytes,
+      source: `${info.homepage}  (${src.split('/').slice(2).join('/')})`,
+      ...info,
+      ...CC0,
+      repo: '',
+      licenseNote: 'OpenGameArt page lists the license as CC0',
+      modifications: 'resized and re-encoded as JPEG by scripts/assets/build-textures.mjs',
     });
   } else if (rel.startsWith('audio/sfx/')) {
     const m = /^audio\/sfx\/(.+)\.(ogg|mp3)$/.exec(rel);

@@ -1,0 +1,11 @@
+{
+  "textures/ground/grass.jpg": "textures/drummyfish/grass_34.png",
+  "textures/ground/grassDark.jpg": "textures/drummyfish/grass_38.png",
+  "textures/ground/moss.jpg": "textures/drummyfish/grass_dev1.png",
+  "textures/ground/dirt.jpg": "textures/luminous/Dirt_4.png",
+  "textures/ground/dirtDark.jpg": "textures/luminous/Dirt_1.png",
+  "textures/ground/dirtCracked.jpg": "textures/drummyfish/dirt_9.png",
+  "textures/ground/sand.jpg": "textures/luminous/Sand2.png",
+  "textures/ground/sandWaves.jpg": "textures/drummyfish/sand_8.png",
+  "textures/ground/cobble.jpg": "textures/drummyfish/pavement_1.png"
+}

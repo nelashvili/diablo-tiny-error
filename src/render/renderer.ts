@@ -19,6 +19,7 @@ import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
 import { makeRect, type GroundRect } from './culling/viewRect';
+import { setTerrainAnisotropy } from './terrain/terrain';
 
 const SABER_SPARKS = 'vfx.saber.sparks';
 const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
@@ -218,6 +219,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       gl.shadowMap.autoUpdate = true;
       // Count every pass of a frame (the composer renders several), reset once per frame in render().
       gl.info.autoReset = false;
+      setTerrainAnisotropy(gl.capabilities.getMaxAnisotropy());
       touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       post = postFactory(gl, scene, iso.camera);
       dpr = window.devicePixelRatio || 1;
@@ -278,6 +280,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       iso.groundCorners(2, viewCorners);
       lighting.fitShadow(viewCorners);
       map?.setFocus(lp.x, lp.z);
+      map?.update(dt);
 
       scanEvents(events, view);
       vfx.handleEvents(events, view);

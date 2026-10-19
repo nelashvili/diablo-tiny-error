@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { GeneratedLevel, TileKind } from '../../core/world/types';
 import type { QualityLevel, VisualFactory } from '../types';
 import { CHUNK_SIZE, chunkGrid, chunkIndexOf, countKindsPerChunk, hash01 } from './chunking';
+import { TERRAIN_KINDS, buildTerrain } from '../terrain/terrain';
 
 type Part = { geometry: THREE.BufferGeometry; material: THREE.Material };
 
@@ -21,6 +22,8 @@ export interface MapRenderer {
   /** Update the wall cutaway focus (world x, z). */
   setFocus(x: number, z: number): void;
   setWallCutaway(on: boolean): void;
+  /** Animate the terrain (water). */
+  update(dt: number): void;
   dispose(): void;
 }
 
@@ -145,7 +148,16 @@ export function buildMap(
   const wallMats = new Map<THREE.Material, THREE.Material>();
 
   const grid = chunkGrid(width, height, CHUNK_SIZE);
-  const counts = countKindsPerChunk(map.kinds, width, height, CHUNK_SIZE);
+  // Ground, water and pits are one splat-shaded mesh per chunk; everything else stays instanced on top.
+  const terrain = buildTerrain(level, tileset, { quality: opts.quality });
+  group.add(terrain.group);
+  const counts = countKindsPerChunk(
+    map.kinds,
+    width,
+    height,
+    CHUNK_SIZE,
+    new Set<string>(['void', ...TERRAIN_KINDS]),
+  );
 
   // ------------------------------------------------------------------ tiles
   interface Batch {
@@ -215,7 +227,7 @@ export function buildMap(
     for (let tx = 0; tx < width; tx++) {
       const idx = ty * width + tx;
       const kind = map.kinds[idx];
-      if (!kind || kind === 'void') continue;
+      if (!kind || kind === 'void' || TERRAIN_KINDS.has(kind)) continue;
       const ci = chunkIndexOf(grid, tx, ty);
       const b = batches.get(`${ci}:${kind}`);
       if (!b) continue;
@@ -320,7 +332,11 @@ export function buildMap(
     setWallCutaway(on) {
       uniforms.uMinH.value = on ? WALL_MIN_HEIGHT : 1;
     },
+    update(dt) {
+      terrain.update(dt);
+    },
     dispose() {
+      terrain.dispose();
       for (const im of meshes) im.dispose();
       for (const m of ownedMaterials) m.dispose();
       group.removeFromParent();
