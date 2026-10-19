@@ -133,7 +133,13 @@ const _a = new THREE.Color();
 const _b = new THREE.Color();
 
 /** Apply weather to an evaluated frame (light + grade), in place. */
-export function applyWeather(light: EnvLightDef, grade: GradeParams, w: WeatherState): void {
+export function applyWeather(
+  light: EnvLightDef,
+  grade: GradeParams,
+  w: WeatherState,
+  /** Softens lightning ("Reduce flashes"). */
+  flashScale = 1,
+): void {
   const m = WEATHER_MOODS[w.kind];
   const i = w.intensity;
   if (m && i > 0) {
@@ -152,15 +158,16 @@ export function applyWeather(light: EnvLightDef, grade: GradeParams, w: WeatherS
       .getHex();
     grade.sat *= lerp(m.sat);
   }
-  if (w.flash > 0) {
-    light.hemi += 1.4 * w.flash;
+  const flash = w.flash * flashScale;
+  if (flash > 0) {
+    light.hemi += 1.4 * flash;
     light.sky = _a
       .setHex(light.sky)
-      .lerp(_b.setHex(0xe8f0ff), w.flash * 0.7)
+      .lerp(_b.setHex(0xe8f0ff), flash * 0.7)
       .getHex();
     light.bg = _a
       .setHex(light.bg)
-      .lerp(_b.setHex(0x404858), w.flash * 0.5)
+      .lerp(_b.setHex(0x404858), flash * 0.5)
       .getHex();
   }
 }

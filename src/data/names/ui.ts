@@ -225,6 +225,8 @@ export default {
   'ui.opt.cb.deutan': 'Green-blind',
   'ui.opt.cb.tritan': 'Blue-blind',
   'ui.opt.shake': 'Screen shake',
+  'ui.opt.weather': 'Weather effects',
+  'ui.opt.flashes': 'Reduce flashes',
   'ui.opt.quality': 'Graphics',
   'ui.opt.q.low': 'Fast',
   'ui.opt.q.medium': 'Medium',

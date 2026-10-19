@@ -203,6 +203,8 @@ const settings = signal<Settings>({
   showStatHints: true,
   lootFilter: 'all',
   screenShake: true,
+  weather: true,
+  reduceFlashes: false,
   colorblind: 'none',
   textScale: 1,
   readAloud: false,

@@ -68,6 +68,10 @@ export interface Settings {
   showStatHints: boolean;
   lootFilter: 'all' | 'hideInferior' | 'hideNormal';
   screenShake: boolean;
+  /** Rain, snow and other weather (visual + sound). */
+  weather: boolean;
+  /** Soften lightning flashes (photosensitivity). */
+  reduceFlashes: boolean;
   colorblind: 'none' | 'protan' | 'deutan' | 'tritan';
   textScale: number;
   readAloud: boolean;

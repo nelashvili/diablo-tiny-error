@@ -137,6 +137,15 @@ describe('migrations', () => {
     expect(r.value.sharedStash).toHaveLength(1);
     expect(migrateSettings(undefined)).toEqual(defaultSettings());
   });
+
+  it('older settings gain weather on and flashes unreduced; bad values fall back', () => {
+    const old = migrateSettings({ screenShake: false });
+    expect(old.weather).toBe(true);
+    expect(old.reduceFlashes).toBe(false);
+    const set = migrateSettings({ weather: false, reduceFlashes: 'yes' });
+    expect(set.weather).toBe(false);
+    expect(set.reduceFlashes).toBe(false);
+  });
 });
 
 describe('mappers', () => {

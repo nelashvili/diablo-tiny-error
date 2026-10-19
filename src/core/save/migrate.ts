@@ -206,6 +206,8 @@ export function migrateSettings(raw: unknown): Settings {
     showStatHints: bool(raw['showStatHints'], d.showStatHints),
     lootFilter: pick(raw['lootFilter'], ['all', 'hideInferior', 'hideNormal'], d.lootFilter),
     screenShake: bool(raw['screenShake'], d.screenShake),
+    weather: bool(raw['weather'], d.weather),
+    reduceFlashes: bool(raw['reduceFlashes'], d.reduceFlashes),
     colorblind: pick(raw['colorblind'], ['none', 'protan', 'deutan', 'tritan'], d.colorblind),
     textScale: num(raw['textScale'], d.textScale, 0.75, 2),
     readAloud: bool(raw['readAloud'], d.readAloud),

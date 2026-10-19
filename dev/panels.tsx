@@ -853,6 +853,8 @@ const settings = signal<Settings>({
   showStatHints: q.get('hints') !== '0',
   lootFilter: 'all',
   screenShake: true,
+  weather: true,
+  reduceFlashes: false,
   colorblind: (q.get('cb') as Settings['colorblind']) ?? 'none',
   textScale: Number(q.get('text') ?? 1),
   readAloud: false,

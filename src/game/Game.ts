@@ -467,6 +467,7 @@ export class Game {
       voice: s.voiceVolume,
     });
     this.renderer?.setScreenShake(s.screenShake);
+    this.renderer?.setWeather(s.weather, s.reduceFlashes);
     if (s.quality !== 'auto') this.renderer?.setQuality(s.quality);
   }
 

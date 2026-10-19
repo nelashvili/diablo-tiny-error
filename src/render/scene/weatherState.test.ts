@@ -59,6 +59,23 @@ describe('weather schedule', () => {
     expect(grade.sat).toBeLessThan(1);
   });
 
+  it('"Reduce flashes" softens lightning', () => {
+    const grade = () => ({
+      tint: [1, 1, 1] as [number, number, number],
+      lift: [0, 0, 0] as [number, number, number],
+      sat: 1,
+      contrast: 1,
+      vignette: 0,
+    });
+    const full = { ...swamp.day, fog: { ...swamp.day.fog! } };
+    const soft = { ...swamp.day, fog: { ...swamp.day.fog! } };
+    applyWeather(full, grade(), { kind: 'storm', intensity: 1, flash: 1 });
+    applyWeather(soft, grade(), { kind: 'storm', intensity: 1, flash: 1 }, 0.15);
+    const calm = { ...swamp.day, fog: { ...swamp.day.fog! } };
+    applyWeather(calm, grade(), { kind: 'storm', intensity: 1, flash: 0 });
+    expect(full.hemi - calm.hemi).toBeGreaterThan(5 * (soft.hemi - calm.hemi));
+  });
+
   it('ground soaks in under rain and dries slowly afterwards', () => {
     let wet = 0;
     for (let i = 0; i < 60 * 10; i++) wet = stepWetness(wet, { kind: 'storm', intensity: 1, flash: 0 }, 0.1);

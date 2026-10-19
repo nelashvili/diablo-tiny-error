@@ -96,6 +96,8 @@ export interface RenderController extends Renderer {
   shake(amount: number): void;
   /** Play-time clock (seconds) that drives the day/night cycle. */
   setClock(seconds: number): void;
+  /** Weather on/off, and softened lightning (photosensitivity). */
+  setWeather(enabled: boolean, reduceFlashes: boolean): void;
   /** Weather on screen this frame (for the weather ambience). */
   getWeather(): Readonly<WeatherState>;
   /** Toggle the D2-style wall cutaway near the player. */
@@ -120,6 +122,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const weather = new WeatherFx();
   const weatherState: WeatherState = { kind: 'clear', intensity: 0, flash: 0 };
   let pinnedWeather: WeatherKind | null = null;
+  let weatherOn = true;
+  /** Lightning brightness multiplier ("Reduce flashes" keeps a faint glow). */
+  let flashScale = 1;
   const entityRoot = new THREE.Group();
   entityRoot.name = 'entities';
   const sync = new EntitySync(entityRoot, visuals, vfx);
@@ -236,8 +241,8 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       GROUND_WETNESS.value = 0;
       return false;
     }
-    weatherAt(env.def, clock, pinnedWeather, weatherState);
-    applyWeather(fr.light, fr.grade, weatherState);
+    weatherAt(weatherOn ? env.def : null, clock, pinnedWeather, weatherState);
+    applyWeather(fr.light, fr.grade, weatherState, flashScale);
     // A fresh level starts already as wet as its weather; afterwards wetness lags behind it.
     GROUND_WETNESS.value =
       dt > 0
@@ -413,6 +418,10 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
 
     setClock(seconds) {
       clock = seconds;
+    },
+    setWeather(enabled, reduceFlashes) {
+      weatherOn = enabled;
+      flashScale = reduceFlashes ? 0.15 : 1;
     },
     getWeather() {
       return weatherState;

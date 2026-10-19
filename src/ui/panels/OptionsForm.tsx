@@ -146,6 +146,12 @@ export function OptionsForm({
           value={s.screenShake}
           onChange={(v) => onChange({ screenShake: v })}
         />
+        <Toggle label={t('ui.opt.weather')} value={s.weather} onChange={(v) => onChange({ weather: v })} />
+        <Toggle
+          label={t('ui.opt.flashes')}
+          value={s.reduceFlashes}
+          onChange={(v) => onChange({ reduceFlashes: v })}
+        />
       </fieldset>
       <fieldset>
         <legend>{t('ui.opt.gameplay')}</legend>
