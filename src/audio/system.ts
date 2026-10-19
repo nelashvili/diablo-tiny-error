@@ -7,7 +7,7 @@ import type { AudioSystem } from './types';
 import type { GameEvent } from '../core/sim/events';
 import { moodFor, startPad, type PadHandle } from './ambient';
 import { planCues, type Cue, type CueContext } from './eventMap';
-import { finalGain, pickTake, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
+import { finalGain, nextTake, pickTake, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
 import { PROCEDURAL_IDS, PROCEDURAL_TAKES, ProceduralSfx, RECIPES } from './synth';
 import { VOICE_DUCK, VOICE_GAP, voiceUrl } from './voice';
 
@@ -76,7 +76,13 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     footstep: 2,
     hit: 5,
   });
-  const throttle = new SfxThrottle(0.04, 4, { hit: 0.05, footstep: 0.15, dialogue: 0.1 }, { hit: 5 });
+  // Saber hits land on nearly every swing: at most two per frame, ~8 a second.
+  const throttle = new SfxThrottle(
+    0.04,
+    4,
+    { hit: 0.05, footstep: 0.15, dialogue: 0.1, saberHit: 0.12 },
+    { hit: 5, saberHit: 2 },
+  );
 
   let volumes: Volumes = { master: 0.8, music: 0.6, sfx: 0.9, voice: 0.9 };
   /** Music gain multiplier: below 1 while a voice line plays. */
@@ -153,6 +159,8 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
   const rand = (spread: number) => 1 + (Math.random() * 2 - 1) * spread;
 
   // ---- SFX ----
+  /** Last procedural take played per id (the next play picks a different one). */
+  const lastTake = new Map<string, number>();
   function playResolved(ids: string[], o: { volume?: number; rate?: number; pos?: Vec2Like } = {}): void {
     if (disposed) return;
     const fileId = ids.find((i) => catalog[i] !== undefined && catalog[i].urls.length > 0);
@@ -206,7 +214,9 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
       limiter.release(handle);
       return;
     }
-    const ab = proc.get(procId, Math.floor(Math.random() * PROCEDURAL_TAKES));
+    const take = nextTake(RECIPES[procId]?.takes ?? PROCEDURAL_TAKES, lastTake.get(procId), Math.random());
+    lastTake.set(procId, take);
+    const ab = proc.get(procId, take);
     if (!ab) {
       limiter.release(handle);
       return;

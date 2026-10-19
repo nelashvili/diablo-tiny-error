@@ -119,6 +119,13 @@ export class SfxThrottle {
   }
 }
 
+/** A random take in [0, count), never `last` again when there is a choice (`r` in [0,1)). */
+export function nextTake(count: number, last: number | undefined, r: number): number {
+  if (count <= 1) return 0;
+  if (last === undefined || last < 0 || last >= count) return Math.floor(r * count);
+  return (last + 1 + Math.floor(r * (count - 1))) % count;
+}
+
 /** Catalog fields that drive per-play variety. */
 export interface TakeInfo {
   variants?: string[];

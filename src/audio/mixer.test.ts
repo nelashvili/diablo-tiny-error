@@ -5,6 +5,7 @@ import {
   distanceGain,
   pickTake,
   finalGain,
+  nextTake,
   panFor,
   positional,
   SfxThrottle,
@@ -116,5 +117,23 @@ describe('pickTake', () => {
     expect(pickTake('a', cat, 0.99, 0.5).rate).toBeCloseTo(1);
     expect(pickTake('a', cat, 0.99, 0).rate).toBeCloseTo(0.5);
     expect(pickTake('plain', cat, 0.3, 0.7)).toEqual({ id: 'plain', rate: 1 });
+  });
+});
+
+describe('nextTake', () => {
+  it('never repeats the last take when there is a choice', () => {
+    for (let last = 0; last < 8; last++)
+      for (const r of [0, 0.3, 0.5, 0.99]) {
+        const t = nextTake(8, last, r);
+        expect(t).not.toBe(last);
+        expect(t).toBeGreaterThanOrEqual(0);
+        expect(t).toBeLessThan(8);
+      }
+  });
+  it('covers every other take and handles one take or no history', () => {
+    const seen = new Set([0, 1, 2, 3, 4, 5, 6].map((k) => nextTake(8, 3, k / 7 + 0.01)));
+    expect(seen.size).toBe(7);
+    expect(nextTake(1, 0, 0.7)).toBe(0);
+    expect(nextTake(4, undefined, 0.6)).toBe(2);
   });
 });

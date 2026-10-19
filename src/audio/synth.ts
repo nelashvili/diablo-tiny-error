@@ -14,6 +14,8 @@ export interface SynthRecipe {
   loop?: boolean;
   /** Natural loudness trim 0..1. */
   gain?: number;
+  /** Distinct renders to rotate through (default PROCEDURAL_TAKES); more for very frequent sounds. */
+  takes?: number;
 }
 
 export function mulberry32(seed: number): () => number {
@@ -363,27 +365,35 @@ export const RECIPES: Record<string, SynthRecipe> = {
     },
   },
   /** Saber hitting something: a high buzz burst with crackling sparks ("kssshh"). */
+  /**
+   * Saber hitting something: a short buzz accent ("tssk") with a few sparks. It plays on nearly every
+   * hit, so it stays brief and soft, and each take differs in pitch, sweep and length.
+   */
   saberHit: {
-    pitchVar: 0.08,
-    gain: 0.6,
+    pitchVar: 0.12,
+    gain: 0.45,
+    takes: 8,
     render(sr, rng) {
+      const sec = 0.14 + rng() * 0.08;
+      const base = 135 + rng() * 70;
+      const fall = 0.2 + rng() * 0.35;
       const d = saberSweep(
         sr,
         rng,
-        0.32,
-        170,
-        (u) => 1.15 - 0.45 * u,
-        (u) => ad(u * 0.32, 0.004, 0.09),
-        0.35,
+        sec,
+        base,
+        (u) => 1.1 - fall * u,
+        (u) => ad(u * sec, 0.003, 0.045 + rng() * 0.02),
+        0.18,
       );
-      // Sparse spark crackles over the burst.
-      for (let k = 0; k < 26; k++) {
-        const at = Math.floor(rng() * rng() * d.length * 0.8);
-        const len = Math.floor(sr * (0.001 + rng() * 0.003));
-        const g = 0.6 * (1 - at / d.length);
+      lowpass(d, sr, () => 3600);
+      for (let k = 0, n = 5 + Math.floor(rng() * 6); k < n; k++) {
+        const at = Math.floor(rng() * rng() * d.length * 0.6);
+        const len = Math.floor(sr * (0.0008 + rng() * 0.002));
+        const g = 0.35 * (1 - at / d.length);
         for (let i = 0; i < len && at + i < d.length; i++) add(d, at + i, noise(rng) * g * (1 - i / len));
       }
-      return declick(normalize(d, 0.85), sr);
+      return declick(normalize(d, 0.8), sr);
     },
   },
   /** Ignition "snap-hiss": a crack, then the hum spins up from low to full pitch. */

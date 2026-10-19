@@ -166,8 +166,9 @@ export function cuesForEvent(e: GameEvent, ctx?: CueContext): Cue[] {
       const crit: Cue[] = physical && e.crit ? [{ ids: ['hitCrit'], volume: 0.7, pos: e.pos }] : [];
       const v = e.crit ? 1 : 0.75;
       const r = e.crit ? 0.9 : 1;
+      // Saber hits are an accent under the swing: soft unless it's a crit.
       if (physical && e.sourceId !== undefined && ctx?.hitsWithSaber?.(e.sourceId))
-        return [{ ids: ['saberHit'], volume: v, rate: r, pos: e.pos }, ...crit];
+        return [{ ids: ['saberHit'], volume: e.crit ? 0.85 : 0.5, rate: r, pos: e.pos }, ...crit];
       if (physical && ctx?.isDroyd?.(e.targetId))
         return [{ ids: ['hitMetal'], volume: v, rate: r, pos: e.pos }, ...crit];
       return [hitCue(e.dtype, e.crit, e.pos), ...crit];
