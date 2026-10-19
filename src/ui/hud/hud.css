@@ -1386,6 +1386,11 @@
   pointer-events: auto;
   cursor: pointer;
 }
+/* A left-docked panel (Character, Hero, quests...) covers the objective: hide it instead of letting
+   the text show through the panel's translucent header. */
+#ui-root:has(.dte-dock.left) .hud-objective {
+  visibility: hidden;
+}
 .hud-objective__quest {
   color: #ffd23f;
   font-weight: 700;

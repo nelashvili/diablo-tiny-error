@@ -76,3 +76,10 @@ export function computeWheelLayout(width: number, height: number): WheelLayout {
 
 /** Fraction of the screen width (from the left) where a touch spawns the floating joystick. */
 export const JOYSTICK_ZONE = 0.4;
+/** Fraction of the screen height (from the top) kept free of the joystick: taps there hit the world. */
+export const JOYSTICK_ZONE_TOP = 0.35;
+
+/** Whether a touch on empty ground at `p` (CSS px) starts the floating joystick. */
+export function inJoystickZone(p: Vec2, width: number, height: number): boolean {
+  return p.x < width * JOYSTICK_ZONE && p.y >= height * JOYSTICK_ZONE_TOP;
+}

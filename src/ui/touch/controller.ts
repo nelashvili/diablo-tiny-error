@@ -26,7 +26,7 @@ import {
 } from '../input/math';
 import { getLocalPlayer, resolveAutoAim, skillRangeFor } from '../input/autoTarget';
 import { findStimColumn, type StimKind } from './skillState';
-import { JOYSTICK_ZONE } from './layout';
+import { inJoystickZone } from './layout';
 
 export type ButtonId = 'primary' | number;
 
@@ -75,6 +75,10 @@ type Gesture =
       holdMove: boolean;
       /** Joystick mode: a quick tap on empty ground walks there on release. */
       tapMove: boolean;
+      /** Entity to interact with on tap / hold (joystick zone: decided on release, not on down). */
+      targetId: EntityId | null;
+      /** Started in the joystick zone: dragging past the tap slop turns this into the stick. */
+      stickOnDrag: boolean;
       done: boolean;
     }
   | {
@@ -94,6 +98,8 @@ const TAP_SLOP = 12;
 const HOLD_REPEAT = 0.22;
 const MOVE_REPEAT = 0.15;
 const LABEL_SEC = 2.5;
+/** Holding still on a monster in the joystick zone attacks it without waiting for release. */
+const ZONE_HOLD_SEC = 0.25;
 
 export class TouchController {
   readonly stick = signal<StickVisual | null>(null);
@@ -162,10 +168,11 @@ export class TouchController {
     if (this.ctx.isOverUi(p.x, p.y)) return false;
     this.beltOpen.value = false;
     const hasStick = [...this.gestures.values()].some((g) => g.kind === 'stick');
-    if (this.movementMode === 'joystick' && !hasStick && p.x < this.size.w * JOYSTICK_ZONE) {
-      this.gestures.set(e.pointerId, { kind: 'stick', base: p, finger: p });
-      this.stick.value = { base: p, knob: p };
-      this.buzz(5);
+    const id = this.ctx.pick(p.x, p.y);
+    const ent = id != null ? this.view?.get(id) : undefined;
+    const zone = this.movementMode === 'joystick' && !hasStick && inJoystickZone(p, this.size.w, this.size.h);
+    if (zone && id == null) {
+      this.startStick(e.pointerId, p, p);
       return true;
     }
     const g: Gesture = {
@@ -177,12 +184,14 @@ export class TouchController {
       itemId: null,
       holdMove: false,
       tapMove: false,
+      targetId: null,
+      stickOnDrag: zone,
       done: false,
     };
-    const id = this.ctx.pick(p.x, p.y);
-    const ent = id != null ? this.view?.get(id) : undefined;
     if (id != null && ent?.kind === 'groundItem') {
       g.itemId = id; // decide on release (tap = pick up) or long-press (= show label)
+    } else if (id != null && zone) {
+      g.targetId = id; // tap / hold = interact, drag = joystick
     } else if (id != null) {
       this.send({ type: 'interact', targetId: id });
       this.buzz(8);
@@ -211,6 +220,10 @@ export class TouchController {
     } else if (g.kind === 'world') {
       g.pos = p;
       g.moved = Math.max(g.moved, Math.hypot(p.x - g.start.x, p.y - g.start.y));
+      if (g.stickOnDrag && !g.done && g.moved > TAP_SLOP && !this.stickActive) {
+        this.startStick(e.pointerId, g.start, p);
+        this.pointerMove(e, p);
+      }
     } else {
       g.pos = p;
       const d = Math.hypot(p.x - g.center.x, p.y - g.center.y);
@@ -230,8 +243,9 @@ export class TouchController {
       this.updateStick(0);
     } else if (g.kind === 'world') {
       if (g.holdMove) this.moveRepeat.stop();
-      if (!cancelled && !g.done && g.itemId != null && g.moved <= TAP_SLOP) {
-        this.send({ type: 'interact', targetId: g.itemId });
+      const tapId = g.itemId ?? g.targetId;
+      if (!cancelled && !g.done && tapId != null && g.moved <= TAP_SLOP) {
+        this.send({ type: 'interact', targetId: tapId });
         this.buzz(8);
       } else if (!cancelled && g.tapMove && g.moved <= TAP_SLOP) {
         const pos = this.ctx.screenToWorld(g.pos.x, g.pos.y);
@@ -243,6 +257,12 @@ export class TouchController {
   }
 
   // ---------------------------------------------------------------- joystick
+
+  private startStick(pointerId: number, base: Vec2, finger: Vec2): void {
+    this.gestures.set(pointerId, { kind: 'stick', base, finger });
+    this.stick.value = { base, knob: base };
+    this.buzz(5);
+  }
 
   private updateStick(dt: number): void {
     let dir: Vec2 = { x: 0, y: 0 };
@@ -425,6 +445,14 @@ export class TouchController {
       if (g.kind === 'world' && g.itemId != null && isLongPress(now - g.t0, g.moved, 0.45, TAP_SLOP)) {
         g.done = true;
         this.showItemLabel(g.itemId);
+      } else if (
+        g.kind === 'world' &&
+        g.targetId != null &&
+        isLongPress(now - g.t0, g.moved, ZONE_HOLD_SEC, TAP_SLOP)
+      ) {
+        g.done = true;
+        this.send({ type: 'interact', targetId: g.targetId });
+        this.buzz(8);
       } else if (g.kind === 'button' && g.id !== 'primary' && !g.aiming) {
         if (isLongPress(now - g.t0, g.moved, 0.5, TAP_SLOP)) {
           g.done = true;
