@@ -1,13 +1,15 @@
 /**
  * Dev harness for render/models. Open /dev/models.html via `npm run dev`.
  * Query: ?mode=attack (freeze a mode), ?cols=8, ?zoom=1, ?only=hero.yediKnight,mon.jawwa (just those,
- * without the extra demo actors and tiles), ?nohelm.
+ * without the extra demo actors and tiles), ?nohelm, ?armor=helm,chest,gloves,boots (armor item ids worn
+ * by the heroes, e.g. trooperHelm,trooperArmor,heavyGloves,heavyBoots).
  */
 import * as THREE from 'three';
 import { MODEL_CATALOG } from '../src/render/assets/catalog';
 import { createVisualFactory } from '../src/render/models';
 import type { EntityVisual } from '../src/render/types';
 import type { ActorMode } from '../src/core/sim/entities';
+import { armorLook } from '../src/render/models/outfit';
 
 const MODES: ActorMode[] = [
   'idle',
@@ -107,6 +109,8 @@ for (const id of ids) {
     if (id.endsWith('forseAdept')) v.setAttachment('offHand', 'item.energyShield');
     if (id.endsWith('bountyHuntur')) v.setAttachment('mainHand', 'item.blasterPistol');
     if (id.endsWith('yediKnight') && !params.has('nohelm')) v.setAttachment('head', 'item.battleHelm');
+    const armor = (params.get('armor') ?? '').split(',');
+    (['head', 'body', 'arms', 'legs'] as const).forEach((part, i) => v.setOutfit?.(part, armorLook(armor[i])));
   }
   add(v);
 }

@@ -1,18 +1,18 @@
 /**
- * Post-processing: RenderPass -> UnrealBloom (high threshold, only emissive things glow) ->
+ * Post-processing: scene + toon outline (OutlineRenderPass) -> UnrealBloom (high threshold, only emissive things glow) ->
  * per-act color grade + vignette -> OutputPass (tone mapping + sRGB) -> SMAA (when there is no MSAA)
  * -> sharpen (when rendering below native resolution).
  * Quality: low = no composer (direct render), medium = half-res bloom + SMAA, high = full-res bloom + MSAA.
  */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import type { QualityLevel } from '../types';
 import { GRADE_FRAG, GRADE_VERT, SHARPEN_FRAG } from '../shaders/vfx';
+import { OutlineRenderPass } from './outlinePass';
 
 export interface PostFx {
   render(dt: number): void;
@@ -61,11 +61,14 @@ export function createPostFx(
   h = size.y || 1;
   dpr = renderer.getPixelRatio();
 
-  const target = new THREE.WebGLRenderTarget(w * dpr, h * dpr, { type: THREE.HalfFloatType, samples: 4 });
+  // MSAA lives on the outline pass's scene target; the composer's ping-pong targets don't need it.
+  const target = new THREE.WebGLRenderTarget(w * dpr, h * dpr, { type: THREE.HalfFloatType });
   const composer = new EffectComposer(renderer, target);
+  const scenePass = new OutlineRenderPass(scene, camera as THREE.OrthographicCamera);
+  scenePass.cssWidth = w;
   composer.setPixelRatio(dpr);
   composer.setSize(w, h);
-  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(scenePass);
 
   // Strength/radius kept modest: only sabers, bolts and Forse powers should glow, without a haze.
   const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.38, 0.35, 0.92);
@@ -123,12 +126,8 @@ export function createPostFx(
   function applyQuality(): void {
     bloom.enabled = quality !== 'low';
     bloomDivisor = quality === 'medium' ? 2 : 1;
-    target.samples = quality === 'high' ? 4 : 0;
-    smaa.enabled = target.samples === 0;
-    target.dispose();
-    composer.renderTarget1.samples = composer.renderTarget2.samples = target.samples;
-    composer.renderTarget1.dispose();
-    composer.renderTarget2.dispose();
+    scenePass.samples = quality === 'high' ? 4 : 0;
+    smaa.enabled = quality !== 'high';
     composer.setSize(w, h);
   }
   applyQuality();
@@ -158,6 +157,7 @@ export function createPostFx(
       w = nw;
       h = nh;
       dpr = ndpr;
+      scenePass.cssWidth = w;
       composer.setPixelRatio(dpr);
       composer.setSize(w, h);
       setTexel();
@@ -176,6 +176,7 @@ export function createPostFx(
     },
     dispose(): void {
       composer.dispose();
+      scenePass.dispose();
       smaa.dispose();
       target.dispose();
       bloom.dispose();

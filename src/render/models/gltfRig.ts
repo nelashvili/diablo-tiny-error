@@ -6,7 +6,7 @@ import type { ModelEntry } from '../types';
 import { ALL_MODES, computePose, makePose, modeLoops, resolveClip } from './helpers';
 import type { LoadedAsset } from './loader';
 import type { AttachSlot, Rig } from './rig';
-import { recolorMaterial } from './toon';
+import { enableRim, recolorMaterial } from './toon';
 import { replaceHelmet } from './headgear';
 import { buildArmor } from './armor';
 
@@ -92,6 +92,11 @@ export class GltfRig implements Rig {
     if (entry.armor) {
       const parts = buildArmor(this.model, entry.armor, entry.armor.hideBody ?? false);
       this.bodyMeshes.push(...parts.filter((m) => m.name !== 'Armor_Glow'));
+    }
+    // Actors get the rim light (outfit recolors start from rawMaterial, so mark that too).
+    for (const mesh of this.bodyMeshes) {
+      for (const m of [mesh.material, mesh.userData.rawMaterial as THREE.Material | undefined].flat())
+        if (m) enableRim(m);
     }
     this.mixer = new THREE.AnimationMixer(this.model);
     const byClip = new Map<string, THREE.AnimationAction>();

@@ -3,10 +3,13 @@ import * as THREE from 'three';
 
 let gradient: THREE.DataTexture | null = null;
 
-/** 4-step gradient map shared by every toon material. */
+/**
+ * 3-step gradient map shared by every toon material. The shadow band is kept fairly light (~43%) so
+ * dark cloth and robes still read as shapes instead of blobs.
+ */
 export function getGradientMap(): THREE.DataTexture {
   if (!gradient) {
-    const data = new Uint8Array([70, 140, 205, 255]);
+    const data = new Uint8Array([110, 185, 255]);
     gradient = new THREE.DataTexture(data, data.length, 1, THREE.RedFormat);
     gradient.minFilter = THREE.NearestFilter;
     gradient.magFilter = THREE.NearestFilter;
@@ -14,6 +17,40 @@ export function getGradientMap(): THREE.DataTexture {
     gradient.needsUpdate = true;
   }
   return gradient;
+}
+
+// Rim light: toon materials compiled with the USE_RIM define add a soft cool light along their
+// silhouette (view-facing edges), which separates characters from the ground under the iso camera.
+const toonLib = THREE.ShaderLib['toon']!;
+toonLib.fragmentShader = toonLib.fragmentShader.replace(
+  '#include <opaque_fragment>',
+  `#ifdef USE_RIM
+{
+  vec3 rimV = isOrthographic ? vec3( 0.0, 0.0, 1.0 ) : normalize( vViewPosition );
+  float rimF = smoothstep( 0.5, 0.95, 1.0 - max( dot( normal, rimV ), 0.0 ) );
+  outgoingLight += vec3( 0.26, 0.28, 0.34 ) * rimF * ( 0.35 + 0.65 * diffuseColor.rgb );
+}
+#endif
+#include <opaque_fragment>`,
+);
+
+/**
+ * Clone a material keeping its shader defines: MeshToonMaterial.copy() resets `defines` to
+ * { TOON: '' }, which would drop USE_RIM from every tint / outfit variant.
+ */
+function cloneKeepingDefines<T extends THREE.Material>(m: T): T {
+  const c = m.clone() as T;
+  const d = (m as unknown as THREE.MeshToonMaterial).defines;
+  if (d) (c as unknown as THREE.MeshToonMaterial).defines = { ...d };
+  return c;
+}
+
+/** Give a material the actor rim light (see USE_RIM above). Idempotent. */
+export function enableRim(m: THREE.Material): void {
+  const t = m as THREE.MeshToonMaterial;
+  if (!t.isMeshToonMaterial || (t.defines && 'USE_RIM' in t.defines)) return;
+  t.defines = { ...t.defines, USE_RIM: '' };
+  t.needsUpdate = true;
 }
 
 export interface ToonOpts {
@@ -115,7 +152,7 @@ export function variantMaterial(
   const key = `${tint ?? -1}|${hl ?? -1}`;
   let v = per.get(key);
   if (!v) {
-    v = base.clone();
+    v = cloneKeepingDefines(base);
     // Keep shader patches (e.g. palette swaps) on hit-flash / status variants.
     v.onBeforeCompile = base.onBeforeCompile;
     v.customProgramCacheKey = base.customProgramCacheKey;
@@ -166,7 +203,7 @@ export function recolorMaterial(
   const k = `${key}|${base.uuid}`;
   let m = recolorCache.get(k);
   if (m) return m;
-  const out = m0.clone();
+  const out = cloneKeepingDefines(m0);
   const n = Math.min(rules.length, 4);
   const lin = (hex: number) => new THREE.Color(hex); // Color stores linear components
   const uniforms = {
