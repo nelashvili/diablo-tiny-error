@@ -5,6 +5,10 @@ import type { ModelEntry } from '../types';
 import { classifyItem, classifyModelId, computePose, makePose, type ItemKind } from './helpers';
 import { mk, shade, unit, type AttachSlot, type Rig } from './rig';
 import { glowMaterial, toonMaterial } from './toon';
+import { buildLitesaber } from './attachments';
+import { isDoubleSaberId } from './helpers';
+import { KIND_COLORS, itemLook } from './itemLook';
+import { parseWeaponStyle } from './weaponStyle';
 
 type Placeholder = ModelEntry['placeholder'];
 
@@ -647,6 +651,23 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
     case 'gem':
       g.add(mk(unit.gem(), glow, 0.24, 0.34, 0.24, 0, 0, 0));
       break;
+    case 'coins': {
+      // A small spill of Creditz chips: a short stack and a few loose ones.
+      const gold = toonMaterial(0xe0b040, { emissive: 0x6a4a10, emissiveIntensity: 0.4 });
+      for (let i = 0; i < 4; i++) g.add(mk(unit.cylinder(), gold, 0.16, 0.035, 0.16, 0, -0.1 + i * 0.04, 0));
+      const loose: [number, number, number][] = [
+        [0.16, 0.05, 0.4],
+        [-0.13, 0.1, -0.3],
+        [0.04, -0.17, 0.9],
+        [-0.18, -0.08, 1.7],
+      ];
+      for (const [x, z, r] of loose) {
+        const c = mk(unit.cylinder(), gold, 0.15, 0.03, 0.15, x, -0.12, z);
+        c.rotation.set(0.25, r, 0.2);
+        g.add(c);
+      }
+      break;
+    }
     default:
       g.add(mk(unit.box(), main, 0.26, 0.26, 0.26, 0, 0, 0));
       g.add(mk(unit.box(), glow, 0.1, 0.1, 0.1, 0, 0, 0.13));
@@ -654,37 +675,87 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
   return g;
 }
 
+/** Kinds that lie on their side on the ground (built along +Y). */
+const LONG_KINDS = new Set<ItemKind>([
+  'litesaber',
+  'blade',
+  'spear',
+  'javelin',
+  'staff',
+  'axe',
+  'baton',
+  'blaster',
+  'rifle',
+]);
+/** Seconds of the drop pop (arc out of the monster, tumble, land). */
+const DROP_SEC = 0.5;
+
+/**
+ * An item on the ground: pops out in a short tumbling arc, then lies there D2-style (long items on
+ * their side, worn gear upright) with a slow glint instead of spinning in the air.
+ * Ids: `item.drop.<baseId>` (shape and colors from the item's data) or a model id classified by name.
+ */
 class ItemRig implements Rig {
   readonly root = new THREE.Group();
   readonly bodyMeshes: THREE.Mesh[] = [];
   readonly handTilt = 0;
-  private readonly spin = new THREE.Group();
+  private readonly hold = new THREE.Group();
+  private readonly rest = new THREE.Quaternion();
+  private readonly tumble = new THREE.Quaternion();
+  private readonly lift: number;
   private time = 0;
 
   constructor(name: string, ph: Placeholder, accent: number | undefined) {
-    const kind = classifyItem(name);
-    const shape = buildItemShape(kind, ph.color, accent);
+    let kind: ItemKind;
+    let body = ph.color;
+    let glow = accent;
+    if (name.startsWith('drop.')) {
+      const base = name.slice(5);
+      const look = base === 'creditz' ? { kind: 'coins' as ItemKind } : itemLook(base);
+      kind = look.kind;
+      const kc = KIND_COLORS[kind];
+      body = ('body' in look && look.body) || kc?.[0] || body;
+      glow = ('glow' in look && look.glow) || kc?.[1] || glow;
+    } else kind = classifyItem(name);
+    const shape =
+      kind === 'litesaber'
+        ? buildLitesaber(accent, isDoubleSaberId(name), parseWeaponStyle(name)).object
+        : buildItemShape(kind, body, glow);
     shape.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) this.bodyMeshes.push(o as THREE.Mesh);
     });
-    const s = Math.max(0.6, ph.height) * (kind === 'spear' || kind === 'blade' ? 1.1 : 1.8);
-    shape.scale.setScalar(s);
-    if (kind === 'blade' || kind === 'spear' || kind === 'blaster') shape.rotation.z = Math.PI / 2; // lie flat
-    this.spin.position.y = 0.3;
-    this.spin.add(shape);
-    this.root.add(this.spin);
+    const long = LONG_KINDS.has(kind);
+    // Readable on the ground whatever the source shape's units: fit its longest side.
+    const size = new THREE.Box3().setFromObject(shape).getSize(new THREE.Vector3());
+    const longest = Math.max(size.x, size.y, size.z, 1e-3);
+    shape.scale.multiplyScalar((long ? 0.9 : kind === 'coins' ? 0.5 : 0.5) / longest);
+    // Rest pose: long items on their side, the rest upright; a random yaw so piles don't line up.
+    const yaw = Math.random() * Math.PI * 2;
+    const e = long ? new THREE.Euler(0, yaw, Math.PI / 2, 'YXZ') : new THREE.Euler(0.12, yaw, 0, 'YXZ');
+    this.rest.setFromEuler(e);
+    this.tumble.setFromEuler(new THREE.Euler(Math.random() * 3, yaw + 2, Math.random() * 3));
+    this.lift = long ? 0.06 : kind === 'coins' ? 0.12 : 0.16;
+    this.hold.add(shape);
+    this.root.add(this.hold);
+    this.update(0);
   }
 
   setMode(): void {}
 
   update(dt: number): void {
     this.time += dt;
-    this.spin.rotation.y += dt * 1.2;
-    this.spin.position.y = 0.3 + Math.sin(this.time * 2) * 0.05;
+    const k = Math.min(1, this.time / DROP_SEC);
+    // Arc up and down with a small bounce at the end, tumbling into the rest pose.
+    const arc = k < 1 ? Math.sin(k * Math.PI) * 0.7 : 0;
+    const settle = k < 1 ? 0 : Math.max(0, 1 - (this.time - DROP_SEC) / 0.25);
+    const bounce = Math.abs(Math.sin(settle * Math.PI)) * 0.06 * settle;
+    this.hold.position.y = this.lift + arc + bounce;
+    const ease = 1 - (1 - k) * (1 - k);
+    this.hold.quaternion.slerpQuaternions(this.tumble, this.rest, ease);
   }
 
   socket(): THREE.Object3D {
-    return this.spin;
+    return this.hold;
   }
 
   dispose(): void {}

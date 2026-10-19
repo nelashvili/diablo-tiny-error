@@ -511,6 +511,9 @@ TILES.push(stat('tile.default', null, 1, ph('box', 0x777777, 0.1, 0.5)));
 // ---- items (attached / ground models) ---------------------------------------------------------------
 const ITEMS: ModelEntry[] = [
   stat('item.default', null, 1, ph('box', 0xc8b060, 0.3, 0.2)),
+  // Items lying on the ground (`item.drop.<baseId>`): always the procedural shape picked from the
+  // item's data (models/itemLook.ts), so a name never pulls in the wrong glTF.
+  stat('item.drop', null, 1, ph('box', 0xc8b060, 0.3, 0.2)),
   stat('item.blastur', 'items/blaster-a', 1, ph('box', 0x5a5f66, 0.25, 0.4), 0xff5a3a),
   stat('item.blastur.pistol', 'items/blaster-b', 1, ph('box', 0x5a5f66, 0.2, 0.25), 0xff5a3a),
   stat('item.blastur.compact', 'items/blaster-c', 1, ph('box', 0x5a5f66, 0.2, 0.25), 0xff5a3a),

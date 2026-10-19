@@ -50,3 +50,11 @@ describe('headgear styles', () => {
     expect(headgearStyle('battleVisor')).toBe('mando');
   });
 });
+
+describe('item looks', () => {
+  it('gives every item base a real shape (no generic boxes)', async () => {
+    const { itemLook } = await import('./itemLook');
+    const generic = [...DB.items.values()].filter((b) => itemLook(b.id).kind === 'generic').map((b) => b.id);
+    expect(generic).toEqual([]);
+  });
+});

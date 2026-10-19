@@ -66,6 +66,7 @@ export type ItemKind =
   | 'potion'
   | 'scroll'
   | 'gem'
+  | 'coins'
   | 'generic';
 
 const ITEM_RULES: [RegExp, ItemKind][] = [

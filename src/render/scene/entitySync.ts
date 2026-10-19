@@ -18,6 +18,11 @@ function itemModelId(baseId: string, quality?: string): string {
   return weaponModelId(baseId, quality);
 }
 
+/** Items on the ground: weapons by their class model; everything else from its data (itemLook). */
+function groundModelId(baseId: string, quality?: string): string {
+  return DB.items.get(baseId)?.weaponClass ? weaponModelId(baseId, quality) : `item.drop.${baseId}`;
+}
+
 const TINT_NONE = -1;
 const TINT_FROZEN = 0x66ccff;
 const TINT_TOXIN = 0x66dd44;
@@ -236,7 +241,7 @@ export class EntitySync {
       case 'object':
         return `obj.${e.defId}`;
       case 'groundItem':
-        return e.creditz ? 'item.creditz' : itemModelId(e.item.base, e.item.quality);
+        return e.creditz ? 'item.drop.creditz' : groundModelId(e.item.base, e.item.quality);
       default:
         return null;
     }
