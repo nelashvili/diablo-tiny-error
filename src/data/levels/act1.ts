@@ -24,7 +24,7 @@ const levels: LevelDef[] = [
     waypoint: true,
     links: [{ to: 'a1.mossfields', kind: 'edge' }],
     music: 'music.town',
-    ambientLight: 'dusk',
+    ambientLight: 'outpost',
     isTown: true,
   },
   {

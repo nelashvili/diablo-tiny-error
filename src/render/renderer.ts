@@ -15,7 +15,8 @@ import { DB } from '../data/db';
 import { IsoCamera } from './camera/isoCamera';
 import { buildMap, type MapRenderer } from './map/mapRenderer';
 import { dressingFor, propVariants, scatterFor } from './map/dressing';
-import { SceneLighting, presetFor } from './scene/lighting';
+import { SceneLighting, SUN_DIR, presetFor } from './scene/lighting';
+import { EnvironmentClock, keyLightDir, parseTimeParam } from './scene/environment';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
 import { StatsOverlay, type RenderStats } from './scene/statsOverlay';
@@ -82,6 +83,8 @@ export interface RenderController extends Renderer {
   setTouchMode(on: boolean): void;
   /** Add camera shake manually (0..1). */
   shake(amount: number): void;
+  /** Play-time clock (seconds) that drives the day/night cycle. */
+  setClock(seconds: number): void;
   /** Toggle the D2-style wall cutaway near the player. */
   setWallCutaway(on: boolean): void;
   getStats(): RenderStats;
@@ -95,6 +98,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   const scene = new THREE.Scene();
   const iso = new IsoCamera();
   const lighting = new SceneLighting();
+  const env = new EnvironmentClock();
+  const keyDir = new THREE.Vector3();
+  let clock = 0;
   const entityRoot = new THREE.Group();
   entityRoot.name = 'entities';
   const sync = new EntitySync(entityRoot, visuals, vfx);
@@ -203,6 +209,17 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     }
   };
 
+  /** Light the scene for the current time of day. False when the level has no EnvDef. */
+  const applyEnvironment = (): boolean => {
+    const fr = env.eval(clock);
+    if (!fr) return false;
+    lighting.apply(fr.light);
+    lighting.setKeyDir(keyLightDir(fr.f, SUN_DIR, keyDir));
+    (scene.background as THREE.Color).setHex(fr.light.bg);
+    post?.setGradeParams(fr.grade);
+    return true;
+  };
+
   const api: RenderController = {
     async init(cv, opts) {
       quality = opts.quality;
@@ -228,6 +245,13 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       cssH = cv.clientHeight || cv.height || 1;
       iso.resize(cssW, cssH);
       api.setQuality(quality);
+      // Debug: ?time=night|dawn|dusk|day|<0..1> pins the time of day; ?daylen=<s> speeds the cycle up.
+      if (typeof location !== 'undefined') {
+        const q = new URLSearchParams(location.search);
+        env.pinned = parseTimeParam(q.get('time'));
+        const len = Number(q.get('daylen'));
+        if (len > 0) env.dayLength = len;
+      }
       if (import.meta.env.DEV && cv.parentElement) stats = new StatsOverlay(cv.parentElement);
     },
 
@@ -258,10 +282,15 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       map.setWallCutaway(wallCutaway);
       scene.add(map.group);
       lighting.setMapLights(map.lights);
-      const preset = presetFor(tileset);
-      lighting.apply(preset);
-      (scene.background as THREE.Color).setHex(preset.bg);
-      post?.setGrade(DB.levels.get(level.levelId)?.ambientLight ?? tileset);
+      const envId = DB.levels.get(level.levelId)?.ambientLight;
+      env.setEnv((envId && DB.environments.get(envId)) || null, envId ?? tileset);
+      if (!applyEnvironment()) {
+        const preset = presetFor(tileset);
+        lighting.apply(preset);
+        lighting.setKeyDir(SUN_DIR);
+        (scene.background as THREE.Color).setHex(preset.bg);
+        post?.setGrade(envId ?? tileset);
+      }
       snapCamera = true;
       bigRect();
     },
@@ -282,6 +311,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         snapCamera = false;
       }
       iso.update(lp.x, lp.z, dt);
+      if (env.cycles) applyEnvironment();
       iso.groundBounds(3.5, rect);
       lighting.follow(iso.target.x, iso.target.z, lp.x, lp.z, dt);
       iso.groundCorners(2, viewCorners);
@@ -340,6 +370,10 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     setScreenShake(enabled) {
       shakeEnabled = enabled;
       iso.shake.setEnabled(enabled);
+    },
+
+    setClock(seconds) {
+      clock = seconds;
     },
 
     setZoom(level) {

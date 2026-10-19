@@ -20,6 +20,8 @@ export interface PostFx {
   setQuality(q: QualityLevel): void;
   /** Per-act color grade key (e.g. 'endoor', 'tatoonie'). */
   setGrade(key: string | null): void;
+  /** Grade to ease toward (e.g. a level grade tinted by the time of day). The object is copied. */
+  setGradeParams(p: GradeParams): void;
   /** Sharpen strength 0..1 (0 = pass off). Used to restore crispness when the resolution scale drops. */
   setSharpen(amount: number): void;
   dispose(): void;
@@ -40,6 +42,16 @@ export const GRADES: Record<string, GradeParams> = {
   tatoonie: { tint: [1.14, 1.0, 0.8], lift: [0.012, 0.004, 0], sat: 1.1, contrast: 1.06, vignette: 0.3 },
   kashyyyyyk: { tint: [0.92, 1.1, 0.88], lift: [0, 0.012, 0], sat: 1.15, contrast: 1.05, vignette: 0.36 },
   deafStar: { tint: [0.88, 0.96, 1.1], lift: [0, 0.004, 0.012], sat: 0.8, contrast: 1.1, vignette: 0.42 },
+  // Act I areas (data/environments/act1.ts)
+  outpost: { tint: [1.05, 1.02, 0.92], lift: [0.008, 0.006, 0], sat: 1.08, contrast: 1.04, vignette: 0.28 },
+  mist: { tint: [0.92, 1.06, 1.02], lift: [0.006, 0.012, 0.014], sat: 1.05, contrast: 1.0, vignette: 0.3 },
+  smoke: { tint: [1.02, 0.98, 0.9], lift: [0.01, 0.008, 0.004], sat: 0.9, contrast: 1.04, vignette: 0.34 },
+  embers: { tint: [1.08, 0.98, 0.88], lift: [0.008, 0.002, 0], sat: 1.08, contrast: 1.06, vignette: 0.34 },
+  gloom: { tint: [0.88, 1.02, 0.96], lift: [0, 0.006, 0.008], sat: 0.95, contrast: 1.08, vignette: 0.4 },
+  fog: { tint: [0.9, 1.02, 1.0], lift: [0.012, 0.016, 0.016], sat: 0.92, contrast: 0.96, vignette: 0.34 },
+  cave: { tint: [1.04, 0.98, 0.9], lift: [0.004, 0.002, 0], sat: 0.92, contrast: 1.08, vignette: 0.42 },
+  temple: { tint: [0.94, 0.98, 1.08], lift: [0, 0.004, 0.01], sat: 0.95, contrast: 1.06, vignette: 0.4 },
+  crypt: { tint: [0.9, 0.95, 1.1], lift: [0, 0.002, 0.012], sat: 0.85, contrast: 1.1, vignette: 0.45 },
 };
 
 export function gradeFor(key: string | null): GradeParams {
@@ -102,6 +114,7 @@ export function createPostFx(
 
   const cur: GradeParams = structuredClone(gradeFor(null));
   let tgt: GradeParams = cur;
+  const custom: GradeParams = structuredClone(cur);
   const gradePass = new ShaderPass({
     uniforms: {
       tDiffuse: { value: null },
@@ -197,6 +210,16 @@ export function createPostFx(
     },
     setGrade(key: string | null): void {
       tgt = gradeFor(key);
+    },
+    setGradeParams(p: GradeParams): void {
+      for (let i = 0; i < 3; i++) {
+        custom.tint[i] = p.tint[i]!;
+        custom.lift[i] = p.lift[i]!;
+      }
+      custom.sat = p.sat;
+      custom.contrast = p.contrast;
+      custom.vignette = p.vignette;
+      tgt = custom;
     },
     setSharpen(amount: number): void {
       sharpen.enabled = amount > 0;

@@ -2,18 +2,11 @@ import * as THREE from 'three';
 import type { QualityLevel } from '../types';
 import type { MapLightSpec } from '../map/mapRenderer';
 import { hash01 } from '../map/chunking';
+import type { EnvLightDef } from '../../data/schema';
 import { fitShadowBounds, type ShadowBounds } from './shadowFit';
 
-export interface LightPreset {
-  sky: number;
-  ground: number;
-  hemi: number;
-  sun: number;
-  sunI: number;
-  bg: number;
-  playerLight: number;
-  playerLightI: number;
-}
+/** Fallback lighting for levels without an EnvDef (picked from the tileset name). */
+export type LightPreset = EnvLightDef;
 
 const PRESETS: { match: RegExp; preset: LightPreset }[] = [
   {
@@ -106,7 +99,9 @@ export function presetFor(tileset: string): LightPreset {
 
 export const POINT_LIGHT_LIMIT: Record<QualityLevel, number> = { low: 0, medium: 4, high: 8 };
 const SHADOW_HALF = 17;
-const SUN_DIR = new THREE.Vector3(-0.55, 1.0, 0.35).normalize();
+export const SUN_DIR = new THREE.Vector3(-0.55, 1.0, 0.35).normalize();
+/** The key light only moves once its direction drifts this far (radians): each move re-snaps the shadows. */
+const KEY_DIR_STEP = 0.012;
 /** Tallest shadow casters the fitted frustum must include above the visible ground (walls, trees). */
 const CASTER_HEIGHT = 3;
 
@@ -121,6 +116,8 @@ export class SceneLighting {
   private specs: MapLightSpec[] = [];
   private used = new Uint8Array(0);
   private quality: QualityLevel = 'medium';
+  private mapLightMul = 1;
+  private readonly keyDir = SUN_DIR.clone();
   private shadows = false;
   private readonly fit: ShadowBounds = { left: 0, right: 0, top: 0, bottom: 0, near: 1, far: 90 };
 
@@ -150,6 +147,14 @@ export class SceneLighting {
     this.playerLight.color.setHex(p.playerLight);
     // Kept subtle: a strong point light washes out light ground (and blooms) around the hero.
     this.playerLight.intensity = p.playerLightI * 0.2;
+    this.mapLightMul = p.mapLights ?? 1;
+  }
+
+  /** Point the key light (sun or moon) along `dir` (unit, toward the light). Small drifts are ignored. */
+  setKeyDir(dir: THREE.Vector3): void {
+    if (dir.angleTo(this.keyDir) < KEY_DIR_STEP) return;
+    this.keyDir.copy(dir);
+    this.sun.position.copy(dir).multiplyScalar(45);
   }
 
   setQuality(q: QualityLevel): void {
@@ -239,7 +244,7 @@ export class SceneLighting {
         this.used[best] = 1;
         l.position.set(s.x, 1.6, s.z);
         l.color.setHex(s.color);
-        l.intensity = 6 * s.intensity;
+        l.intensity = 6 * s.intensity * this.mapLightMul;
         l.distance = s.radius;
       } else {
         l.intensity = 0;

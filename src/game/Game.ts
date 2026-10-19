@@ -362,7 +362,10 @@ export class Game {
     const alpha = this.loading ? 0 : this.loop.advance(realDt);
     if (!this.loading && !w.paused) this.playTime += realDt;
     const events = w.drainFrameEvents();
-    if (!this.loading) this.renderer.render(w, events, alpha, realDt);
+    if (!this.loading) {
+      this.renderer.setClock(this.playTime);
+      this.renderer.render(w, events, alpha, realDt);
+    }
     const p = this.player;
     if (p) this.audio.setListener?.(p.pos);
     this.audio.handleEvents(events, this.cueCtx);

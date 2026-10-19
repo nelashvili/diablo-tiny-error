@@ -8,6 +8,7 @@ import type {
   AffixDef,
   BossDef,
   ClassDef,
+  EnvDef,
   GemDef,
   ItemBaseDef,
   LevelDef,
@@ -63,6 +64,10 @@ export const DB = {
   quests: table<QuestDef>('quest', import.meta.glob(['./quests/*.ts', '!**/*.test.ts'], { eager: true })),
   mercs: table<MercDef>('merc', import.meta.glob(['./mercs/*.ts', '!**/*.test.ts'], { eager: true })),
   lore: table<LoreDef>('lore', import.meta.glob(['./lore/*.ts', '!**/*.test.ts'], { eager: true })),
+  environments: table<EnvDef>(
+    'environment',
+    import.meta.glob(['./environments/*.ts', '!**/*.test.ts'], { eager: true }),
+  ),
   vfx: table<VfxDef>('vfx', import.meta.glob(['./vfx/*.ts', '!**/*.test.ts'], { eager: true })),
 };
 

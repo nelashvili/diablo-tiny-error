@@ -366,10 +366,40 @@ export interface LevelDef {
   /** Exits to other levels. */
   links: { to: DefId; kind: 'edge' | 'stairsDown' | 'stairsUp' | 'portal' | 'door' }[];
   music?: string;
-  ambientLight?: string; // color grade key
+  /** Environment id (data/environments): lighting, color grade and whether the day/night clock applies. */
+  ambientLight?: string;
   /** Optional fixed bosses / superuniques placed here. */
   bosses?: DefId[];
   isTown?: boolean;
+}
+
+/** Lighting for one time of day (render/scene/lighting). Colors are 0xRRGGBB. */
+export interface EnvLightDef {
+  /** Hemisphere sky / ground colors and intensity. */
+  sky: number;
+  ground: number;
+  hemi: number;
+  /** Shadow-casting key light (the sun by day, the moon at night). */
+  sun: number;
+  sunI: number;
+  /** Background (void) color. */
+  bg: number;
+  /** Soft light that follows the hero. */
+  playerLight: number;
+  playerLightI: number;
+  /** Multiplier on torches, beacons and other map lights (default 1). */
+  mapLights?: number;
+}
+
+/** A level's look: referenced by LevelDef.ambientLight. Purely visual, never read by the sim. */
+export interface EnvDef {
+  id: DefId;
+  /** Base color grade key (render/vfx/post GRADES); dawn/dusk/night tint it further. */
+  grade: string;
+  /** Lighting by day. Indoor levels use only this. */
+  day: EnvLightDef;
+  /** Outdoor levels: present = the level follows the day/night clock. */
+  cycle?: { dawn: EnvLightDef; dusk: EnvLightDef; night: EnvLightDef };
 }
 
 export interface NpcDef {
