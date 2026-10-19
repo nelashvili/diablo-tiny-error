@@ -62,7 +62,7 @@ const ROBOT_CLIPS: NonNullable<ModelEntry['clips']> = {
   cheer: 'Dance',
 };
 // 'HandR' in this file is a skinned mesh group at the origin; the palm bones are the real hands.
-const ROBOT_BONES = { rightHand: 'Palm2R', leftHand: 'Palm2L', head: 'Head' };
+const ROBOT_BONES = { rightHand: 'Palm2.R', leftHand: 'Palm2.L', head: 'Head' };
 const QM_CLIPS: NonNullable<ModelEntry['clips']> = {
   idle: 'Idle',
   walk: 'Walk',
