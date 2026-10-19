@@ -219,8 +219,10 @@ const ACTORS: ModelEntry[] = [
     placeholder: ph('sphere', 0x2c2f36, 0.9, 0.3),
     accent: 0xff2222,
     recolor: [
-      { hue: [0, 360], minSat: 0.5, color: 0x2a2e36, flat: 0.7 },
-      { hue: [0, 360], maxSat: 0.5, minVal: 0.5, color: 0x6a707a },
+      // The robot's orange shell turns black; its pale fittings become gunmetal trim.
+      { hue: [0, 360], minSat: 0.5, color: 0x1e2126, flat: 0.85 },
+      { hue: [0, 360], maxSat: 0.5, minVal: 0.5, color: 0x5a616c, flat: 0.6 },
+      { hue: [0, 360], maxSat: 0.5, color: 0x101216, flat: 0.6 },
     ],
   },
   // Jawwa: a short brown-robed scavenger, face lost in the dark of its hood.
