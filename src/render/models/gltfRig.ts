@@ -7,6 +7,7 @@ import { ALL_MODES, computePose, makePose, modeLoops, resolveClip } from './help
 import type { LoadedAsset } from './loader';
 import type { AttachSlot, Rig } from './rig';
 import { recolorMaterial } from './toon';
+import { replaceHelmet } from './headgear';
 
 const FADE = 0.15;
 
@@ -37,6 +38,11 @@ export class GltfRig implements Rig {
         mesh.material = recolorMaterial(mesh.material, entry.recolor, entry.id);
       this.bodyMeshes.push(mesh);
     });
+    const hp = entry.helmet;
+    const oldHelm = hp && this.model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(hp.replace));
+    const headBone = entry.bones?.head && this.model.getObjectByName(entry.bones.head);
+    if (hp && oldHelm && headBone)
+      this.bodyMeshes.push(...replaceHelmet(this.model, oldHelm, headBone, hp.style, hp.color));
     this.mixer = new THREE.AnimationMixer(this.model);
     const byClip = new Map<string, THREE.AnimationAction>();
     for (const mode of ALL_MODES) {

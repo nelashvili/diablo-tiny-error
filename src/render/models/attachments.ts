@@ -7,6 +7,7 @@ import { mk, unit, type AttachSlot } from './rig';
 import { glowMaterial, toonMaterial } from './toon';
 import type { ModelEntry } from '../types';
 import type { LoadedAsset } from './loader';
+import { parseWeaponStyle, type WeaponStyle } from './weaponStyle';
 
 export interface Attachment {
   readonly object: THREE.Object3D;
@@ -39,16 +40,55 @@ function coreColor(accent: number): number {
   return white.getHex();
 }
 
-/** Procedural litesaber: hilt + emissive core + additive glow. Double sabers get a second blade. */
-export function buildLitesaber(accent: number | undefined, double: boolean): Attachment {
-  const ac = accent ?? DEFAULT_SABER;
+/** Blade color per saber line (training blue, cadet green, guard blue, falchion purple). */
+const LINE_BLADES = [0x4fc3ff, 0x3dff6a, 0x5ad8ff, 0xb36bff];
+/** Exceptional sabers burn temple-guard yellow, elite ones white-hot; uniques/sets amber. */
+const TIER_BLADES = [0, 0xffd24a, 0xf4f4ff];
+const UNIQUE_BLADE = 0xff8a2a;
+/** Hilt trim per tier: steel, gold, black-and-gold. */
+const TIER_HILT: [number, number][] = [
+  [0x9aa0aa, 0x2a2d36],
+  [0xc8a040, 0x2a2d36],
+  [0x1c1c22, 0xe0b040],
+];
+
+export function saberColor(style: WeaponStyle | null): number {
+  if (!style) return DEFAULT_SABER;
+  if (style.unique) return UNIQUE_BLADE;
+  return TIER_BLADES[style.tier] || LINE_BLADES[style.line % LINE_BLADES.length]!;
+}
+
+/**
+ * Procedural litesaber: hilt + emissive core + additive glow. Double sabers get a second blade.
+ * `style` varies the hilt by line (plain, ribbed grip, crossguard, curved) and the trim/blade by tier.
+ */
+export function buildLitesaber(
+  accent: number | undefined,
+  double: boolean,
+  style: WeaponStyle | null = null,
+): Attachment {
+  const ac = accent ?? saberColor(style);
+  const tier = style?.tier ?? 0;
+  const line = style?.line ?? 0;
   const g = new THREE.Group();
-  const hiltMat = toonMaterial(0x9aa0aa);
-  const darkMat = toonMaterial(0x2a2d36);
-  const hiltLen = double ? HILT_LEN * 1.4 : HILT_LEN;
+  const [hiltCol, darkCol] = TIER_HILT[tier] ?? TIER_HILT[0]!;
+  const hiltMat = toonMaterial(hiltCol);
+  const darkMat = toonMaterial(darkCol);
+  const hiltLen = (double ? HILT_LEN * 1.4 : HILT_LEN) * (line === 3 ? 1.15 : 1);
   g.add(mk(unit.cylinder(), hiltMat, 0.05, hiltLen, 0.05, 0, 0, 0));
   g.add(mk(unit.cylinder(), darkMat, 0.058, hiltLen * 0.3, 0.058, 0, -hiltLen * 0.2, 0));
   g.add(mk(unit.cylinder(), darkMat, 0.07, 0.03, 0.07, 0, hiltLen / 2, 0));
+  if (line === 1)
+    for (let i = 0; i < 4; i++)
+      g.add(mk(unit.cylinder(), darkMat, 0.062, 0.018, 0.062, 0, -hiltLen * 0.35 + i * 0.05, 0));
+  if (line === 3) {
+    // Curved duelist hilt: an angled pommel and a hand guard.
+    const pommel = mk(unit.cylinder(), darkMat, 0.055, 0.1, 0.055, 0.02, -hiltLen / 2 - 0.03, 0);
+    pommel.rotation.z = 0.5;
+    g.add(pommel, mk(unit.box(), hiltMat, 0.1, 0.025, 0.03, 0.03, hiltLen * 0.25, 0));
+  }
+  if (tier > 0) g.add(mk(unit.cylinder(), toonMaterial(0xe0b040), 0.064, 0.02, 0.064, 0, hiltLen * 0.18, 0));
+  const glowW = tier === 2 ? 1.35 : tier === 1 ? 1.15 : 1;
   const glows: THREE.Mesh[] = [];
   const coreMat = glowMaterial(coreColor(ac));
   const glowMat = glowMaterial(ac, 0.5, true);
@@ -58,6 +98,7 @@ export function buildLitesaber(accent: number | undefined, double: boolean): Att
     core.position.y = base + (dir * BLADE_LEN) / 2;
     const glow = new THREE.Mesh(capsule('glow', 0.068, BLADE_LEN - 0.12), glowMat);
     glow.position.copy(core.position);
+    glow.scale.set(glowW, 1, glowW);
     core.userData.noTint = true;
     glow.userData.noTint = true;
     g.add(core, glow);
@@ -65,13 +106,22 @@ export function buildLitesaber(accent: number | undefined, double: boolean): Att
   };
   addBlade(1);
   if (double) addBlade(-1);
+  // Guard-line sabers get two short crossguard vents.
+  if (line === 2 && !double)
+    for (const side of [-1, 1]) {
+      const q = new THREE.Mesh(capsule('quillon', 0.02, 0.1), glowMaterial(coreColor(ac)));
+      q.rotation.z = Math.PI / 2;
+      q.position.set(side * 0.1, hiltLen / 2 - 0.03, 0);
+      q.userData.noTint = true;
+      g.add(q);
+    }
   const phase = (phaseCounter++ * 2.399) % 10;
   return {
     object: g,
     tilt: 1.1,
     update(time) {
       const f = 1 + Math.sin(time * 38 + phase) * 0.06 + Math.sin(time * 11.3 + phase) * 0.05;
-      for (const m of glows) m.scale.set(f, 1, f);
+      for (const m of glows) m.scale.set(f * glowW, 1, f * glowW);
     },
   };
 }
@@ -160,13 +210,20 @@ export function createAttachment(
   entry: ModelEntry | undefined,
   asset: LoadedAsset | null,
 ): Attachment {
-  if (isLitesaberId(modelId)) return buildLitesaber(accent ?? entry?.accent, isDoubleSaberId(modelId));
+  const style = parseWeaponStyle(modelId);
+  if (isLitesaberId(modelId)) return buildLitesaber(accent, isDoubleSaberId(modelId), style);
   const info = classifyModelId(modelId);
   const kind = classifyItem(info.kind === 'item' ? info.name : modelId);
   if (asset && entry) return fromAsset(asset, entry, kind);
   const wc = WEAPON_COLORS[kind];
-  const color = wc?.[0] ?? entry?.placeholder.color ?? 0x8a929c;
-  const shape = buildItemShape(kind, color, accent ?? wc?.[1] ?? entry?.accent);
+  const tier = style?.tier ?? 0;
+  // Exceptional weapons get a navy finish and gold glow, elite ones black with a white-gold glow.
+  const color =
+    tier === 2 ? 0x1c1c22 : tier === 1 ? 0x2a3a5e : (wc?.[0] ?? entry?.placeholder.color ?? 0x8a929c);
+  const glowCol = style?.unique ? UNIQUE_BLADE : tier === 2 ? 0xfff0b0 : tier === 1 ? 0xffd24a : undefined;
+  const shape = buildItemShape(kind, color, accent ?? glowCol ?? wc?.[1] ?? entry?.accent);
+  // Later lines of a weapon class are a little bigger.
+  if (style) shape.scale.multiplyScalar(1 + Math.min(3, style.line) * 0.07);
   let tilt: number | null = 1.1;
   if (kind === 'shield') {
     tilt = null;

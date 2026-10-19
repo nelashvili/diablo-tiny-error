@@ -10,12 +10,12 @@ import { MotionBuffer, type MotionSample } from './interp';
 import { distSqToSegment } from '../camera/isoMath';
 import type { IsoCamera } from '../camera/isoCamera';
 import { rectContains, type GroundRect } from '../culling/viewRect';
-import { RANGED_WEAPON_CLASSES, WEAPON_MODEL_IDS } from '../models/helpers';
+import { RANGED_WEAPON_CLASSES } from '../models/helpers';
+import { weaponModelId } from '../models/weaponStyle';
 
-/** Model id for an item base: weapons by class (names vary too much), everything else by base id. */
-function itemModelId(baseId: string): string {
-  const wc = DB.items.get(baseId)?.weaponClass;
-  return (wc && WEAPON_MODEL_IDS[wc]) ?? `item.${baseId}`;
+/** Model id for an item base: weapons by class, line and tier (see weaponStyle), the rest by base id. */
+function itemModelId(baseId: string, quality?: string): string {
+  return weaponModelId(baseId, quality);
 }
 
 const TINT_NONE = -1;
@@ -236,7 +236,7 @@ export class EntitySync {
       case 'object':
         return `obj.${e.defId}`;
       case 'groundItem':
-        return e.creditz ? 'item.creditz' : itemModelId(e.item.base);
+        return e.creditz ? 'item.creditz' : itemModelId(e.item.base, e.item.quality);
       default:
         return null;
     }
@@ -478,20 +478,26 @@ export class EntitySync {
     if (gear.offHand) v.setAttachment('offHand', itemModelId(gear.offHand), gear.accent);
   }
 
-  private applyEquipment(r: Rec, v: EntityVisual, eq: Readonly<Record<string, { base: string }>>): void {
-    const m = eq['mainHand']?.base ?? '';
-    const o = eq['offHand']?.base ?? '';
+  private applyEquipment(
+    r: Rec,
+    v: EntityVisual,
+    eq: Readonly<Record<string, { base: string; quality?: string }>>,
+  ): void {
+    const mi = eq['mainHand'];
+    const oi = eq['offHand'];
+    const m = mi ? itemModelId(mi.base, mi.quality) : '';
+    const o = oi ? itemModelId(oi.base, oi.quality) : '';
     const h = eq['head']?.base ?? '';
     const c = eq['chest']?.base ?? '';
     if (m !== r.equip0) {
       r.equip0 = m;
-      const wc = m ? DB.items.get(m)?.weaponClass : undefined;
+      const wc = mi ? DB.items.get(mi.base)?.weaponClass : undefined;
       r.ranged = !!wc && RANGED_WEAPON_CLASSES.has(wc);
-      v.setAttachment('mainHand', m ? itemModelId(m) : null);
+      v.setAttachment('mainHand', m || null);
     }
     if (o !== r.equip1) {
       r.equip1 = o;
-      v.setAttachment('offHand', o ? itemModelId(o) : null);
+      v.setAttachment('offHand', o || null);
     }
     if (h !== r.equip2) {
       r.equip2 = h;

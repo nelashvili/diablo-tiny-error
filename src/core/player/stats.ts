@@ -11,7 +11,7 @@ import type { DerivedStats, Modifier, StatSources } from '../stats/types';
 import type { Difficulty } from '../types';
 import type { Actor, PlayerEntity } from '../sim/entities';
 import type { Equipment, ItemInstance } from '../items/types';
-import { getEquippedWeapon } from './weapon';
+import { MELEE_MASTERY, getEquippedWeapon, wieldsMelee } from './weapon';
 import { itemModifiers, setBonusModifiers } from '../items/helpers';
 
 function equipmentMods(eq: Equipment, out: Modifier[]): void {
@@ -63,6 +63,15 @@ export function gatherModifiers(p: PlayerEntity): Modifier[] {
   return mods;
 }
 
+/** The built-in melee edge (see MELEE_MASTERY) while a melee weapon is equipped. */
+function meleeMasteryMods(p: PlayerEntity): Modifier[] {
+  if (!wieldsMelee(p)) return [];
+  return [
+    { stat: 'enhancedDamage', op: 'flat', value: MELEE_MASTERY.enhancedDamage, source: 'melee' },
+    { stat: 'damageReducedPct', op: 'flat', value: MELEE_MASTERY.damageReducedPct, source: 'melee' },
+  ];
+}
+
 export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSources {
   const cls = DB.classes.get(p.classId);
   const w = getEquippedWeapon(p);
@@ -80,7 +89,7 @@ export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSou
         }
       : {},
     allocated: p.allocated,
-    modifiers: gatherModifiers(p),
+    modifiers: [...gatherModifiers(p), ...meleeMasteryMods(p)],
     difficulty,
     weapon: w
       ? { min: w.min, max: w.max, strBonus: w.strBonus, dexBonus: w.dexBonus, speed: w.speed }

@@ -8,13 +8,8 @@ import { DB } from '../../data/db';
 import type { ItemBaseDef } from '../../data/schema';
 import { getModelEntry } from '../assets/catalog';
 import { buildLitesaber, createAttachment } from '../models/attachments';
-import {
-  classifyItem,
-  isDoubleSaberId,
-  isLitesaberId,
-  WEAPON_MODEL_IDS,
-  type ItemKind,
-} from '../models/helpers';
+import { classifyItem, isDoubleSaberId, isLitesaberId, type ItemKind } from '../models/helpers';
+import { parseWeaponStyle, weaponModelId } from '../models/weaponStyle';
 import { AssetLoader } from '../models/loader';
 import { buildItemShape } from '../models/placeholders';
 
@@ -69,7 +64,7 @@ function iconModel(
   baseId: string,
 ): { id: string; kind: ItemKind; glow?: number } {
   if (base?.weaponClass) {
-    const id = WEAPON_MODEL_IDS[base.weaponClass] ?? `item.${baseId}`;
+    const id = weaponModelId(baseId);
     return { id, kind: classifyItem(id) };
   }
   if (base?.armorClass && ARMOR_MODEL[base.armorClass]) {
@@ -177,7 +172,7 @@ export function createItemIcons(): ItemIconSource {
     const entry = getModelEntry(id);
     let obj: THREE.Object3D;
     if (procedural(id)) asset = null;
-    if (isLitesaberId(id)) obj = buildLitesaber(entry.accent, isDoubleSaberId(id)).object;
+    if (isLitesaberId(id)) obj = buildLitesaber(undefined, isDoubleSaberId(id), parseWeaponStyle(id)).object;
     else if (asset) obj = createAttachment('mainHand', id, undefined, entry, asset).object;
     else if (HELD.has(kind) || AIMED.has(kind)) {
       obj = createAttachment('mainHand', id, undefined, undefined, null).object;

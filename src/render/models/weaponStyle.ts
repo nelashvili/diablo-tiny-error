@@ -1,0 +1,48 @@
+/**
+ * Weapon looks vary by line and tier: the model id of a held/dropped weapon carries a style suffix
+ * `.v<line>.t<tier>[.u]` (line index within its weapon class, tier 0-2, unique/set flag), which the
+ * catalog resolves to the class's model by prefix and the attachment builder reads back. Blasters
+ * instead pick one of the many blaster meshes per line and tier.
+ */
+import { DB } from '../../data/db';
+import { WEAPON_LINES } from '../../data/items/_weaponTable';
+import { TIERS, camel } from '../../data/items/_build';
+import { WEAPON_MODEL_IDS } from './helpers';
+
+/** base id -> [line index within its class, tier index]. */
+const LINE_OF = new Map<string, [number, number]>();
+const perClass = new Map<string, number>();
+for (const line of WEAPON_LINES) {
+  const idx = perClass.get(line.cls) ?? 0;
+  perClass.set(line.cls, idx + 1);
+  line.names.forEach((n, tier) => LINE_OF.set(camel(n), [idx, tier]));
+}
+
+const PISTOLS = ['pistol', 'compact', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o', 'smg'];
+const RIFLES = ['carbine', 'rifle', 'p', 'q', 'r', 'heavy', 'sniper'];
+
+export interface WeaponStyle {
+  line: number;
+  tier: number;
+  unique: boolean;
+}
+
+/** Style suffix parsed from a model id (null when the id carries none). */
+export function parseWeaponStyle(modelId: string): WeaponStyle | null {
+  const m = /\.v(\d+)\.t(\d)(\.u)?$/.exec(modelId);
+  return m ? { line: Number(m[1]), tier: Number(m[2]), unique: !!m[3] } : null;
+}
+
+/** Model id for a weapon base (plus quality), styled by line and tier. */
+export function weaponModelId(baseId: string, quality?: string): string {
+  const b = DB.items.get(baseId);
+  const wc = b?.weaponClass;
+  if (!wc) return `item.${baseId}`;
+  const [line, tier] = LINE_OF.get(baseId) ?? [0, Math.max(0, TIERS.indexOf(b.tier ?? 'normal'))];
+  if (wc === 'blasturPistol' || wc === 'blasturRifle') {
+    const pool = wc === 'blasturPistol' ? PISTOLS : RIFLES;
+    return `item.blastur.${pool[(line * 3 + tier * 2) % pool.length]}`;
+  }
+  const unique = quality === 'unique' || quality === 'set';
+  return `${WEAPON_MODEL_IDS[wc] ?? `item.${baseId}`}.v${line}.t${tier}${unique ? '.u' : ''}`;
+}

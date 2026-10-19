@@ -475,9 +475,14 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.cone(), metal, 0.07, 0.12, 0.025, 0, 0.85, 0));
       break;
     case 'spear':
-      g.add(mk(unit.cylinder(), main, 0.04, 1.4, 0.04, 0, 0.1, 0));
-      g.add(mk(unit.cone(), metal, 0.1, 0.28, 0.06, 0, 0.94, 0));
-      g.add(mk(unit.sphere(), glow, 0.07, 0.07, 0.07, 0, 0.78, 0));
+      // Electro-pike: dark shaft, grip wraps, and glowing emitter heads at both ends.
+      g.add(mk(unit.cylinder(), dark, 0.04, 1.5, 0.04, 0, 0.15, 0));
+      g.add(mk(unit.cylinder(), metal, 0.06, 0.14, 0.06, 0, 0.0, 0));
+      g.add(mk(unit.cylinder(), metal, 0.06, 0.14, 0.06, 0, 0.3, 0));
+      g.add(mk(unit.box(), metal, 0.12, 0.2, 0.05, 0, 0.92, 0));
+      g.add(mk(unit.box(), glow, 0.05, 0.16, 0.07, 0, 1.06, 0));
+      g.add(mk(unit.box(), metal, 0.1, 0.14, 0.05, 0, -0.62, 0));
+      g.add(mk(unit.box(), glow, 0.04, 0.1, 0.07, 0, -0.72, 0));
       break;
     case 'blaster':
       g.add(mk(unit.box(), main, 0.08, 0.3, 0.12, 0, 0.12, 0));
@@ -493,10 +498,13 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.box(), glow, 0.04, 0.12, 0.04, 0, 0.22, 0.075));
       break;
     case 'staff':
-      g.add(mk(unit.cylinder(), main, 0.045, 1.5, 0.045, 0, 0.35, 0));
-      g.add(mk(unit.cylinder(), metal, 0.07, 0.06, 0.07, 0, 0.0, 0));
-      g.add(mk(unit.cylinder(), metal, 0.08, 0.08, 0.08, 0, 1.08, 0));
-      g.add(mk(unit.gem(), glow, 0.18, 0.26, 0.18, 0, 1.25, 0));
+      // Forse staff: a ribbed metal pole with a crystal held in a three-prong emitter.
+      g.add(mk(unit.cylinder(), dark, 0.045, 1.5, 0.045, 0, 0.35, 0));
+      for (const y of [0.0, 0.2, 0.75]) g.add(mk(unit.cylinder(), metal, 0.07, 0.05, 0.07, 0, y, 0));
+      g.add(mk(unit.cylinder(), metal, 0.1, 0.08, 0.1, 0, 1.08, 0));
+      for (const a of [0, 2.1, 4.2])
+        g.add(mk(unit.box(), metal, 0.03, 0.2, 0.03, Math.cos(a) * 0.07, 1.2, Math.sin(a) * 0.07));
+      g.add(mk(unit.gem(), glow, 0.12, 0.2, 0.12, 0, 1.22, 0));
       break;
     case 'javelin':
       g.add(mk(unit.cylinder(), main, 0.035, 1.3, 0.035, 0, 0.25, 0));
@@ -504,9 +512,12 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.cylinder(), glow, 0.05, 0.08, 0.05, 0, 0.85, 0));
       break;
     case 'axe':
-      g.add(mk(unit.cylinder(), dark, 0.045, 0.75, 0.045, 0, 0.22, 0));
-      g.add(mk(unit.box(), metal, 0.3, 0.24, 0.035, 0.13, 0.5, 0));
-      g.add(mk(unit.box(), glow, 0.035, 0.26, 0.04, 0.28, 0.5, 0));
+      // Vibro-axe: a squared-off cleaver head with a humming glowing edge and a power cell.
+      g.add(mk(unit.box(), dark, 0.06, 0.75, 0.06, 0, 0.22, 0));
+      g.add(mk(unit.box(), metal, 0.26, 0.3, 0.04, 0.12, 0.48, 0));
+      g.add(mk(unit.box(), dark, 0.12, 0.06, 0.05, 0.08, 0.48, 0));
+      g.add(mk(unit.box(), glow, 0.03, 0.32, 0.05, 0.26, 0.48, 0));
+      g.add(mk(unit.cylinder(), glow, 0.05, 0.1, 0.05, 0, 0.05, 0.04));
       break;
     case 'baton':
       g.add(mk(unit.cylinder(), dark, 0.06, 0.24, 0.06, 0, -0.02, 0));
@@ -528,9 +539,12 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.gem(), glow, 0.2, 0.3, 0.2, 0, 0.26, 0));
       break;
     case 'helm':
-      g.add(mk(unit.sphere(), main, 0.36, 0.36, 0.36, 0, 0, 0));
-      g.add(mk(unit.box(), glow, 0.28, 0.07, 0.05, 0, 0.0, 0.16));
-      g.add(mk(unit.box(), dark, 0.1, 0.1, 0.2, 0, 0.18, 0));
+      // A rounded trooper/pilot helmet with a dark T visor.
+      g.add(mk(unit.sphere(), main, 0.36, 0.34, 0.36, 0, 0.02, 0));
+      g.add(mk(unit.cylinder(), main, 0.34, 0.16, 0.34, 0, -0.1, 0));
+      g.add(mk(unit.box(), dark, 0.24, 0.05, 0.05, 0, 0.02, 0.17));
+      g.add(mk(unit.box(), dark, 0.06, 0.12, 0.05, 0, -0.06, 0.17));
+      g.add(mk(unit.box(), glow, 0.03, 0.12, 0.03, 0.18, 0.1, 0));
       break;
     case 'armor':
       g.add(mk(unit.box(), main, 0.4, 0.4, 0.26, 0, 0, 0));
@@ -539,11 +553,23 @@ export function buildItemShape(kind: ItemKind, color: number, accent?: number): 
       g.add(mk(unit.sphere(), dark, 0.18, 0.14, 0.2, 0.24, 0.17, 0));
       break;
     case 'shield': {
-      const disc = mk(unit.cylinder(), main, 0.5, 0.06, 0.5, 0, 0, 0);
-      disc.rotation.x = Math.PI / 2;
-      g.add(disc);
-      const boss = mk(unit.sphere(), glow, 0.14, 0.14, 0.1, 0, 0, 0.05);
-      g.add(boss);
+      // Energy deflector: an arm-mounted emitter plate projecting a translucent glowing field.
+      g.add(mk(unit.box(), main, 0.2, 0.3, 0.07, 0, 0, 0));
+      g.add(mk(unit.box(), dark, 0.12, 0.2, 0.04, 0, 0, 0.04));
+      g.add(mk(unit.box(), glow, 0.04, 0.12, 0.03, 0, 0, 0.07));
+      const field = mk(
+        unit.cylinder(),
+        glowMaterial(accent ?? 0x4fc3ff, 0.32, true),
+        0.62,
+        0.02,
+        0.62,
+        0,
+        0,
+        0.1,
+      );
+      field.rotation.x = Math.PI / 2;
+      field.userData.noTint = true;
+      g.add(field);
       break;
     }
     case 'boots':

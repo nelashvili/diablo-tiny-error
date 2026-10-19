@@ -21,6 +21,7 @@ import type { SkillFireContext } from './registry';
 import { buildAttackSpec, paramEffects } from './spec';
 import { spawnArea, spawnMissile, spawnSummon } from './spawn';
 import { TRAIL_PREFIX } from './trail';
+import { MELEE_MASTERY, wieldsMelee } from '../player/weapon';
 
 type Handler = (ctx: SkillFireContext) => void;
 
@@ -96,6 +97,20 @@ export function meleeHandler(ctx: SkillFireContext, range: number): void {
     }
   }
   for (const t of targets) dealAttack(world, caster, t, spec, { melee: true, skillId: skill.id });
+  // Basic melee swings cleave: other enemies in front take part damage.
+  if (skill.id === 'attack' && targets.length === 1 && wieldsMelee(caster)) {
+    const half = (MELEE_MASTERY.cleaveArcDeg * Math.PI) / 360;
+    const side = {
+      ...spec,
+      weaponDamagePct: ((spec.weaponDamagePct ?? 100) * MELEE_MASTERY.cleavePct) / 100,
+    };
+    for (const a of hostilesNear(world, caster.team, caster.pos, reach)) {
+      if (a === targets[0]) continue;
+      let d = angleTo(caster.pos, a.pos) - ctx.angle;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (Math.abs(d) <= half) dealAttack(world, caster, a, side, { melee: true, skillId: skill.id });
+    }
+  }
   const at = targets[0]?.pos ?? fromAngle(ctx.angle, 1.2);
   impact(ctx, targets[0] ? at : { x: caster.pos.x + (at as Vec2).x, y: caster.pos.y + (at as Vec2).y });
 }

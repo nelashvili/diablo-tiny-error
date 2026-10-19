@@ -1,4 +1,5 @@
 import { DB } from '../../data/db';
+import { MELEE_MASTERY } from '../player/weapon';
 import { hasName, t } from '../../data/names';
 import type { Modifier, StatId } from '../stats/types';
 import type { ClassId, ItemQuality } from '../types';
@@ -137,6 +138,15 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
     const key = ranged ? 'item.damage.ranged' : w.twoHanded ? 'item.damage.2h' : 'item.damage.1h';
     push(t(key, { min: w.min, max: w.max }), 'base');
     push(t('item.speed', { v: w.speed.toFixed(2) }), 'base');
+    if (!ranged && w.weaponClass !== 'javelin' && w.weaponClass !== 'throwingDisc')
+      push(
+        t('item.meleeMastery', {
+          dmg: MELEE_MASTERY.enhancedDamage,
+          dr: MELEE_MASTERY.damageReducedPct,
+          cleave: MELEE_MASTERY.cleavePct,
+        }),
+        'magic',
+      );
   }
   if (b.defense) push(t('item.defense', { v: itemDefense(item) }), 'base');
   if (b.block) push(t('item.block', { v: b.block }), 'base');

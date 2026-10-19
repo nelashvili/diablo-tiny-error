@@ -31,6 +31,19 @@ export const RANGED_WEAPON_MISSILE: Partial<Record<WeaponClass, string>> = {
   throwingDisc: 'disc',
 };
 
+/**
+ * Close-quarters fighting is riskier than shooting from range, so a hero holding a melee weapon
+ * gets a built-in edge: more damage, less physical damage taken, and basic swings that cleave
+ * through other enemies in front at part damage.
+ */
+export const MELEE_MASTERY = { enhancedDamage: 30, damageReducedPct: 15, cleavePct: 50, cleaveArcDeg: 120 };
+
+/** Is this actor fighting with a melee weapon (players/mercs)? */
+export function wieldsMelee(actor: Actor): boolean {
+  const wc = getEquippedWeapon(actor)?.weaponClass;
+  return !!wc && !RANGED_WEAPON_MISSILE[wc];
+}
+
 export function getEquippedWeapon(actor: Actor): EquippedWeapon | undefined {
   if (actor.kind !== 'player' && actor.kind !== 'merc') return undefined;
   const item = actor.equipment.mainHand;

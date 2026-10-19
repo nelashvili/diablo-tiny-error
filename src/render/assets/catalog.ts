@@ -129,6 +129,7 @@ const ACTORS: ModelEntry[] = [
   }),
   // Bounty Huntur: visored helmet and armor in bounty-hunter green, crimson trim, worn brown cape.
   kay('hero.bountyHuntur', 'heroes/knight', 0x5d6b4a, 0xff8a3d, 0.75, {
+    helmet: { replace: 'Knight_Helmet', style: 'mando', color: 0x7a8a5c },
     recolor: [
       { hue: [0, 360], maxSat: 0.12, color: 0x7a8a5c },
       { hue: [330, 20], minSat: 0.4, color: 0x6a5238 },
@@ -221,6 +222,7 @@ const ACTORS: ModelEntry[] = [
   // Normtrooper: white armor, black visor and joints, and a blastur carbine.
   kay('mon.normtrooper', 'heroes/knight', 0xeeeeee, 0xff5a3a, 0.72, {
     hide: ['Knight_Cape'],
+    helmet: { replace: 'Knight_Helmet', style: 'trooper', color: 0xf2f2f4 },
     recolor: [
       { hue: [0, 360], maxSat: 0.12, minVal: 0.35, color: 0xf2f2f4, flat: 0.5 },
       { hue: [0, 360], maxSat: 0.12, color: 0x1a1a1e },
@@ -497,8 +499,8 @@ const ITEMS: ModelEntry[] = [
   stat('item.clip', 'items/clip', 2, ph('box', 0x6a6f76, 0.2, 0.1)),
   // litesaber hilts: blade is procedural; no CC0 hilt found, so a plain cylinder placeholder
   stat('item.litesaberHilt', null, 1, ph('cylinder', 0xb0b4b8, 0.35, 0.04), 0x4fc3ff),
-  stat('item.shield', 'items/shieldRound', 0.5, ph('cylinder', 0x8a8f94, 0.7, 0.35)),
-  stat('item.shield.square', 'items/shieldSquare', 0.5, ph('box', 0x8a8f94, 0.7, 0.35)),
+  // Energy deflectors are procedural (the glTF shields are medieval wood and iron).
+  stat('item.shield', null, 1, ph('box', 0x5a606a, 0.7, 0.35), 0x4fc3ff),
   stat('item.stim', 'items/potionRed', 0.5, ph('cylinder', 0xd04040, 0.45, 0.12), 0xd04040),
   stat('item.potion', 'items/potion', 0.7, ph('cylinder', 0x40c070, 0.45, 0.12), 0x40c070),
   stat('item.credits', 'items/coin', 1.6, ph('cylinder', 0xffd23f, 0.08, 0.2), 0xffd23f),
