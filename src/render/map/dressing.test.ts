@@ -33,3 +33,13 @@ describe('dressing', () => {
     expect([...d]).toEqual([0, 1, 2, 3]);
   });
 });
+
+describe('ground scatter', () => {
+  it('uses real catalog models and only on open ground', async () => {
+    const { scatterFor } = await import('./dressing');
+    const grass = scatterFor('endoor.forest', 'grass')!;
+    for (const id of grass.props) expect(getModelEntry(id).url, id).not.toBeNull();
+    expect(scatterFor('endoor.forest', 'wall')).toBeUndefined();
+    expect(scatterFor('endoor.forest', 'road')).toBeUndefined();
+  });
+});

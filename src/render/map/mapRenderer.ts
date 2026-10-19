@@ -3,7 +3,7 @@ import type { GeneratedLevel, TileKind } from '../../core/world/types';
 import type { QualityLevel, VisualFactory } from '../types';
 import { CHUNK_SIZE, chunkGrid, chunkIndexOf, countKindsPerChunk, hash01 } from './chunking';
 import { TERRAIN_KINDS, buildTerrain } from '../terrain/terrain';
-import { depthInto, dressingFor, propVariant, tileTint } from './dressing';
+import { depthInto, dressingFor, propVariant, scatterFor, tileTint } from './dressing';
 
 type Part = { geometry: THREE.BufferGeometry; material: THREE.Material };
 
@@ -275,6 +275,14 @@ export function buildMap(
   }
   const lights: MapLightSpec[] = [];
   const insts: PropInst[] = [];
+  const overWet = (x: number, z: number, r: number) => {
+    for (let ty = Math.floor(z - r); ty <= Math.floor(z + r); ty++)
+      for (let tx = Math.floor(x - r); tx <= Math.floor(x + r); tx++) {
+        const k = tx >= 0 && ty >= 0 && tx < width && ty < height ? map.kinds[ty * width + tx] : 'void';
+        if (k === 'water' || k === 'pit') return true;
+      }
+    return false;
+  };
   const propId = (ref: string) => (ref.startsWith('prop.') ? ref : `prop.${ref}`);
   for (const p of level.placements) {
     if (p.kind === 'light') {
@@ -289,8 +297,12 @@ export function buildMap(
       const tx = Math.floor(p.pos.x);
       const ty = Math.floor(p.pos.y);
       if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
+      const id = propVariant(propId(p.ref), hash01(tx * 31 + 7, ty * 17 + 3));
+      // Decorative only: drop a prop whose footprint would hang over water or a pit.
+      getParts(id).box.getSize(_size);
+      if (overWet(p.pos.x, p.pos.y, Math.max(_size.x, _size.z) * 0.45)) continue;
       insts.push({
-        id: propVariant(propId(p.ref), hash01(tx * 31 + 7, ty * 17 + 3)),
+        id,
         x: p.pos.x,
         z: p.pos.y,
         rot: p.facing ?? hash01(tx, ty) * Math.PI * 2,
@@ -323,6 +335,33 @@ export function buildMap(
         cast: d.castShadow === true && opts.quality === 'high',
       });
     }
+  // Ground scatter: small render-only detail on open tiles, by quality.
+  const scatterK = opts.quality === 'high' ? 1 : opts.quality === 'medium' ? 0.5 : 0;
+  if (scatterK > 0)
+    for (let ty = 0; ty < height; ty++)
+      for (let tx = 0; tx < width; tx++) {
+        const idx = ty * width + tx;
+        const kind = map.kinds[idx];
+        const sc = kind ? scatterFor(tileset, kind) : undefined;
+        if (!sc) continue;
+        // Up to two spots per tile, each kept with probability density/2 * quality.
+        for (let k = 0; k < 2; k++) {
+          if (hash01(idx * 2 + k, 71) >= (sc.density / 2) * scatterK) continue;
+          const x = tx + 0.1 + 0.8 * hash01(idx * 2 + k, 79);
+          const z = ty + 0.1 + 0.8 * hash01(idx * 2 + k, 83);
+          // Shorelines curve into the banks: keep tufts off any tile touching water.
+          if (overWet(x, z, 0.6)) continue;
+          insts.push({
+            id: sc.props[Math.floor(hash01(idx * 2 + k, 73) * sc.props.length)]!,
+            x,
+            z,
+            rot: hash01(idx * 2 + k, 89) * Math.PI * 2,
+            scale: sc.scale[0] + (sc.scale[1] - sc.scale[0]) * hash01(idx * 2 + k, 97),
+            fade: false,
+            cast: false,
+          });
+        }
+      }
 
   const propBatches = new Map<
     string,

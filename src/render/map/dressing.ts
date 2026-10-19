@@ -58,6 +58,49 @@ const DRESSING: Record<string, Partial<Record<TileKind, KindDressing>>> = {
   cave: { rock: { props: ['prop.rock.tall', 'prop.stone.tall'], scale: [0.55, 0.85], jitter: 0.12 } },
 };
 
+export interface GroundScatter {
+  /** Models picked per spot. */
+  props: readonly string[];
+  /** Spots per open tile at high quality (medium gets half, low none). */
+  density: number;
+  scale: [number, number];
+}
+
+/**
+ * Small ground detail (grass tufts, flowers, pebbles) on open tiles: render-only, no shadows, so the
+ * big flat fields read as ground rather than a texture. Scatter never blocks movement.
+ */
+const SCATTER: Record<string, Partial<Record<TileKind, GroundScatter>>> = {
+  forest: {
+    grass: {
+      props: [
+        ...['prop.grass', 'prop.grass', 'prop.grass', 'prop.grass', 'prop.grass', 'prop.grass'],
+        'prop.flowers',
+        'prop.flowers',
+        'prop.rock.small',
+        'prop.mushrooms',
+      ],
+      density: 0.8,
+      scale: [0.7, 1.15],
+    },
+    floor: { props: ['prop.grass', 'prop.rock.small', 'prop.flowers'], density: 0.22, scale: [0.4, 0.7] },
+  },
+  town: {
+    grass: {
+      props: ['prop.grass', 'prop.grass', 'prop.grass', 'prop.flowers'],
+      density: 0.6,
+      scale: [0.7, 1.1],
+    },
+  },
+  cave: {
+    floor: { props: ['prop.rock.small', 'prop.bones', 'prop.rock.small'], density: 0.08, scale: [0.4, 0.7] },
+  },
+};
+
+export function scatterFor(tileset: string, kind: TileKind): GroundScatter | undefined {
+  return SCATTER[tileset.split('.').pop() ?? tileset]?.[kind];
+}
+
 /** Color multiplier (sRGB) for plain tile kinds whose stock texture clashes with the ground. */
 const TILE_TINT: Record<string, Partial<Record<TileKind, number>>> = {
   cave: { wall: 0x9c9088, rock: 0x9c9088 },

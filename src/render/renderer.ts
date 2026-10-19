@@ -14,7 +14,7 @@ import { createPostFx, type PostFx } from './vfx/post';
 import { DB } from '../data/db';
 import { IsoCamera } from './camera/isoCamera';
 import { buildMap, type MapRenderer } from './map/mapRenderer';
-import { dressingFor, propVariants } from './map/dressing';
+import { dressingFor, propVariants, scatterFor } from './map/dressing';
 import { SceneLighting, presetFor } from './scene/lighting';
 import { EntitySync } from './scene/entitySync';
 import { AdaptiveScale } from './scene/adaptiveScale';
@@ -245,6 +245,7 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         if (k === 'void') continue;
         ids.add(`tile.${tileset}.${k}`);
         for (const v of dressingFor(tileset, k as TileKind)?.props ?? []) ids.add(v);
+        for (const v of scatterFor(tileset, k as TileKind)?.props ?? []) ids.add(v);
       }
       await visuals.preload([...ids]);
       const b = iso.basis.toCam;
