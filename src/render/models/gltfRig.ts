@@ -247,9 +247,8 @@ export class GltfRig implements Rig {
     const hair = this.headParts.filter((p) => /^hair/i.test(p.obj.name));
     for (const p of this.headParts) p.obj.visible = p.visible;
     if (!style) return;
-    if (style === 'hood') {
-      // Without a hood of its own the character just keeps its hair (the palette shows the item).
-      if (!hood.length) return;
+    if (style === 'hood' && hood.length) {
+      // The model's own hood (hair tucked in); others get the procedural cloth hood below.
       for (const p of hood) p.obj.visible = true;
       for (const p of hair) p.obj.visible = false;
       return;

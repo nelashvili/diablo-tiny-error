@@ -7,13 +7,22 @@ import * as THREE from 'three';
 import { mk, unit } from './rig';
 import { toonMaterial } from './toon';
 
-export type HelmetStyle = 'mando' | 'trooper';
+export type HelmetStyle = 'mando' | 'trooper' | 'hood';
 
 /** Shapes in a unit box centered on the origin (x across, y up, z toward the face). */
 export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
   const main = toonMaterial(color);
   const visor = toonMaterial(0x0c0c10);
   const metal = toonMaterial(0x3a3e46);
+  if (style === 'hood') {
+    // Cloth hood (worn hood items on heroes whose model has none): a cowl over the crown and back
+    // of the head, set back so the face shows, with a peak at the back and a drape on the shoulders.
+    return [
+      mk(unit.sphere(), main, 1.1, 1.05, 0.95, 0, 0.14, -0.2),
+      mk(unit.cone(), main, 0.42, 0.4, 0.42, 0, 0.42, -0.5).rotateX(-1.0),
+      mk(unit.taper(), main, 1.15, 0.5, 1.0, 0, -0.42, -0.2),
+    ];
+  }
   if (style === 'mando')
     return [
       mk(unit.sphere(), main, 1, 0.9, 1, 0, 0.08, 0),

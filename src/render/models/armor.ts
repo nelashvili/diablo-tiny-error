@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { unit } from './rig';
 import { getGradientMap, glowMaterial } from './toon';
-import { helmetShapes } from './headgear';
+import { helmetShapes, type HelmetStyle } from './headgear';
 
 export type ArmorStyle = 'trooper' | 'mando' | 'droid';
 
@@ -83,7 +83,7 @@ function plate(
 }
 
 /** Helmet meshes (headgear.ts) fitted around the head: centered above the Head bone, ~0.27 m. */
-function helmet(style: 'trooper' | 'mando', color: number): Piece[] {
+function helmet(style: HelmetStyle, color: number): Piece[] {
   return helmetShapes(style, color).map((m) => {
     const mat = m.material as THREE.MeshToonMaterial;
     const k = 0.27;
@@ -216,7 +216,7 @@ export function buildArmor(model: THREE.Object3D, spec: ArmorSpec, hideBody: boo
  */
 export function buildHelmet(
   model: THREE.Object3D,
-  style: 'trooper' | 'mando',
+  style: HelmetStyle,
   material: THREE.Material,
 ): THREE.SkinnedMesh | null {
   return bindPieces(model, () => helmet(style, 0xffffff), material, 'Helmet_Worn', 0)[0] ?? null;
