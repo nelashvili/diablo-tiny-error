@@ -207,6 +207,7 @@ export default {
   'ui.opt.master': 'Main volume',
   'ui.opt.music': 'Music',
   'ui.opt.sfx': 'Effects',
+  'ui.opt.voice': 'Voices',
   'ui.opt.controls': 'Controls',
   'ui.opt.movement': 'Moving',
   'ui.opt.move.tapToMove': 'Tap to move',

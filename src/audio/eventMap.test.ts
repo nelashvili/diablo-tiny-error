@@ -92,7 +92,20 @@ describe('basic attack sounds', () => {
   it('follow the weapon the caster wields', () => {
     expect(cuesForEvent(cast, { basicAttackSound: () => 'blastur' })[0]?.ids).toEqual(['blasturClassic']);
     expect(cuesForEvent(cast, { basicAttackSound: () => 'saber' })[0]?.ids).toEqual(['saberVwoom']);
-    expect(cuesForEvent(cast, { basicAttackSound: () => 'swing' })[0]?.rate).toBeLessThan(1);
+    expect(cuesForEvent(cast, { basicAttackSound: () => 'blasturHeavy' })[0]?.ids).toEqual(['blasturHeavy']);
+    for (const swing of ['swingLight', 'swingMedium', 'swingHeavy', 'swingVibro', 'swingShock'] as const) {
+      expect(cuesForEvent(cast, { basicAttackSound: () => swing })[0]?.ids).toEqual([swing]);
+      expect(PROCEDURAL_IDS).toContain(swing);
+    }
+  });
+  it('weapon hits clank on droyds and crits add a crunch', () => {
+    const hit = (crit: boolean) =>
+      ({ type: 'damage', targetId: 3, sourceId: 2, amount: 5, dtype: 'physical', crit, pos }) as const;
+    const droyd = { isDroyd: (id: number) => id === 3 };
+    expect(cuesForEvent(hit(false), droyd).map((c) => c.ids)).toEqual([['hitMetal']]);
+    expect(cuesForEvent(hit(true), droyd).map((c) => c.ids)).toEqual([['hitMetal'], ['hitCrit']]);
+    expect(cuesForEvent(hit(true)).map((c) => c.ids.at(-1))).toEqual(['hit', 'hitCrit']);
+    expect(cuesForEvent({ ...hit(true), dtype: 'plasma' }, droyd)).toHaveLength(1);
   });
   it('stay silent without a weapon sound instead of playing a spell chime', () => {
     expect(cuesForEvent(cast)).toEqual([]);

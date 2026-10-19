@@ -80,13 +80,26 @@ export function itemDropIds(quality: string): string[] {
   return q === proc ? [`itemDrop.${q}`] : [`itemDrop.${q}`, `itemDrop.${proc}`];
 }
 
+/** Melee swings by weapon: light (daggers, fists, throws), medium, heavy (pikes, staves), vibro, shock. */
+export type SwingSound = 'swingLight' | 'swingMedium' | 'swingHeavy' | 'swingVibro' | 'swingShock';
+const SWINGS: ReadonlySet<string> = new Set<SwingSound>([
+  'swingLight',
+  'swingMedium',
+  'swingHeavy',
+  'swingVibro',
+  'swingShock',
+]);
+export const isSwing = (s: BasicAttackSound): s is SwingSound => s !== null && SWINGS.has(s);
+
 /** What a basic attack (`attack` / `throw`) sounds like for a caster; null = silent (the hit covers it). */
-export type BasicAttackSound = SkillSound | 'swing' | null;
+export type BasicAttackSound = SkillSound | 'blasturHeavy' | SwingSound | null;
 
 export interface CueContext {
   basicAttackSound?(casterId: number): BasicAttackSound;
   /** True when the attacker hits with a lit saber (hits then sizzle instead of thumping). */
   hitsWithSaber?(sourceId: number): boolean;
+  /** True when the target is a droyd (weapon hits clank on metal). */
+  isDroyd?(targetId: number): boolean;
   /**
    * For an enemy caster: what its attack sounds like (null = silent, the impact covers melee).
    * Undefined for anyone else (heroes and mercs use the normal sounds).
@@ -104,8 +117,8 @@ const BASIC_SKILLS = new Set(['attack', 'throw']);
 
 function basicAttackCue(sound: BasicAttackSound, pos?: { x: number; y: number }): Cue[] {
   if (!sound) return [];
-  // Plain weapon swings reuse the saber whoosh, lower and quieter.
-  if (sound === 'swing') return [{ ids: ['sfx.saberSwing', 'saberSwing'], volume: 0.45, rate: 0.7, pos }];
+  if (isSwing(sound)) return [{ ids: [sound], volume: 0.6, pos }];
+  if (sound === 'blasturHeavy') return [{ ids: ['blasturHeavy'], volume: 0.85, pos }];
   const file = SKILL_FILE[sound];
   return [{ ids: [...(file ? [file] : []), SKILL_SOUND[sound]], volume: sound === 'saber' ? 1 : 0.8, pos }];
 }
@@ -113,11 +126,19 @@ function basicAttackCue(sound: BasicAttackSound, pos?: { x: number; y: number })
 /** Map one event to zero or more cues. */
 export function cuesForEvent(e: GameEvent, ctx?: CueContext): Cue[] {
   switch (e.type) {
-    case 'damage':
+    case 'damage': {
       if (e.amount <= 0) return [];
-      if (e.dtype === 'physical' && e.sourceId !== undefined && ctx?.hitsWithSaber?.(e.sourceId))
-        return [{ ids: ['saberHit'], volume: e.crit ? 1 : 0.75, rate: e.crit ? 0.9 : 1, pos: e.pos }];
-      return [hitCue(e.dtype, e.crit, e.pos)];
+      const physical = e.dtype === 'physical';
+      // A crushing extra layer under physical crits.
+      const crit: Cue[] = physical && e.crit ? [{ ids: ['hitCrit'], volume: 0.7, pos: e.pos }] : [];
+      const v = e.crit ? 1 : 0.75;
+      const r = e.crit ? 0.9 : 1;
+      if (physical && e.sourceId !== undefined && ctx?.hitsWithSaber?.(e.sourceId))
+        return [{ ids: ['saberHit'], volume: v, rate: r, pos: e.pos }, ...crit];
+      if (physical && ctx?.isDroyd?.(e.targetId))
+        return [{ ids: ['hitMetal'], volume: v, rate: r, pos: e.pos }, ...crit];
+      return [hitCue(e.dtype, e.crit, e.pos), ...crit];
+    }
     case 'death':
       return e.droyd
         ? [{ ids: ['death.droyd', 'droydDeath'], pos: e.pos }]

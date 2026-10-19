@@ -22,9 +22,16 @@ import { createRenderer, type RenderController } from '@/render/renderer';
 import { createItemIcons, type ItemIconSource } from '@/render/icons/itemIcons';
 import { createAudioSystem, type FullAudioSystem, type LoopHandle } from '@/audio';
 import { AUDIO_CATALOG } from '@/render/assets/audio';
-import { elementForSkill, type BasicAttackSound, type CueContext } from '@/audio/eventMap';
+import {
+  elementForSkill,
+  isSwing,
+  type BasicAttackSound,
+  type CueContext,
+  type SwingSound,
+} from '@/audio/eventMap';
 import { basicMissileFor } from '@/core/skills/behaviors';
 import { getEquippedWeapon } from '@/core/player/weapon';
+import type { WeaponClass } from '@/data/schema';
 import { createInputManager, detectTouch, type InputManager } from '@/ui/input';
 import type { InputContext } from '@/ui/input/types';
 import {
@@ -111,7 +118,12 @@ export class Game {
     window.addEventListener('resize', () => this.resize());
 
     this.audio = createAudioSystem({ catalog: AUDIO_CATALOG });
-    this.audio.setVolumes({ master: masterVolume(s), music: s.musicVolume, sfx: s.sfxVolume });
+    this.audio.setVolumes({
+      master: masterVolume(s),
+      music: s.musicVolume,
+      sfx: s.sfxVolume,
+      voice: s.voiceVolume,
+    });
 
     const ctx: InputContext = {
       dispatch: (cmd) => this.dispatch(cmd),
@@ -173,6 +185,7 @@ export class Game {
   private readonly cueCtx: CueContext = {
     basicAttackSound: (id) => basicAttackSound(this.world, id),
     hitsWithSaber: (id) => wieldsSaber(this.world, id),
+    isDroyd: (id) => isDroyd(this.world, id),
     hostileAttackSound: (id, skillId) => hostileAttackSound(this.world, id, skillId),
   };
 
@@ -232,6 +245,7 @@ export class Game {
     this.dialogue = null;
     this.ui.api.closeAllPanels();
     this.audio.playMusic(null);
+    this.audio.speak([]);
   }
 
   waypointView(): WaypointView {
@@ -251,6 +265,11 @@ export class Game {
   }
 
   private dialogue: DialogueView | null = null;
+  /** Speak recorded lines (NPCs, bosses, narrator), replacing any current speech; [] stops it. */
+  speak(lineKeys: readonly string[]): void {
+    this.audio?.speak(lineKeys);
+  }
+
   dialogueView(): DialogueView | null {
     return this.dialogue;
   }
@@ -437,7 +456,12 @@ export class Game {
   }
 
   private applySettings(s: Settings): void {
-    this.audio?.setVolumes({ master: masterVolume(s), music: s.musicVolume, sfx: s.sfxVolume });
+    this.audio?.setVolumes({
+      master: masterVolume(s),
+      music: s.musicVolume,
+      sfx: s.sfxVolume,
+      voice: s.voiceVolume,
+    });
     this.renderer?.setScreenShake(s.screenShake);
     if (s.quality !== 'auto') this.renderer?.setQuality(s.quality);
   }
@@ -665,6 +689,10 @@ export class Game {
       }
     });
 
+    w.bus.on('bossIntro', (e) => {
+      if (e.lineKey) this.speak([e.lineKey]);
+    });
+
     w.bus.on('dialogue', (e) => {
       const npc = w.get(e.npcId);
       if (!npc || npc.kind !== 'npc') return;
@@ -695,17 +723,29 @@ function masterVolume(s: Settings): number {
 
 const SABER_CLASSES = new Set(['litesaber', 'doubleLitesaber']);
 
+/** Melee swing by weapon class (unarmed and unlisted weapons swing light). */
+const SWING_BY_CLASS: Partial<Record<WeaponClass, SwingSound>> = {
+  vibroAxe: 'swingVibro',
+  shockBaton: 'swingShock',
+  vibroPike: 'swingHeavy',
+  forseStaff: 'swingHeavy',
+};
+
 /** Basic-attack sound by what the attacker wields: sabers hum, blasturs fire, monster missiles by element. */
 function basicAttackSound(world: SimWorld, id: number): BasicAttackSound {
   const a = world.get(id);
   if (!a || (a.kind !== 'player' && a.kind !== 'merc' && a.kind !== 'monster')) return null;
+  const wc = a.kind === 'monster' ? undefined : getEquippedWeapon(a)?.weaponClass;
   const missile = basicMissileFor(a);
   if (missile) {
-    if (missile === 'javelin' || missile === 'disc') return 'swing';
+    if (missile === 'javelin' || missile === 'disc') return 'swingLight';
     const fam = elementForSkill(missile.replace(/^m_/, ''));
-    return fam === 'magic' || fam === 'saber' ? 'swing' : fam;
+    if (fam === 'blastur' && wc === 'blasturRifle') return 'blasturHeavy';
+    return fam === 'magic' || fam === 'saber' ? 'swingMedium' : fam;
   }
-  return wieldsSaber(world, id) ? 'saber' : 'swing';
+  if (wc && SABER_CLASSES.has(wc)) return 'saber';
+  if (a.kind === 'monster') return 'swingMedium';
+  return (wc && SWING_BY_CLASS[wc]) ?? 'swingLight';
 }
 
 /** Enemy attack sound: melee is silent (the impact covers it), ranged uses its element family. */
@@ -714,7 +754,7 @@ function hostileAttackSound(world: SimWorld, id: number, skillId: string): Basic
   if (!a || a.kind !== 'monster' || a.team !== 'monsters') return undefined;
   if (skillId === 'attack' || skillId === 'throw') {
     const s = basicAttackSound(world, id);
-    return s === 'swing' || s === 'saber' ? null : s;
+    return isSwing(s) || s === 'saber' ? null : s;
   }
   const def = DB.skills.get(skillId);
   if (!def || def.kind === 'meleeAttack') return null;
@@ -724,6 +764,11 @@ function hostileAttackSound(world: SimWorld, id: number, skillId: string): Basic
   const el = def.element;
   if (el === 'storm' || el === 'plasma' || el === 'cryo' || el === 'toxin') return el;
   return 'magic';
+}
+
+function isDroyd(world: SimWorld, id: number): boolean {
+  const a = world.get(id);
+  return a?.kind === 'monster' && DB.monsters.get(a.defId)?.flags.droyd === true;
 }
 
 function wieldsSaber(world: SimWorld, id: number): boolean {

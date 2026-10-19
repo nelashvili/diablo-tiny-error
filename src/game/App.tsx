@@ -11,6 +11,7 @@ import { TouchControls } from '@/ui/touch';
 import type { PanelDataSource } from '@/ui/panels/services';
 import { itemValue } from '@/core/items/helpers';
 import type { Game } from './Game';
+import { CRAWL_PARTS } from './voiceCast';
 import './app.css';
 
 type Phase = 'menu' | 'loading' | 'playing';
@@ -55,7 +56,21 @@ export function App({ game }: { game: Game }): JSX.Element {
     [game],
   );
 
-  const services = useMemo(() => ({ itemIcon: game.itemIcons.get, price: itemValue }), [game]);
+  const services = useMemo(
+    () => ({
+      itemIcon: game.itemIcons.get,
+      price: itemValue,
+      speak: (keys: readonly string[]) => game.speak(keys),
+    }),
+    [game],
+  );
+
+  // The narrator reads the crawl while it rolls.
+  useEffect(() => {
+    if (!crawl) return;
+    game.speak(CRAWL_PARTS.map((p) => `story.${crawl}.${p}`));
+    return () => game.speak([]);
+  }, [crawl]);
 
   const run = async (fn: () => Promise<unknown>) => {
     setPhase('loading');

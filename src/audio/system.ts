@@ -9,6 +9,7 @@ import { moodFor, startPad, type PadHandle } from './ambient';
 import { planCues, type Cue, type CueContext } from './eventMap';
 import { finalGain, pickTake, positional, SfxThrottle, VoiceLimiter, type Volumes } from './mixer';
 import { PROCEDURAL_IDS, PROCEDURAL_TAKES, ProceduralSfx, RECIPES } from './synth';
+import { VOICE_DUCK, VOICE_GAP, voiceUrl } from './voice';
 
 export interface CatalogEntry {
   urls: string[];
@@ -49,6 +50,8 @@ export interface FullAudioSystem extends AudioSystem {
   playSfxAt(id: string, pos: Vec2Like, opts?: { volume?: number; rate?: number }): void;
   /** Start a continuous loop (e.g. 'saberHum'); returns a handle or null if unavailable. */
   startLoop(id: string, opts?: { volume?: number }): LoopHandle | null;
+  /** Speak recorded lines in order (unrecorded ones are skipped), replacing any current speech. */
+  speak(lineKeys: readonly string[]): void;
   /** Ids available procedurally. */
   listProcedural(): string[];
   /** Whether a catalog file exists for the id. */
@@ -75,7 +78,9 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
   });
   const throttle = new SfxThrottle(0.04, 4, { hit: 0.05, footstep: 0.15, dialogue: 0.1 }, { hit: 5 });
 
-  let volumes: Volumes = { master: 0.8, music: 0.6, sfx: 0.9 };
+  let volumes: Volumes = { master: 0.8, music: 0.6, sfx: 0.9, voice: 0.9 };
+  /** Music gain multiplier: below 1 while a voice line plays. */
+  let duck = 1;
   let listener: Vec2Like | null = null;
   let unlocked = false;
   let disposed = false;
@@ -111,9 +116,9 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
 
   function applyVolumes(): void {
     const g = {
-      master: finalGain(1, 'sfx', { master: volumes.master, music: 1, sfx: 1 }),
-      sfx: finalGain(1, 'sfx', { master: 1, music: 1, sfx: volumes.sfx }),
-      music: finalGain(1, 'music', { master: 1, music: volumes.music, sfx: 1 }),
+      master: finalGain(1, 'sfx', { ...volumes, sfx: 1 }),
+      sfx: finalGain(1, 'sfx', { ...volumes, master: 1 }),
+      music: finalGain(1, 'music', { ...volumes, master: 1 }) * duck,
     };
     if (masterGain) masterGain.gain.value = g.master;
     if (sfxBus) sfxBus.gain.value = g.sfx;
@@ -141,9 +146,9 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     }
     return h;
   }
-  const sfxFileVolume = (base: number) => finalGain(base, 'sfx', { master: 1, music: 1, sfx: volumes.sfx });
-  const musicFileVolume = (base: number) =>
-    finalGain(base, 'music', { master: 1, music: volumes.music, sfx: 1 });
+  const sfxFileVolume = (base: number) => finalGain(base, 'sfx', { ...volumes, master: 1 });
+  const musicFileVolume = (base: number) => finalGain(base, 'music', { ...volumes, master: 1 }) * duck;
+  const voiceFileVolume = () => finalGain(1, 'voice', { ...volumes, master: 1 });
 
   const rand = (spread: number) => 1 + (Math.random() * 2 - 1) * spread;
 
@@ -287,6 +292,65 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
     currentPad = startPad(c, musicBus, moodFor(trackId), crossfade + 0.5);
   }
 
+  // ---- Voice ----
+  let speech: Howl | null = null;
+  /** Bumped by every new speech so a stale line's 'end' cannot start the next one. */
+  let speechToken = 0;
+  let gapTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function setDuck(on: boolean): void {
+    const next = on ? VOICE_DUCK : 1;
+    if (next === duck) return;
+    duck = next;
+    if (currentMusicHowl)
+      currentMusicHowl.fade(currentMusicHowl.volume(), musicFileVolume(currentMusicBase), 400);
+    if (musicBus && ctx)
+      musicBus.gain.setTargetAtTime(
+        finalGain(1, 'music', { ...volumes, master: 1 }) * duck,
+        ctx.currentTime,
+        0.15,
+      );
+  }
+
+  function stopSpeech(): void {
+    speechToken++;
+    clearTimeout(gapTimer);
+    if (speech) {
+      speech.unload();
+      speech = null;
+    }
+  }
+
+  function speak(lineKeys: readonly string[]): void {
+    if (disposed) return;
+    stopSpeech();
+    const urls = lineKeys.map((k) => voiceUrl(k)).filter((u): u is string => u !== null);
+    const token = speechToken;
+    const next = (i: number): void => {
+      if (token !== speechToken) return;
+      const url = urls[i];
+      if (!url) {
+        speech = null;
+        setDuck(false);
+        return;
+      }
+      const h = new Howl({ src: [url], format: ['m4a'], volume: voiceFileVolume() });
+      speech = h;
+      const done = () => {
+        h.unload();
+        if (token !== speechToken) return;
+        speech = null;
+        gapTimer = setTimeout(() => next(i + 1), VOICE_GAP * 1000);
+      };
+      h.once('end', done);
+      h.once('loaderror', done);
+      h.once('playerror', done);
+      h.play();
+    };
+    setDuck(urls.length > 0);
+    next(0);
+  }
+
   // ---- Unlock ----
   function unlock(): void {
     if (disposed) return;
@@ -366,8 +430,9 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
       for (const c of planCues(events, 4, cueCtx)) playCue(c);
     },
     setVolumes(v) {
-      volumes = { master: v.master, music: v.music, sfx: v.sfx };
+      volumes = { master: v.master, music: v.music, sfx: v.sfx, voice: v.voice ?? volumes.voice };
       applyVolumes();
+      speech?.volume(voiceFileVolume());
     },
     getVolumes: () => ({ ...volumes }),
     setListener(pos) {
@@ -413,11 +478,13 @@ export function createAudioSystem(opts: AudioSystemOptions = {}): FullAudioSyste
         },
       };
     },
+    speak,
     listProcedural: () => [...PROCEDURAL_IDS],
     hasFile: (id) => catalog[id] !== undefined,
     dispose() {
       disposed = true;
       removeGestureListeners();
+      stopSpeech();
       fadeOutCurrent();
       howls.forEach((h) => h.unload());
       howls.clear();

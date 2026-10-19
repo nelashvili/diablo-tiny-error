@@ -1,6 +1,7 @@
 import { createAudioSystem, MOODS, PROCEDURAL_IDS } from '../src/audio';
 import type { LoopHandle } from '../src/audio';
 import type { GameEvent } from '../src/core/sim/events';
+import VOICE_LINES from '../src/audio/voiceLines.gen';
 
 const audio = createAudioSystem({});
 audio.setListener({ x: 0, y: 0 });
@@ -26,8 +27,8 @@ function button(parent: HTMLElement, label: string, fn: () => void): void {
   parent.appendChild(b);
 }
 
-const vols = { master: 0.8, music: 0.6, sfx: 0.9 };
-for (const k of ['master', 'music', 'sfx'] as const) {
+const vols = { master: 0.8, music: 0.6, sfx: 0.9, voice: 0.9 };
+for (const k of ['master', 'music', 'sfx', 'voice'] as const) {
   const l = document.createElement('label');
   l.textContent = `${k} `;
   const r = document.createElement('input');
@@ -47,6 +48,24 @@ audio.setVolumes(vols);
 
 const sfx = section('Procedural SFX');
 for (const id of PROCEDURAL_IDS) button(sfx, id, () => audio.playSfx(id));
+
+const weapons = section('Weapons (A/B: new recipes)');
+for (const id of [
+  'blasturClassic',
+  'blasturHeavy',
+  'swingLight',
+  'swingMedium',
+  'swingHeavy',
+  'swingVibro',
+  'swingShock',
+])
+  button(weapons, id, () => audio.playSfx(id));
+for (const id of ['hit', 'hitMetal'])
+  button(weapons, `${id} + crit`, () => (audio.playSfx(id), audio.playSfx('hitCrit')));
+
+const voices = section('Voice lines (music ducks while one plays)');
+button(voices, 'stop', () => audio.speak([]));
+for (const key of Object.keys(VOICE_LINES)) button(voices, key, () => audio.speak([key]));
 
 const mus = section('Music moods (generative ambient)');
 for (const m of MOODS) button(mus, m, () => audio.playMusic(m));

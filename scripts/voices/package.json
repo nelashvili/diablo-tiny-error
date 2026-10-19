@@ -1,0 +1,12 @@
+{
+  "name": "dte-voice-generator",
+  "private": true,
+  "type": "module",
+  "description": "Offline voice-line generator (Kokoro TTS). Kept out of the game's dependencies.",
+  "scripts": {
+    "generate": "node generate.mjs"
+  },
+  "dependencies": {
+    "kokoro-js": "1.2.1"
+  }
+}

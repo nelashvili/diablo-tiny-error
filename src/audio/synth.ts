@@ -171,10 +171,19 @@ function itemDrop(base: number, partials: number[], tau: number, sparkle = false
  * all-pass filters has the same dispersion, so a click through it becomes that chirp. The energy is
  * then evened out over the sweep and the wire's echoes ("-ew") are added.
  */
-function guyWireChirp(sr: number, rng: () => number, len: number): Float32Array {
+interface ChirpOpts {
+  /** Dispersion per stage (higher = longer, lower sweep). */
+  a?: number;
+  /** All-pass stages (more = longer sweep). */
+  stages?: number;
+  lp?: number;
+  hp?: number;
+}
+
+function guyWireChirp(sr: number, rng: () => number, len: number, o: ChirpOpts = {}): Float32Array {
   const n = Math.floor(sr * len);
-  const a = 0.885 + rng() * 0.03; // dispersion per stage (sweep length)
-  const stages = 170 + Math.floor(rng() * 50);
+  const a = (o.a ?? 0.885) + rng() * 0.03; // dispersion per stage (sweep length)
+  const stages = (o.stages ?? 170) + Math.floor(rng() * 50);
   let x = new Float32Array(n);
   // Strike: a 1 ms bright burst rather than a perfect impulse (less clicky, a bit of grit).
   const strike = Math.max(2, Math.floor(sr * 0.001));
@@ -207,10 +216,80 @@ function guyWireChirp(sr: number, rng: () => number, len: number): Float32Array 
     const off = Math.floor(delay * sr);
     for (let i = 0; i + off < n; i++) out[i + off] = out[i + off]! + x[i]! * g;
   }
-  lowpass(out, sr, () => 6500);
-  highpass(out, sr, 320);
+  lowpass(out, sr, () => o.lp ?? 6500);
+  highpass(out, sr, o.hp ?? 320);
   for (let i = 0; i < n; i++) out[i] = softclip(out[i]! * 1.6);
   return declick(normalize(out, 0.9), sr);
+}
+
+/**
+ * A full blaster shot: the guy-wire "pyew" plus what a chirp alone lacks, a bright muzzle crack for
+ * the attack and a falling low thump for weight. Rifles get a longer, lower sweep and a bigger thump.
+ */
+function blasterShot(sr: number, rng: () => number, heavy: boolean): Float32Array {
+  const d = heavy
+    ? guyWireChirp(sr, rng, 0.42, { a: 0.9, stages: 240, lp: 4800, hp: 150 })
+    : guyWireChirp(sr, rng, 0.3, { hp: 220 });
+  const crack = buf(sr, 0.012);
+  for (let i = 0; i < crack.length; i++) crack[i] = noise(rng) * (1 - i / crack.length) ** 2;
+  highpass(crack, sr, 2500);
+  const crackGain = heavy ? 0.55 : 0.7;
+  for (let i = 0; i < crack.length; i++) add(d, i, crack[i]! * crackGain);
+  const [f0, f1, tau, g] = heavy ? [50, 150, 0.07, 0.75] : [85, 190, 0.035, 0.45];
+  let ph = 0;
+  for (let i = 0; i < Math.min(d.length, Math.floor(sr * tau * 5)); i++) {
+    const t = i / sr;
+    ph += (TAU * (f0 + f1 * Math.exp(-t / 0.018))) / sr;
+    add(d, i, Math.sin(ph) * ad(t, 0.001, tau) * g);
+  }
+  for (let i = 0; i < d.length; i++) d[i] = softclip(d[i]! * 1.2);
+  return declick(normalize(d, 0.9), sr);
+}
+
+interface WhooshOpts {
+  sec: number;
+  /** Band center at rest and at the fastest point of the swing (Hz). */
+  lo: number;
+  hi: number;
+  /** Vibro blades: a buzzing motor tone (Hz) riding the swing. */
+  buzz?: number;
+  /** Shock weapons: electric crackle through the swing. */
+  crackle?: boolean;
+  gain: number;
+}
+
+/** A weapon cutting the air: noise through a resonant band that rises as the swing peaks, then falls. */
+function whoosh(o: WhooshOpts): SynthRecipe {
+  const peak = 0.4;
+  const shape = (u: number) =>
+    u < peak
+      ? Math.sin((Math.PI / 2) * (u / peak))
+      : Math.cos((Math.PI / 2) * Math.min(1, (u - peak) / (1 - peak)));
+  return {
+    pitchVar: 0.1,
+    gain: o.gain,
+    render(sr, rng) {
+      const d = buf(sr, o.sec);
+      for (let i = 0; i < d.length; i++) d[i] = noise(rng) * shape(i / d.length) ** 1.5;
+      bandpass(d, sr, (t) => o.lo + (o.hi - o.lo) * shape(t / o.sec), 2.2);
+      normalize(d, 0.8);
+      if (o.buzz) {
+        let ph = 0;
+        for (let i = 0; i < d.length; i++) {
+          const s = shape(i / d.length);
+          ph += (TAU * o.buzz * (1 + 0.15 * s)) / sr;
+          add(d, i, softclip(Math.sin(ph) * 3) * 0.22 * s);
+        }
+      }
+      if (o.crackle) {
+        const c = buf(sr, o.sec);
+        impulses(c, sr, rng, 220, o.sec * 0.15, o.sec * 0.8, 0.7, 0.0012);
+        highpass(c, sr, 2000);
+        for (let i = 0; i < d.length; i++) add(d, i, c[i]!);
+      }
+      return declick(normalize(d, 0.85), sr);
+    },
+  };
 }
 
 /**
@@ -308,14 +387,28 @@ export const RECIPES: Record<string, SynthRecipe> = {
       return declick(normalize(d, 0.85), sr);
     },
   },
-  /** Classic movie-style blaster shot (see guyWireChirp). */
+  /** Classic movie-style blaster shot (see blasterShot). */
   blasturClassic: {
     pitchVar: 0.07,
     gain: 0.6,
     render(sr, rng) {
-      return guyWireChirp(sr, rng, 0.26);
+      return blasterShot(sr, rng, false);
     },
   },
+  /** Blaster rifle: longer, lower "pyeww" with a heavier thump. */
+  blasturHeavy: {
+    pitchVar: 0.06,
+    gain: 0.65,
+    render(sr, rng) {
+      return blasterShot(sr, rng, true);
+    },
+  },
+  /** Melee swings by weapon weight and kind (see whoosh). */
+  swingLight: whoosh({ sec: 0.22, lo: 900, hi: 3200, gain: 0.45 }),
+  swingMedium: whoosh({ sec: 0.3, lo: 500, hi: 1900, gain: 0.5 }),
+  swingHeavy: whoosh({ sec: 0.42, lo: 280, hi: 1100, gain: 0.55 }),
+  swingVibro: whoosh({ sec: 0.32, lo: 450, hi: 1700, buzz: 118, gain: 0.5 }),
+  swingShock: whoosh({ sec: 0.3, lo: 500, hi: 1900, crackle: true, gain: 0.5 }),
   saberHum: {
     loop: true,
     gain: 0.35,
@@ -459,6 +552,7 @@ export const RECIPES: Record<string, SynthRecipe> = {
       return declick(normalize(d, 0.8), sr);
     },
   },
+  /** Weapon on a body: a low thump plus a mid "slap" for definition. */
   hit: {
     pitchVar: 0.1,
     gain: 0.7,
@@ -471,6 +565,53 @@ export const RECIPES: Record<string, SynthRecipe> = {
         d[i] = Math.sin(ph) * decay(t, 0.06) + noise(rng) * decay(t, 0.008) * 0.6;
       }
       lowpass(d, sr, () => 2500);
+      const slap = buf(sr, 0.06);
+      for (let i = 0; i < slap.length; i++) slap[i] = noise(rng) * decay(i / sr, 0.012);
+      bandpass(slap, sr, () => 1300, 1.5);
+      normalize(slap, 0.5);
+      for (let i = 0; i < slap.length; i++) add(d, i, slap[i]!);
+      return declick(normalize(d, 0.85), sr);
+    },
+  },
+  /** Weapon on a droyd: a struck metal shell (inharmonic ring) with a knock under it. */
+  hitMetal: {
+    pitchVar: 0.1,
+    gain: 0.55,
+    render(sr, rng) {
+      const d = buf(sr, 0.35);
+      const f = 380 + rng() * 140;
+      [1, 2.32, 4.25, 6.63, 9.38].forEach((p, k) =>
+        tone(d, sr, 0, f * p, 0.35, 0.45 / (1 + k * 0.6), 0.08 / (1 + k * 0.4)),
+      );
+      const click = Math.floor(sr * 0.004);
+      for (let i = 0; i < click; i++) add(d, i, noise(rng) * (1 - i / click) * 0.9);
+      let ph = 0;
+      for (let i = 0; i < Math.floor(sr * 0.15); i++) {
+        const t = i / sr;
+        ph += (TAU * (85 + 70 * Math.exp(-t / 0.02))) / sr;
+        add(d, i, Math.sin(ph) * decay(t, 0.04) * 0.5);
+      }
+      lowpass(d, sr, () => 7000);
+      return declick(normalize(d, 0.85), sr);
+    },
+  },
+  /** Extra layer under a critical hit: a crunchy, heavier impact. */
+  hitCrit: {
+    pitchVar: 0.08,
+    gain: 0.6,
+    render(sr, rng) {
+      const d = buf(sr, 0.3);
+      let ph = 0;
+      for (let i = 0; i < d.length; i++) {
+        const t = i / sr;
+        ph += (TAU * (40 + 260 * Math.exp(-t / 0.015))) / sr;
+        d[i] = softclip(Math.sin(ph) * 2.5) * decay(t, 0.08);
+      }
+      const crunch = buf(sr, 0.09);
+      for (let i = 0; i < crunch.length; i++) crunch[i] = noise(rng) * decay(i / sr, 0.025);
+      bandpass(crunch, sr, (t) => 3200 - 18000 * t, 1.2);
+      normalize(crunch, 0.6);
+      for (let i = 0; i < crunch.length; i++) add(d, i, crunch[i]!);
       return declick(normalize(d, 0.85), sr);
     },
   },

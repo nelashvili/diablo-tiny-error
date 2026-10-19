@@ -18,10 +18,15 @@ describe('volume buses', () => {
     expect(clamp01(-1)).toBe(0);
   });
   it('applies a squared curve', () => {
-    expect(busGains({ master: 0.5, music: 1, sfx: 0 })).toEqual({ master: 0.25, music: 1, sfx: 0 });
+    expect(busGains({ master: 0.5, music: 1, sfx: 0, voice: 0.5 })).toEqual({
+      master: 0.25,
+      music: 1,
+      sfx: 0,
+      voice: 0.25,
+    });
   });
   it('multiplies base, bus and master', () => {
-    const v = { master: 0.5, music: 0.5, sfx: 1 };
+    const v = { master: 0.5, music: 0.5, sfx: 1, voice: 1 };
     expect(finalGain(1, 'sfx', v)).toBeCloseTo(0.25);
     expect(finalGain(0.5, 'music', v)).toBeCloseTo(0.5 * 0.25 * 0.25);
   });

@@ -62,6 +62,7 @@ export interface Settings {
   masterVolume: number;
   musicVolume: number;
   sfxVolume: number;
+  voiceVolume: number;
   movement: 'tapToMove' | 'joystick' | 'auto';
   showBuildGuide: boolean;
   showStatHints: boolean;

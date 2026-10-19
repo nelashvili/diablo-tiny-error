@@ -13,6 +13,15 @@ Skill and item icons (game-icons.net, CC BY 3.0) and fonts are credited separate
 - Modifications: generated, encoded with ffmpeg
 - Files (6): `audio/music/boss_theme.mp3`, `audio/music/boss_theme.ogg`, `audio/music/town_theme.mp3`, `audio/music/town_theme.ogg`, `audio/music/wilderness_theme.mp3`, `audio/music/wilderness_theme.ogg`
 
+## Diablo Tiny Error voice lines
+
+- Author: Diablo Tiny Error project (generated)
+- License: [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/)
+- Home: https://huggingface.co/hexgrad/Kokoro-82M
+- License evidence: Original lines spoken by the Kokoro-82M TTS model (Apache-2.0, outputs unrestricted); dedicated to the public domain (CC0)
+- Modifications: generated, pitch-shifted, encoded as AAC
+- Files (75): `audio/voice/*.m4a` (one per voiced line; see `src/audio/voiceLines.gen.ts`)
+
 ## KayKit Adventurers Character Pack 1.0
 
 - Author: Kay Lousberg (KayKit)

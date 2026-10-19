@@ -307,7 +307,7 @@ function useTypewriter(text: string): { shown: string; done: boolean; skip: () =
  * Topics swap the speech in place; clicking the open topic again returns to the greeting.
  */
 export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => void }) {
-  const { data } = usePanelEnv();
+  const { data, services } = usePanelEnv();
   const dlg = data.dialogue?.() ?? null;
   const [topic, setTopic] = useState<number | null>(null);
   // A new conversation starts from its greeting.
@@ -316,6 +316,12 @@ export function DialoguePanel({ api, onClose }: { api: UiApi; onClose?: () => vo
   const lines = dlg ? ((topic !== null ? dlg.topics?.[topic]?.lines : undefined) ?? dlg.lines) : [];
   const text = lines.map((l) => t(l)).join('\n\n');
   const typed = useTypewriter(text);
+  // The speaker says what is on screen; closing or switching topics cuts them off.
+  const said = lines.join();
+  useEffect(() => {
+    services.speak?.(lines);
+    return () => services.speak?.([]);
+  }, [said]);
   if (!dlg) return null;
   const name = t(dlg.nameKey);
   return (

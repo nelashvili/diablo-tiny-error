@@ -17,7 +17,8 @@ export const QUEST_GIVER: Record<DefId, DefId> = {
   a1q5: 'captainKasha',
 };
 
-function reportsTo(q: QuestDef): DefId | undefined {
+/** The NPC a quest is turned in to (its last step is talking to them), if any. */
+export function reportsTo(q: QuestDef): DefId | undefined {
   const last = q.steps[q.steps.length - 1];
   return last?.on.event === 'talkTo' ? last.on.npc : undefined;
 }

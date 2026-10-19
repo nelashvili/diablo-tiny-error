@@ -197,6 +197,7 @@ const settings = signal<Settings>({
   masterVolume: 1,
   musicVolume: 1,
   sfxVolume: 1,
+  voiceVolume: 1,
   movement: (params.get('mode') as Settings['movement']) ?? 'auto',
   showBuildGuide: true,
   showStatHints: true,

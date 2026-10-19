@@ -53,12 +53,11 @@ const RAW: Record<string, Omit<AudioEntry, 'id'>> = {
   'sfx.saberClash.2': sfx('saber_clash_2', 0.7),
   // --- hits by damage type (audio system: hit.<dtype>) ---
   'hit.physical': sfx('hit_1', 0.8, {
-    variants: ['hit.physical.2', 'hit.physical.3', 'hit.physical.4'],
+    variants: ['hit.physical.2', 'hit.physical.3'],
     rate: [0.9, 1.1],
   }),
   'hit.physical.2': sfx('hit_2', 0.8, { rate: [0.9, 1.1] }),
   'hit.physical.3': sfx('hit_3', 0.8, { rate: [0.9, 1.1] }),
-  'hit.physical.4': sfx('hit_metal_1', 0.45, { rate: [0.8, 0.95] }),
   'hit.plasma': sfx('droyd_sparks_1', 0.45, { rate: [0.9, 1.2], variants: ['hit.plasma.2'] }),
   'hit.plasma.2': sfx('droyd_sparks_2', 0.4, { rate: [0.8, 1.05] }),
   'hit.cryo': sfx('hit_metal_2', 0.5, { rate: [1.2, 1.5] }),

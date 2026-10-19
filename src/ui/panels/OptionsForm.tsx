@@ -92,6 +92,11 @@ export function OptionsForm({
           onChange={(v) => onChange({ musicVolume: v })}
         />
         <Slider label={t('ui.opt.sfx')} value={s.sfxVolume} onChange={(v) => onChange({ sfxVolume: v })} />
+        <Slider
+          label={t('ui.opt.voice')}
+          value={s.voiceVolume}
+          onChange={(v) => onChange({ voiceVolume: v })}
+        />
       </fieldset>
       <fieldset>
         <legend>{t('ui.opt.controls')}</legend>

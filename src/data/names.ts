@@ -91,3 +91,8 @@ export function t(key: string, params?: Record<string, string | number>): string
 export function hasName(key: string): boolean {
   return key in names;
 }
+
+/** Every registered key and its text (tooling, e.g. the voice-line generator). */
+export function nameEntries(): Readonly<Record<string, string>> {
+  return names;
+}

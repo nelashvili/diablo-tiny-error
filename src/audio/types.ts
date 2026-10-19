@@ -8,7 +8,7 @@ export interface AudioSystem {
   playMusic(trackId: string | null): void;
   playSfx(id: string, opts?: { volume?: number; rate?: number }): void;
   handleEvents(events: readonly GameEvent[], ctx?: CueContext): void;
-  setVolumes(v: { master: number; music: number; sfx: number }): void;
+  setVolumes(v: { master: number; music: number; sfx: number; voice?: number }): void;
   /** Listener position (local player) for positional sfx. */
   setListener?(pos: Vec2): void;
   playSfxAt?(id: string, pos: Vec2, opts?: { volume?: number; rate?: number }): void;

@@ -26,6 +26,8 @@ export interface PanelServices {
   price(item: ItemInstance, mode: 'buy' | 'sell'): number;
   /** Rendered item art (image URL), or null to use the SVG glyph; `onReady` fires once it exists. */
   itemIcon?(baseId: DefId, onReady: () => void): string | null;
+  /** Speak these lines aloud (recorded voices), replacing any current speech; [] stops it. */
+  speak?(lineKeys: readonly string[]): void;
 }
 
 const QUALITY_PRICE: Record<ItemQuality, number> = {

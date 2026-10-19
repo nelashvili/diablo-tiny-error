@@ -4,6 +4,8 @@ export interface Volumes {
   master: number;
   music: number;
   sfx: number;
+  /** Spoken lines (NPCs, bosses, narrator). */
+  voice: number;
 }
 
 export function clamp01(v: number): number {
@@ -18,11 +20,11 @@ export function curve(v: number): number {
 
 /** Linear gains of each bus given the slider values. */
 export function busGains(v: Volumes): Volumes {
-  return { master: curve(v.master), music: curve(v.music), sfx: curve(v.sfx) };
+  return { master: curve(v.master), music: curve(v.music), sfx: curve(v.sfx), voice: curve(v.voice) };
 }
 
 /** Final linear gain of a single sound = base * bus * master. */
-export function finalGain(base: number, bus: 'music' | 'sfx', v: Volumes): number {
+export function finalGain(base: number, bus: 'music' | 'sfx' | 'voice', v: Volumes): number {
   const g = busGains(v);
   return clamp01(base) * g[bus] * g.master;
 }

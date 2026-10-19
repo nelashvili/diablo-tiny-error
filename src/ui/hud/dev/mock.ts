@@ -294,6 +294,7 @@ const DEFAULT_SETTINGS: Settings = {
   masterVolume: 1,
   musicVolume: 1,
   sfxVolume: 1,
+  voiceVolume: 1,
   movement: 'auto',
   showBuildGuide: false,
   showStatHints: false,

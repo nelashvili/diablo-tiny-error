@@ -847,6 +847,7 @@ const settings = signal<Settings>({
   masterVolume: 0.8,
   musicVolume: 0.6,
   sfxVolume: 0.9,
+  voiceVolume: 0.9,
   movement: 'auto',
   showBuildGuide: q.get('guide') === '1',
   showStatHints: q.get('hints') !== '0',

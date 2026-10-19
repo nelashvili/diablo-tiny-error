@@ -200,6 +200,7 @@ export function migrateSettings(raw: unknown): Settings {
     masterVolume: num(raw['masterVolume'], d.masterVolume, 0, 1),
     musicVolume: num(raw['musicVolume'], d.musicVolume, 0, 1),
     sfxVolume: num(raw['sfxVolume'], d.sfxVolume, 0, 1),
+    voiceVolume: num(raw['voiceVolume'], d.voiceVolume, 0, 1),
     movement: pick(raw['movement'], ['tapToMove', 'joystick', 'auto'], d.movement),
     showBuildGuide: bool(raw['showBuildGuide'], d.showBuildGuide),
     showStatHints: bool(raw['showStatHints'], d.showStatHints),

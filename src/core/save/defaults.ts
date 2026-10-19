@@ -10,6 +10,7 @@ export function defaultSettings(): Settings {
     masterVolume: 0.8,
     musicVolume: 0.6,
     sfxVolume: 0.8,
+    voiceVolume: 0.9,
     movement: 'auto',
     showBuildGuide: true,
     showStatHints: true,

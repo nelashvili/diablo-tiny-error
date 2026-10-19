@@ -10,7 +10,7 @@ import { t } from '../../data/names';
 import './crawl.css';
 
 /** Intro line + crawl, in seconds (matches crawl.css). */
-export const CRAWL_SEC = 4 + 30;
+export const CRAWL_SEC = 4 + 38;
 
 export function OpeningCrawl({
   onDone,
