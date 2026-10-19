@@ -9,7 +9,7 @@ import { isActor, type Actor, type Entity } from '../entities';
 import type { SimSystem, SimWorld } from '../world';
 import { CommandHandlers } from './commandHandlers';
 import { clearMovement, getIntent, navOf, setIntent } from './intent';
-import { isTargetable } from './util';
+import { isHostile, isTargetable } from './util';
 
 export const PICKUP_RANGE = 1.5;
 export const INTERACT_RANGE = 2.4;
@@ -31,6 +31,25 @@ const dist = (a: Actor, e: Entity): number => Math.hypot(a.pos.x - e.pos.x, a.po
 function stopChase(p: Actor): void {
   p.path = [];
   p.moveTarget = undefined;
+}
+
+/**
+ * After the hero's target falls, the next foe to keep swinging at: the nearest hostile already
+ * fighting the hero and already within the attack's reach. Never starts a chase or a new fight.
+ */
+export function nextAutoTarget(world: SimWorld, p: Actor, range: number): Actor | undefined {
+  let best: Actor | undefined;
+  let bestD = Infinity;
+  for (const e of world.entities.values()) {
+    if (!isActor(e) || e.kind === 'npc' || !isTargetable(e) || !isHostile(p, e)) continue;
+    if (e.targetId !== p.id) continue;
+    const d = dist(p, e) - e.radius;
+    if (d <= range && d < bestD) {
+      best = e;
+      bestD = d;
+    }
+  }
+  return best;
 }
 
 export function interactWithObject(world: SimWorld, p: Actor, obj: Entity): void {
@@ -63,8 +82,14 @@ export function createTargetingSystem(): SimSystem {
             const tgt = intent.targetId !== undefined ? world.get(intent.targetId) : undefined;
             if (intent.targetId !== undefined) {
               if (!tgt || !isActor(tgt) || !isTargetable(tgt)) {
-                setIntent(p, undefined);
-                stopChase(p);
+                const next = nextAutoTarget(world, p, getSkillRange(p, intent.skillId));
+                if (next) {
+                  setIntent(p, { ...intent, targetId: next.id, targetPos: { x: next.pos.x, y: next.pos.y } });
+                  p.targetId = next.id;
+                } else {
+                  setIntent(p, undefined);
+                  stopChase(p);
+                }
                 break;
               }
             }

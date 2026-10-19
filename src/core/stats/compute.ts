@@ -15,7 +15,7 @@
  *    (resist cap 100 so monsters can be immune).
  *
  * DAMAGE: physMin/physMax = weapon * (1 + ED/100 + stat bonus) + flat min/max damage (flat added AFTER ED,
- * as in D2). With no weapon, players punch for 1-2 (monsters: 0 + flat; give them `minDamage/maxDamage`
+ * as in D2). Heroes add STAT_FLAT_DAMAGE per str/dex point above the class start (weighted by the weapon). With no weapon, players punch for 1-2 (monsters: 0 + flat; give them `minDamage/maxDamage`
  * in `base`). `raw` holds the post-modifier total of every StatId (parameterized stats: sum over params);
  * for attributes, pools, AR, defense and resists `raw` mirrors the final DerivedStats value, except
  * `blockChance`, where raw is the pre-formula (shield) total.
@@ -49,6 +49,9 @@ const ALL_STATS: readonly StatId[] = [
   'goldFind', 'lightRadius', 'staminaDrainReduced', 'requirementsReduced', 'allSkills', 'classSkills',
   'treeSkills', 'singleSkill', 'chargedSkill', 'auraWhenEquipped',
 ];
+
+/** Flat min/max damage per attribute point a hero raises above their class start (weapon-weighted). */
+export const STAT_FLAT_DAMAGE = 0.15;
 
 export const computeStats: ComputeStats = (src) => {
   const agg = aggregate(src.modifiers);
@@ -114,8 +117,16 @@ export const computeStats: ComputeStats = (src) => {
   const wMax = w ? w.max : player ? 2 : 0;
   const statBonusPct = w ? (strength * w.strBonus) / 100 + (dexterity * w.dexBonus) / 100 : 0;
   const dmgMul = Math.max(0, 1 + (T('enhancedDamage', 0) + statBonusPct) / 100);
-  const physMin = Math.max(0, wMin * dmgMul + T('minDamage'));
-  const physMax = Math.max(physMin, wMax * dmgMul + T('maxDamage'));
+  // Heroes also hit harder by a flat amount for every point raised above the class start, so each
+  // point of the weapon's attribute (strength for sabers, dexterity for pistols) is felt at once.
+  const strW = w ? w.strBonus / 100 : 1;
+  const dexW = w ? w.dexBonus / 100 : 0;
+  const statFlat = player
+    ? (Math.max(0, strength - b('strength')) * strW + Math.max(0, dexterity - b('dexterity')) * dexW) *
+      STAT_FLAT_DAMAGE
+    : 0;
+  const physMin = Math.max(0, wMin * dmgMul + T('minDamage') + statFlat);
+  const physMax = Math.max(physMin, wMax * dmgMul + T('maxDamage') + statFlat);
 
   const range = (lo: StatId, hi: StatId): { min: number; max: number } => {
     const min = Math.max(0, T(lo));

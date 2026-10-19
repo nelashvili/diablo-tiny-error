@@ -96,7 +96,8 @@ export default {
   'ui.attr.dexterity': 'Dexterity',
   'ui.attr.vitality': 'Vitality',
   'ui.attr.energy': 'Energy',
-  'ui.attr.strength.hint': 'More weapon damage. Lets you wear heavy gear.',
+  'ui.attr.strength.hint':
+    'Every point adds damage to sabers, axes, staffs and rifles. Lets you wear heavy gear.',
   'ui.attr.dexterity.hint': 'Better aim, more blocking, more blastur damage.',
   'ui.attr.vitality.hint': 'More life and stamina.',
   'ui.attr.energy.hint': 'More energy for skills.',

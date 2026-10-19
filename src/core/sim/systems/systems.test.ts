@@ -122,6 +122,31 @@ describe('combat loop', () => {
     expect([...world.all()].filter((e) => e.kind === 'remnant')).toHaveLength(0);
   });
 
+  it('after a kill, keeps swinging at a nearby foe that is attacking, but not at idle ones', () => {
+    const { world, run, player } = setup();
+    const first = spawnTestMonster(world, { pos: { x: 11.5, y: 10.5 }, life: 1, level: 12, defense: 0 });
+    const attacker = spawnTestMonster(world, { pos: { x: 10.5, y: 11.5 }, life: 500, level: 12 });
+    const idle = spawnTestMonster(world, { pos: { x: 9.6, y: 10.5 }, life: 500, level: 12 });
+    attacker.targetId = player.id;
+    world.commands.push({ type: 'interact', targetId: first.id });
+    for (let t = 0; t < 120 && attacker.life === attacker.stats.lifeMax; t++) run(1);
+    expect(first.life).toBe(0);
+    expect(attacker.life).toBeLessThan(attacker.stats.lifeMax);
+    expect(idle.life).toBe(idle.stats.lifeMax);
+  });
+
+  it('stops after a kill when no foe in reach is attacking', () => {
+    const { world, run, player } = setup();
+    const first = spawnTestMonster(world, { pos: { x: 11.5, y: 10.5 }, life: 1, level: 12, defense: 0 });
+    const far = spawnTestMonster(world, { pos: { x: 16.5, y: 10.5 }, life: 500, level: 12 });
+    far.targetId = player.id;
+    world.commands.push({ type: 'interact', targetId: first.id });
+    run(80);
+    expect(first.life).toBe(0);
+    expect(far.life).toBe(far.stats.lifeMax);
+    expect(Math.abs(player.pos.x - 10.5)).toBeLessThan(0.5);
+  });
+
   it('levels up after enough kills (5 stat points, 1 skill point, no free heal)', () => {
     const { world, run, player, events } = setup();
     player.life = 10;

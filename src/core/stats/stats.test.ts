@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeStats } from './compute';
+import { STAT_FLAT_DAMAGE, computeStats } from './compute';
 import {
   applyResist,
   attackSpeedMulFromIas,
@@ -174,6 +174,23 @@ describe('computeStats', () => {
     // mul = 1 + (100 + 50)/100 = 2.5
     expect(s.physMin).toBe(10 * 2.5 + 5);
     expect(s.physMax).toBe(20 * 2.5 + 8);
+  });
+  it('each strength point raised above the class start adds flat damage too', () => {
+    const weapon = { min: 10, max: 20, strBonus: 100, dexBonus: 0, speed: 1.4 };
+    const base = computeStats(src({ weapon }));
+    const raised = computeStats(
+      src({ weapon, allocated: { strength: 40, dexterity: 0, vitality: 0, energy: 0 } }),
+    );
+    // +40% from the D2 bonus plus 40 * STAT_FLAT_DAMAGE flat.
+    expect(raised.physMin - base.physMin).toBeCloseTo(10 * 0.4 + 40 * STAT_FLAT_DAMAGE);
+    expect(raised.physMax - base.physMax).toBeCloseTo(20 * 0.4 + 40 * STAT_FLAT_DAMAGE);
+    // A pistol (dex weapon) gains nothing from strength.
+    const pistol = { min: 10, max: 20, strBonus: 0, dexBonus: 100, speed: 1.4 };
+    const p0 = computeStats(src({ weapon: pistol }));
+    const p1 = computeStats(
+      src({ weapon: pistol, allocated: { strength: 40, dexterity: 0, vitality: 0, energy: 0 } }),
+    );
+    expect(p1.physMin).toBe(p0.physMin);
   });
   it('dex-based weapon bonus', () => {
     const weapon = { min: 10, max: 10, strBonus: 0, dexBonus: 75, speed: 1 };
