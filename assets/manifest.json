@@ -1237,6 +1237,19 @@
       "modifications": "built by scripts/assets/build-chars.mjs: outfit + head cut from a base body + hairstyle merged on one skeleton, meshes simplified and joined per material, textures downsized to base color only, meshopt-compressed"
     },
     {
+      "path": "public/assets/models/chars/peasantMParts.glb",
+      "bytes": 711100,
+      "source": "https://quaternius.itch.io  (outfits/Male_Peasant + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted (split by body part))",
+      "pack": "Quaternius Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library 1 & 2 (Standard)",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "homepage": "https://quaternius.com/packs/universalbasecharacters.html",
+      "repo": "https://quaternius.itch.io",
+      "licenseNote": "License_Standard.txt / License.txt in each downloaded pack states CC0 1.0 Universal",
+      "modifications": "built by scripts/assets/build-chars.mjs: outfit + head cut from a base body + hairstyle merged on one skeleton, meshes simplified and joined per material, textures downsized to base color only, meshopt-compressed"
+    },
+    {
       "path": "public/assets/models/chars/rangerF.glb",
       "bytes": 894116,
       "source": "https://quaternius.itch.io  (outfits/Female_Ranger + ubc/Superhero_Female_FullBody (head) + ubc/Hair_Buns)",
@@ -1263,43 +1276,17 @@
       "modifications": "built by scripts/assets/build-chars.mjs: outfit + head cut from a base body + hairstyle merged on one skeleton, meshes simplified and joined per material, textures downsized to base color only, meshopt-compressed"
     },
     {
-      "path": "public/assets/models/heroes/knight.glb",
-      "bytes": 921848,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0  (addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb)",
-      "pack": "KayKit Adventurers Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
+      "path": "public/assets/models/chars/rangerMParts.glb",
+      "bytes": 863128,
+      "source": "https://quaternius.itch.io  (outfits/Male_Ranger + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted (split by body part))",
+      "pack": "Quaternius Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library 1 & 2 (Standard)",
+      "author": "Quaternius",
       "license": "CC0-1.0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-adventurers",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
-      "path": "public/assets/models/heroes/mage.glb",
-      "bytes": 899824,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0  (addons/kaykit_character_pack_adventures/Characters/gltf/Mage.glb)",
-      "pack": "KayKit Adventurers Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-adventurers",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
-      "path": "public/assets/models/heroes/rogue.glb",
-      "bytes": 894136,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0  (addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb)",
-      "pack": "KayKit Adventurers Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-adventurers",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
+      "homepage": "https://quaternius.com/packs/universalbasecharacters.html",
+      "repo": "https://quaternius.itch.io",
+      "licenseNote": "License_Standard.txt / License.txt in each downloaded pack states CC0 1.0 Universal",
+      "modifications": "built by scripts/assets/build-chars.mjs: outfit + head cut from a base body + hairstyle merged on one skeleton, meshes simplified and joined per material, textures downsized to base color only, meshopt-compressed"
     },
     {
       "path": "public/assets/models/items/blaster-a.glb",
@@ -1731,19 +1718,6 @@
       "modifications": "re-packed as single-file GLB (textures embedded)"
     },
     {
-      "path": "public/assets/models/monsters/barbarian.glb",
-      "bytes": 904104,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0  (addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb)",
-      "pack": "KayKit Adventurers Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-adventurers",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
       "path": "public/assets/models/monsters/orc.glb",
       "bytes": 476540,
       "source": "https://github.com/511action/descent-3d-assets  (models/Orc.gltf)",
@@ -1767,45 +1741,6 @@
       "homepage": "https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive",
       "repo": "https://github.com/mrdoob/three.js",
       "licenseNote": "README.md next to the model states CC0 1.0",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
-      "path": "public/assets/models/monsters/rogueHooded.glb",
-      "bytes": 875712,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0  (addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb)",
-      "pack": "KayKit Adventurers Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-adventurers",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
-      "path": "public/assets/models/monsters/skeletonMage.glb",
-      "bytes": 931052,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0  (addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Mage.glb)",
-      "pack": "KayKit Skeletons Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-skeletons",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
-      "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
-    },
-    {
-      "path": "public/assets/models/monsters/skeletonMinion.glb",
-      "bytes": 983908,
-      "source": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0  (addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Minion.glb)",
-      "pack": "KayKit Skeletons Character Pack 1.0",
-      "author": "Kay Lousberg (KayKit)",
-      "license": "CC0-1.0",
-      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "homepage": "https://kaylousberg.itch.io/kaykit-skeletons",
-      "repo": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
-      "licenseNote": "LICENSE.txt in the repository states Creative Commons Zero (CC0)",
       "modifications": "re-packed as single-file GLB (textures embedded); unused animation clips and baked-in held items removed to cut size"
     },
     {

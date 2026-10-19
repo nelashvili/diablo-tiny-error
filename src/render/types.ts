@@ -82,6 +82,17 @@ export interface ModelEntry {
    * x, y, z, w) of the grip socket, so items authored for the KayKit hand slots fit other rigs.
    * `scale` resizes held items for hands smaller than KayKit's.
    */
+  /**
+   * Procedural rigid armor / droid body on the universal rig (render/models/armor.ts): plates and a
+   * helmet for troopers and bounty hunters, or a whole B1-style droid with `hideBody`.
+   */
+  armor?: {
+    style: 'trooper' | 'mando' | 'droid';
+    color: number;
+    trim?: number;
+    eye?: number;
+    hideBody?: boolean;
+  };
   handGrip?: {
     scale?: number;
     right: { pos: [number, number, number]; quat: [number, number, number, number] };

@@ -8,6 +8,7 @@ import type { LoadedAsset } from './loader';
 import type { AttachSlot, Rig } from './rig';
 import { recolorMaterial } from './toon';
 import { replaceHelmet } from './headgear';
+import { buildArmor } from './armor';
 
 const FADE = 0.15;
 
@@ -88,6 +89,10 @@ export class GltfRig implements Rig {
     const headBone = entry.bones?.head && this.model.getObjectByName(entry.bones.head);
     if (hp && oldHelm && headBone)
       this.bodyMeshes.push(...replaceHelmet(this.model, oldHelm, headBone, hp.style, hp.color));
+    if (entry.armor) {
+      const parts = buildArmor(this.model, entry.armor, entry.armor.hideBody ?? false);
+      this.bodyMeshes.push(...parts.filter((m) => m.name !== 'Armor_Glow'));
+    }
     this.mixer = new THREE.AnimationMixer(this.model);
     const byClip = new Map<string, THREE.AnimationAction>();
     const clips = anims ? clipsForModel(anims, asset) : asset.animations;

@@ -10,7 +10,7 @@ import { toonMaterial } from './toon';
 export type HelmetStyle = 'mando' | 'trooper';
 
 /** Shapes in a unit box centered on the origin (x across, y up, z toward the face). */
-function shapes(style: HelmetStyle, color: number): THREE.Mesh[] {
+export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
   const main = toonMaterial(color);
   const visor = toonMaterial(0x0c0c10);
   const metal = toonMaterial(0x3a3e46);
@@ -70,7 +70,7 @@ export function replaceHelmet(
   const q = new THREE.Quaternion();
   head.getWorldQuaternion(q);
   g.quaternion.copy(q.invert()).multiply(model.getWorldQuaternion(new THREE.Quaternion()));
-  const meshes = shapes(style, color);
+  const meshes = helmetShapes(style, color);
   meshes.forEach((m, i) => {
     m.name = `Helmet_${i}`;
     m.castShadow = true;

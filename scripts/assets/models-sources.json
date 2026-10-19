@@ -1,11 +1,4 @@
 {
-  "models/heroes/knight.glb": "KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb",
-  "models/heroes/rogue.glb": "KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb",
-  "models/heroes/mage.glb": "KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Mage.glb",
-  "models/monsters/barbarian.glb": "KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb",
-  "models/monsters/rogueHooded.glb": "KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb",
-  "models/monsters/skeletonMinion.glb": "KayKit-Character-Pack-Skeletons-1.0/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Minion.glb",
-  "models/monsters/skeletonMage.glb": "KayKit-Character-Pack-Skeletons-1.0/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Mage.glb",
   "models/monsters/robot.glb": "robot/RobotExpressive.glb",
   "models/monsters/orc.glb": "descent-3d-assets/models/Orc.gltf",
   "models/items/blaster-a.glb": "kenney/3d/blaster/blaster-a.glb",
@@ -124,5 +117,7 @@
   "models/chars/rangerF.glb": "quaternius/outfits/Female_Ranger + ubc/Superhero_Female_FullBody (head) + ubc/Hair_Buns",
   "models/chars/peasantM.glb": "quaternius/outfits/Male_Peasant + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted",
   "models/chars/peasantF.glb": "quaternius/outfits/Female_Peasant + ubc/Superhero_Female_FullBody (head) + ubc/Hair_Long",
-  "models/chars/anims.glb": "quaternius/ual1/AnimationLibrary_Godot_Standard + ual2/UAL2_Standard (selected clips)"
+  "models/chars/anims.glb": "quaternius/ual1/AnimationLibrary_Godot_Standard + ual2/UAL2_Standard (selected clips)",
+  "models/chars/rangerMParts.glb": "quaternius/outfits/Male_Ranger + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted (split by body part)",
+  "models/chars/peasantMParts.glb": "quaternius/outfits/Male_Peasant + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted (split by body part)"
 }

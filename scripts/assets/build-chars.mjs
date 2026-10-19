@@ -48,6 +48,16 @@ const UAL2 = `${Q}/ual2/Universal Animation Library 2 [Standard]/Unreal-Godot/UA
 
 /** Optional parts kept as separate nodes so catalog entries can `hide` them; the rest is joined. */
 const SEPARATE = /Head_Hood|^Hair_/;
+/**
+ * Hero builds ("<id>Parts.glb") keep one node per body part, named so render/models/outfit.ts can
+ * recolor what armor covers (arms / legs / body); the face is left out of outfit recolors.
+ */
+function partOf(name) {
+  if (/Arms/.test(name)) return 'Arms';
+  if (/Legs|Feet|Boots/.test(name)) return 'Legs';
+  if (/Body|Belt|Pauldron/.test(name)) return 'Body';
+  return 'Face';
+}
 /** Default hair tint: the hair textures are near-white masks meant to be colored. */
 const HAIR_COLOR = 0x4a2e1c;
 
@@ -57,11 +67,24 @@ const TEX_SIZE = 1024;
 const KEEP_RATIO = 0.3;
 
 // hairColor: tint of hair and eyebrows (sRGB hex); defaults to HAIR_COLOR.
+// heroParts: also build <id>Parts.glb, split by body part for hero armor outfits.
 const CHARS = [
   // Rangers carry both a hood and hair: catalog entries hide one (`hide: ['Hair_*']` or the hood).
-  { id: 'rangerM', outfit: 'Male_Ranger', body: 'Superhero_Male_FullBody', hair: 'Hair_SimpleParted' },
+  {
+    id: 'rangerM',
+    outfit: 'Male_Ranger',
+    body: 'Superhero_Male_FullBody',
+    hair: 'Hair_SimpleParted',
+    heroParts: true,
+  },
   { id: 'rangerF', outfit: 'Female_Ranger', body: 'Superhero_Female_FullBody', hair: 'Hair_Buns' },
-  { id: 'peasantM', outfit: 'Male_Peasant', body: 'Superhero_Male_FullBody', hair: 'Hair_SimpleParted' },
+  {
+    id: 'peasantM',
+    outfit: 'Male_Peasant',
+    body: 'Superhero_Male_FullBody',
+    hair: 'Hair_SimpleParted',
+    heroParts: true,
+  },
   { id: 'peasantF', outfit: 'Female_Peasant', body: 'Superhero_Female_FullBody', hair: 'Hair_Long' },
 ];
 
@@ -263,7 +286,7 @@ async function shrinkTextures(doc, tmp) {
  * all parts share the outfit skeleton and identity node transforms, so their primitives can simply be
  * concatenated. Parts matching SEPARATE stay their own nodes. ~13 meshes -> ~5 draw calls.
  */
-function joinSkinned(doc) {
+function joinSkinned(doc, byPart) {
   const root = doc.getRoot();
   const skin = root.listSkins()[0];
   const parent = skin.listJoints()[0].getParentNode();
@@ -271,7 +294,8 @@ function joinSkinned(doc) {
   for (const node of root.listNodes()) {
     const mesh = node.getMesh();
     if (!mesh || node.getSkin() !== skin) continue;
-    const owner = SEPARATE.test(node.getName()) ? node.getName() : 'Body';
+    const name = node.getName();
+    const owner = SEPARATE.test(name) ? name : byPart ? partOf(name) : 'Body';
     for (const prim of mesh.listPrimitives()) {
       dequantizePrimitive(prim);
       for (const sem of prim.listSemantics())
@@ -304,7 +328,7 @@ function tintHair(doc, hex) {
   for (const m of doc.getRoot().listMaterials()) if (/Hair/.test(m.getName())) m.setBaseColorFactor(rgb);
 }
 
-async function buildChar(c, tmp) {
+async function buildChar(c, tmp, byPart) {
   const doc = await readLenient(OUTFIT(c.outfit));
   // Head (with eyes and eyebrows) cut from the base body.
   let headTris = 0;
@@ -317,7 +341,7 @@ async function buildChar(c, tmp) {
   if (c.hair) await graft(doc, HAIR(c.hair), () => true);
   tintHair(doc, c.hairColor ?? HAIR_COLOR);
   await shrinkTextures(doc, tmp);
-  joinSkinned(doc);
+  joinSkinned(doc, byPart);
   await doc.transform(
     dedup(),
     weld(),
@@ -415,11 +439,14 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'chars-'));
 fs.mkdirSync(OUT, { recursive: true });
 const report = {};
 for (const c of CHARS) {
-  const { doc, report: r } = await buildChar(c, tmp);
-  const file = path.join(OUT, `${c.id}.glb`);
-  if (!dry) await io.write(file, doc);
-  report[c.id] = { ...r, bytes: dry ? null : fs.statSync(file).size };
-  console.log(c.id, JSON.stringify(report[c.id]));
+  for (const byPart of c.heroParts ? [false, true] : [false]) {
+    const id = byPart ? `${c.id}Parts` : c.id;
+    const { doc, report: r } = await buildChar(c, tmp, byPart);
+    const file = path.join(OUT, `${id}.glb`);
+    if (!dry) await io.write(file, doc);
+    report[id] = { ...r, bytes: dry ? null : fs.statSync(file).size };
+    console.log(id, JSON.stringify(report[id]));
+  }
 }
 {
   const { doc, report: r } = await buildAnims();

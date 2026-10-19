@@ -25,25 +25,6 @@ export const DEFAULT_PLACEHOLDER: Ph = ph('box', 0xff00ff, 1, 0.4);
 const M = (file: string) => `/assets/models/${file}.glb`;
 
 // ---- clip maps -------------------------------------------------------------------------------------
-const KAY_CLIPS: NonNullable<ModelEntry['clips']> = {
-  idle: 'Idle',
-  walk: 'Walking_A',
-  run: 'Running_A',
-  attack: '1H_Melee_Attack_Slice_Horizontal',
-  attack2: '1H_Melee_Attack_Chop',
-  cast: 'Spellcast_Shoot',
-  throw: '1H_Ranged_Shoot',
-  hit: 'Hit_A',
-  block: 'Block',
-  stunned: 'Hit_A',
-  frozen: 'Idle',
-  dying: 'Death_A',
-  dead: 'Death_A',
-  interact: 'Interact',
-  pickup: 'PickUp',
-  cheer: 'Cheer',
-};
-const KAY_BONES = { rightHand: 'handslot.r', leftHand: 'handslot.l', head: 'head' };
 const ROBOT_CLIPS: NonNullable<ModelEntry['clips']> = {
   idle: 'Idle',
   walk: 'Walking',
@@ -101,6 +82,15 @@ const UNI_CLIPS: NonNullable<ModelEntry['clips']> = {
   pickup: 'PickUp_Table',
   cheer: 'Dance_Loop',
 };
+/** Gunners: pistol stance and shot instead of sword swings. */
+const SHOOTER_CLIPS: NonNullable<ModelEntry['clips']> = {
+  ...UNI_CLIPS,
+  idle: 'Pistol_Idle_Loop',
+  attack: 'Pistol_Shoot',
+  attack2: 'Pistol_Shoot',
+};
+/** Camp NPCs: relaxed idles. */
+const NPC_CLIPS: NonNullable<ModelEntry['clips']> = { ...UNI_CLIPS, idle: 'Idle_Talking_Loop' };
 const UNI_BONES = { rightHand: 'hand_r', leftHand: 'hand_l', head: 'Head' };
 /**
  * Grip sockets matching the KayKit hand slots (the item poses in visual.ts are authored for those):
@@ -134,24 +124,6 @@ const uni = (
   ...extra,
 });
 
-const kay = (
-  id: string,
-  file: string,
-  color: number,
-  accent?: number,
-  scale = 0.75,
-  extra: Partial<ModelEntry> = {},
-): ModelEntry => ({
-  id,
-  url: M(file),
-  scale,
-  clips: { ...KAY_CLIPS },
-  bones: { ...KAY_BONES },
-  placeholder: ph('capsule', color, 1.6, 0.3),
-  accent,
-  ...extra,
-});
-
 /**
  * B1-style battle droid on the robot mesh (the skeleton read as bones, not a machine): painted
  * `tan` with dark joints, carrying a stun mace glowing `eye`.
@@ -159,22 +131,12 @@ const kay = (
 const darken = (c: number): number =>
   ((((c >> 16) & 255) * 0.62) << 16) | ((((c >> 8) & 255) * 0.62) << 8) | ((c & 255) * 0.62);
 
-const battleDroid = (id: string, tan: number, eye: number, scale: number): ModelEntry => ({
-  id,
-  url: M('monsters/robot'),
-  scale,
-  clips: { ...ROBOT_CLIPS },
-  bones: { ...ROBOT_BONES },
-  placeholder: ph('capsule', tan, 1.4, 0.3),
-  accent: eye,
-  // The robot's bright paint becomes the droid's tan shell, shaded parts darker, joints near black.
-  recolor: [
-    { hue: [0, 360], minSat: 0.5, minVal: 0.75, color: tan, flat: 0.6 },
-    { hue: [0, 360], minSat: 0, minVal: 0.3, color: darken(tan), flat: 0.6 },
-    { hue: [0, 360], minSat: 0, color: 0x2e241a, flat: 0.5 },
-  ],
-  gear: { mainHand: 'stunMace', accent: eye },
-});
+const battleDroid = (id: string, tan: number, eye: number, scale: number): ModelEntry =>
+  uni(id, 'peasantM', tan, eye, scale, {
+    clips: { ...UNI_CLIPS, idle: 'Pistol_Idle_Loop' },
+    armor: { style: 'droid', color: tan, trim: darken(tan), eye, hideBody: true },
+    gear: { mainHand: 'stunMace', accent: eye },
+  });
 
 const stat = (
   id: string,
@@ -195,67 +157,57 @@ const ACTORS: ModelEntry[] = [
     recolor: [{ hue: [60, 180], minSat: 0.15, color: 0x7a5434 }],
   }),
   // Bounty Huntur: visored helmet and armor in bounty-hunter green, crimson trim, worn brown cape.
-  kay('hero.bountyHuntur', 'heroes/knight', 0x5d6b4a, 0xff8a3d, 0.75, {
-    helmet: { replace: 'Knight_Helmet', style: 'mando', color: 0x7a8a5c },
-    recolor: [
-      { hue: [0, 360], maxSat: 0.12, color: 0x7a8a5c },
-      { hue: [330, 20], minSat: 0.4, color: 0x6a5238 },
-      { hue: [35, 60], minSat: 0.5, color: 0x9a3a2a },
-    ],
+  // Bounty Huntur: plated in bounty-hunter green over a dark flight suit, T-visor helmet and jetpack.
+  uni('hero.bountyHuntur', 'peasantMParts', 0x5d6b4a, 0xff8a3d, 0.94, {
+    clips: SHOOTER_CLIPS,
+    hide: ['Hair_SimpleParted'],
+    recolor: [{ hue: [0, 360], minSat: 0, color: 0x34383e, flat: 1 }],
+    armor: { style: 'mando', color: 0x7a8a5c, trim: 0x6a5238 },
   }),
   // Forse Adept: no wizard hat; farm-boy-to-hero cream tunic with a brown belt and boots.
-  kay('hero.forseAdept', 'heroes/mage', 0xd8ccb0, 0xb36bff, 0.75, {
-    hide: ['Mage_Hat'],
-    recolor: [
-      { hue: [220, 285], minSat: 0.15, color: 0xe2d6bc },
-      { hue: [300, 345], minSat: 0.4, color: 0x6b4a2e },
-    ],
-  }),
-  kay('npc.default', 'monsters/barbarian', 0xb89c6a, undefined, 0.72),
+  // Forse Adept: the farm-boy-to-hero look the peasant outfit already has (cream tunic, dark trousers).
+  uni('hero.forseAdept', 'peasantMParts', 0xd8ccb0, 0xb36bff, 0.94),
+  uni('npc.default', 'peasantM', 0xb89c6a, undefined, 0.92, { clips: NPC_CLIPS }),
   // Camp NPCs: each gets its own body and palette so the camp doesn't look cloned.
   // Medic Akarra: white medical robes with teal trim, no hat.
-  kay('npc.medicAkarra', 'heroes/mage', 0xe8ecef, undefined, 0.72, {
-    hide: ['Mage_Hat'],
+  // Medic Akarra: white medical tunic with teal trim.
+  uni('npc.medicAkarra', 'peasantF', 0xe8ecef, undefined, 0.9, {
+    clips: NPC_CLIPS,
     recolor: [
-      { hue: [160, 290], minSat: 0.15, color: 0xeef1f3 },
-      { hue: [300, 345], minSat: 0.4, color: 0x2a9d8f },
+      { hue: [10, 50], minSat: 0.35, minVal: 0.45, color: 0x2a9d8f },
+      { hue: [0, 360], maxSat: 0.25, minVal: 0.5, color: 0xeef1f3 },
     ],
   }),
   // Chief Charzi: the camp mechanic, bald and burly, with orange-trimmed work gear.
-  kay('npc.chiefCharzi', 'monsters/barbarian', 0xc8682a, undefined, 0.76, {
-    hide: ['Barbarian_Hat'],
-    recolor: [{ hue: [190, 230], minSat: 0.25, color: 0xd0702a }],
+  // Chief Charzi: the camp mechanic, in an orange work shirt.
+  uni('npc.chiefCharzi', 'peasantM', 0xc8682a, undefined, 0.98, {
+    clips: { ...NPC_CLIPS, idle: 'Idle_FoldArms_Loop' },
+    recolor: [{ hue: [0, 360], maxSat: 0.25, minVal: 0.5, color: 0xd0702a }],
   }),
   // Captain Kasha: rebel pilot in an orange flight suit with a white helmet and harness.
-  kay('npc.captainKasha', 'heroes/knight', 0xd26a2a, undefined, 0.74, {
-    hide: ['Knight_Cape'],
-    recolor: [
-      { hue: [0, 360], maxSat: 0.12, color: 0xd26a2a },
-      { hue: [330, 20], minSat: 0.4, color: 0xeeeeee },
-      { hue: [35, 60], minSat: 0.5, color: 0x3a3a3a },
-    ],
+  // Captain Kasha: rebel pilot in an orange flight suit.
+  uni('npc.captainKasha', 'rangerF', 0xd26a2a, undefined, 0.92, {
+    clips: NPC_CLIPS,
+    hide: ['Female_Ranger_Head_Hood'],
+    recolor: [{ hue: [60, 180], minSat: 0.15, color: 0xd26a2a }],
   }),
   // Gheedo: a small hooded scrap trader in dark brown robes.
-  kay('npc.gheedo', 'monsters/rogueHooded', 0x4a3420, undefined, 0.55, {
-    recolor: [
-      { hue: [95, 200], color: 0x4a3420 },
-      { hue: [55, 95], minSat: 0.35, color: 0x2e2216 },
-    ],
+  // Gheedo: a small hooded scrap trader in dark brown robes.
+  uni('npc.gheedo', 'rangerM', 0x4a3420, undefined, 0.62, {
+    clips: NPC_CLIPS,
+    hide: ['Hair_SimpleParted'],
+    recolor: [{ hue: [60, 180], minSat: 0.15, color: 0x4a3420 }],
   }),
   // Master Yoduh: tiny, green-skinned, in a pale hermit's robe.
-  kay('npc.masterYoduh', 'heroes/mage', 0x8fae5a, undefined, 0.5, {
-    hide: ['Mage_Hat'],
-    recolor: [
-      { hue: [15, 40], minSat: 0.2, color: 0x93b25e },
-      { hue: [300, 345], minSat: 0.4, color: 0xcab68e },
-      { hue: [160, 290], minSat: 0.15, color: 0x7a5a3a },
-      { hue: [0, 360], maxSat: 0.15, color: 0xdcdcd2 },
-    ],
+  // Master Yoduh: tiny, in a pale hermit's robe.
+  uni('npc.masterYoduh', 'peasantM', 0x8fae5a, undefined, 0.5, {
+    clips: NPC_CLIPS,
+    recolor: [{ hue: [0, 360], maxSat: 0.25, minVal: 0.5, color: 0xcab68e }],
   }),
 
   // Act I monsters (mesh re-use + suggested tint in `accent`)
   // Classic tan battle droids: the skinny skeleton rig, cloak off, painted sand-tan (rusty for scrap).
-  battleDroid('mon.scrapDroyd', 0xc09464, 0xff6a1a, 0.22),
+  battleDroid('mon.scrapDroyd', 0xc09464, 0xff6a1a, 0.84),
   {
     // Black probe droid.
     id: 'mon.probeDroyd',
@@ -271,33 +223,34 @@ const ACTORS: ModelEntry[] = [
     ],
   },
   // Jawwa: a short brown-robed scavenger, face lost in the dark of its hood.
-  kay('mon.jawwa', 'monsters/rogueHooded', 0x6a4a2a, 0xffd23f, 0.58, {
+  // Jawwa: a short brown-robed scavenger, face lost in the dark of its hood.
+  uni('mon.jawwa', 'rangerM', 0x6a4a2a, 0xffd23f, 0.6, {
+    clips: SHOOTER_CLIPS,
+    hide: ['Hair_SimpleParted'],
     recolor: [
-      { hue: [95, 200], color: 0x5c3f22 },
-      { hue: [55, 95], minSat: 0.35, color: 0x3e2a16 },
-      { hue: [10, 50], minSat: 0.2, color: 0x0e0a06, flat: 1 },
+      { hue: [60, 180], minSat: 0.15, color: 0x5c3f22 },
+      { hue: [10, 50], minSat: 0.2, color: 0x3e2a16 },
     ],
     // A stubby ion blaster for its stun bolts.
     gear: { mainHand: 'scoutBlastur', accent: 0x66aaff },
   }),
   // Tuskin Raider: tall desert raider wrapped head to toe in sand-colored cloth, with a gaderffii pike.
-  kay('mon.tuskinRaider', 'monsters/rogueHooded', 0xc2a878, undefined, 0.82, {
+  // Tuskin Raider: tall desert raider wrapped head to toe in sand-colored cloth, with a gaderffii pike.
+  uni('mon.tuskinRaider', 'rangerM', 0xc2a878, undefined, 1.0, {
+    hide: ['Hair_SimpleParted'],
     recolor: [
-      { hue: [95, 200], color: 0xc9b08a },
-      { hue: [55, 95], minSat: 0.35, color: 0x7a5e3e },
-      { hue: [10, 50], minSat: 0.2, color: 0x6e604c, flat: 0.8 },
+      { hue: [60, 180], minSat: 0.15, color: 0xc9b08a },
+      { hue: [10, 50], minSat: 0.2, color: 0x7a5e3e },
     ],
     gear: { mainHand: 'vibroSpear' },
   }),
   // Normtrooper: white armor, black visor and joints, and a blastur carbine.
-  kay('mon.normtrooper', 'heroes/knight', 0xeeeeee, 0xff5a3a, 0.72, {
-    hide: ['Knight_Cape'],
-    helmet: { replace: 'Knight_Helmet', style: 'trooper', color: 0xf2f2f4 },
-    recolor: [
-      { hue: [0, 360], maxSat: 0.12, minVal: 0.35, color: 0xf2f2f4, flat: 0.5 },
-      { hue: [0, 360], maxSat: 0.12, color: 0x1a1a1e },
-      { hue: [330, 60], minSat: 0.2, color: 0x222228, flat: 0.6 },
-    ],
+  // Normtrooper: white plastoid plates over a black body glove, and a blastur carbine.
+  uni('mon.normtrooper', 'peasantM', 0xeeeeee, 0xff5a3a, 0.94, {
+    clips: SHOOTER_CLIPS,
+    hide: ['Hair_SimpleParted'],
+    recolor: [{ hue: [0, 360], minSat: 0, color: 0x1a1a1e, flat: 1 }],
+    armor: { style: 'trooper', color: 0xf2f2f4, trim: 0x2a2a30 },
     gear: { mainHand: 'hunturCarbine' },
   }),
   {
@@ -316,40 +269,45 @@ const ACTORS: ModelEntry[] = [
     ],
   },
   // Nightsistah: Dathomir witch in crimson and black robes, chalk-white skin, no wizard hat.
-  kay('mon.nightsistah', 'heroes/mage', 0x7a1a24, 0xc040ff, 0.74, {
-    hide: ['Mage_Hat'],
+  // Nightsistah: Dathomir witch in a crimson hooded robe.
+  uni('mon.nightsistah', 'rangerF', 0x7a1a24, 0xc040ff, 0.92, {
+    hide: ['Hair_Buns'],
     recolor: [
-      { hue: [220, 285], minSat: 0.15, color: 0x7a1622 },
-      { hue: [300, 345], minSat: 0.4, color: 0x1c1418 },
-      { hue: [15, 40], minSat: 0.2, color: 0xe8e2dc },
+      { hue: [60, 180], minSat: 0.15, color: 0x7a1622 },
+      { hue: [10, 50], minSat: 0.2, color: 0x1c1418 },
     ],
     gear: { mainHand: 'apprenticeStaff', accent: 0x6aff8a },
   }),
   // Shadow Wraith: a Syth shade, a black hooded robe around a faint violet glow.
-  kay('mon.shadowWraith', 'monsters/rogueHooded', 0x1a1622, 0x8866ff, 0.78, {
+  // Shadow Wraith: a Syth shade, a black hooded robe around a faint violet glow.
+  uni('mon.shadowWraith', 'rangerM', 0x1a1622, 0x8866ff, 0.98, {
+    hide: ['Hair_SimpleParted'],
     recolor: [
-      { hue: [95, 200], color: 0x16121c },
-      { hue: [55, 95], minSat: 0.35, color: 0x4a2a7a, flat: 0.6 },
-      { hue: [10, 50], minSat: 0.2, color: 0x07060a, flat: 1 },
+      { hue: [60, 180], minSat: 0.15, color: 0x16121c },
+      { hue: [10, 50], minSat: 0.2, color: 0x4a2a7a, flat: 0.6 },
     ],
     // A ghostly violet blade.
     gear: { mainHand: 'trainingLitesaber', accent: 0x8866ff },
   }),
   // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery), larger, dark crimson, red litesaber.
-  kay('mon.countDooky', 'monsters/rogueHooded', 0x2a1a24, 0xff2a2a, 0.95, {
+  // Count Dooky: robed, hooded Syth lord (PLAN §2: no demon imagery), larger, dark crimson, red litesaber.
+  uni('mon.countDooky', 'rangerM', 0x2a1a24, 0xff2a2a, 1.1, {
+    clips: { ...UNI_CLIPS, idle: 'Sword_Idle' },
+    hide: ['Hair_SimpleParted'],
     recolor: [
-      { hue: [95, 200], color: 0x221820 },
-      { hue: [55, 95], minSat: 0.35, color: 0x5a1a22 },
+      { hue: [60, 180], minSat: 0.15, color: 0x221820 },
+      { hue: [10, 50], minSat: 0.2, color: 0x5a1a22 },
     ],
     gear: { mainHand: 'trainingLitesaber', accent: 0xff2a2a },
   }),
   // The Countezz: a Syth noblewoman in black and blood red.
-  kay('mon.countezz', 'heroes/mage', 0x1c1418, 0xff3a3a, 0.86, {
-    hide: ['Mage_Hat'],
+  // The Countezz: a Syth noblewoman in black and blood red.
+  uni('mon.countezz', 'rangerF', 0x1c1418, 0xff3a3a, 1.0, {
+    clips: { ...UNI_CLIPS, idle: 'Sword_Idle' },
+    hide: ['Female_Ranger_Head_Hood'],
     recolor: [
-      { hue: [220, 285], minSat: 0.15, color: 0x1c1418 },
-      { hue: [300, 345], minSat: 0.4, color: 0x9a1622 },
-      { hue: [15, 40], minSat: 0.2, color: 0xe0d8d2 },
+      { hue: [60, 180], minSat: 0.15, color: 0x1c1418 },
+      { hue: [10, 50], minSat: 0.2, color: 0x9a1622 },
     ],
     gear: { mainHand: 'trainingLitesaber', accent: 0xff2a2a },
   }),
@@ -370,10 +328,14 @@ const ACTORS: ModelEntry[] = [
     gear: { mainHand: 'doubleVibroAxe', accent: 0xff8a2a },
   },
   // Player summons
-  battleDroid('mon.battleDroyd', 0xdcc690, 0x4fc3ff, 0.24),
+  battleDroid('mon.battleDroyd', 0xdcc690, 0x4fc3ff, 0.94),
   // Holo-Decoy: a blue hologram of the Bounty Huntur.
-  kay('mon.holoDecoy', 'heroes/knight', 0x4fc3ff, 0x4fc3ff, 0.75, {
+  // Holo-Decoy: a blue hologram of the Bounty Huntur.
+  uni('mon.holoDecoy', 'peasantM', 0x4fc3ff, 0x4fc3ff, 0.94, {
+    clips: SHOOTER_CLIPS,
+    hide: ['Hair_SimpleParted'],
     recolor: [{ hue: [0, 360], minSat: 0, color: 0x6ad0ff }],
+    armor: { style: 'mando', color: 0x6ad0ff, trim: 0x4fa8e0 },
     gear: { mainHand: 'scoutBlastur', accent: 0x4fc3ff },
   }),
   stat('mon.blasturTurret', null, 1, ph('cylinder', 0x5a5f66, 0.9, 0.35), 0xff5a3a),

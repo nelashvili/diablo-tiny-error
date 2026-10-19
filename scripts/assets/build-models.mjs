@@ -20,77 +20,14 @@ const dry = process.argv.includes('--dry');
 const K = (kit, f) => `kenney/3d/${kit}/${f}.glb`;
 const KD = (f) => `KayKit-Dungeon-Remastered-1.0/addons/kaykit_dungeon_remastered/Assets/gltf/${f}.gltf.glb`;
 const KS = (f) => `KayKit-Space-Base-Bits-1.0/addons/kaykit_space_base_bits/Assets/gltf/${f}.gltf`;
-const KA = (f) =>
-  `KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/${f}.glb`;
 const KW = (f) =>
   `KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Assets/gltf/${f}.gltf`;
-const KK = (f) =>
-  `KayKit-Character-Pack-Skeletons-1.0/addons/kaykit_character_pack_skeletons/Characters/gltf/${f}.glb`;
 
-const KAY_ANIMS = [
-  'Idle',
-  'Walking_A',
-  'Running_A',
-  '1H_Melee_Attack_Slice_Horizontal',
-  '1H_Melee_Attack_Chop',
-  '2H_Melee_Attack_Slice',
-  '1H_Ranged_Shoot',
-  'Spellcast_Shoot',
-  'Spellcast_Raise',
-  'Hit_A',
-  'Death_A',
-  'Block',
-  'Interact',
-  'PickUp',
-  'Cheer',
-];
 const QM_ANIMS = ['Idle', 'Walk', 'Run', 'Punch', 'HitReact', 'Death', 'Weapon'];
 
 /** @type {{dest: string, src: string, anims?: string[], remove?: string[], removeMatch?: RegExp}[]} */
 const T = [
-  // ---- heroes & humanoid monsters (rigged) ----
-  {
-    dest: 'heroes/knight',
-    src: KA('Knight'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(1H_|2H_|.*Shield|Throwable|Mug|Spellbook|Knife|Dagger)/,
-  },
-  {
-    dest: 'heroes/rogue',
-    src: KA('Rogue'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(1H_|2H_|.*Shield|Throwable|Mug|Spellbook|Knife|Dagger|Crossbow|Quiver)/,
-  },
-  {
-    dest: 'heroes/mage',
-    src: KA('Mage'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(1H_|2H_|.*Shield|Throwable|Mug|Spellbook|Knife|Dagger|Staff|Wand)/,
-  },
-  {
-    dest: 'monsters/barbarian',
-    src: KA('Barbarian'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(1H_|2H_|.*Shield|Throwable|Mug|Spellbook|Knife|Dagger|Axe)/,
-  },
-  {
-    dest: 'monsters/rogueHooded',
-    src: KA('Rogue_Hooded'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(1H_|2H_|.*Shield|Throwable|Mug|Spellbook|Knife|Dagger|Crossbow|Quiver)/,
-  },
-  {
-    dest: 'monsters/skeletonMinion',
-    src: KK('Skeleton_Minion'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(Skeleton_(Axe|Blade|Crossbow|Quiver|Shield|Staff|Arrow)|.*Shield)/,
-  },
-  {
-    dest: 'monsters/skeletonMage',
-    src: KK('Skeleton_Mage'),
-    anims: KAY_ANIMS,
-    removeMatch: /^(Skeleton_(Axe|Blade|Crossbow|Quiver|Shield|Staff|Arrow)|.*Shield)/,
-  },
+  // ---- rigged monsters (humanoids are built by build-chars.mjs) ----
   {
     dest: 'monsters/robot',
     src: 'robot/RobotExpressive.glb',
