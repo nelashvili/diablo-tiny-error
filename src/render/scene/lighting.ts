@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { QualityLevel } from '../types';
 import type { MapLightSpec } from '../map/mapRenderer';
 import { hash01 } from '../map/chunking';
+import { fitShadowBounds, type ShadowBounds } from './shadowFit';
 
 export interface LightPreset {
   sky: number;
@@ -106,6 +107,8 @@ export function presetFor(tileset: string): LightPreset {
 export const POINT_LIGHT_LIMIT: Record<QualityLevel, number> = { low: 0, medium: 4, high: 8 };
 const SHADOW_HALF = 17;
 const SUN_DIR = new THREE.Vector3(-0.55, 1.0, 0.35).normalize();
+/** Tallest shadow casters the fitted frustum must include above the visible ground (walls, trees). */
+const CASTER_HEIGHT = 3;
 
 /** Hemisphere + one shadow-casting directional light that follows the camera target + point-light pool. */
 export class SceneLighting {
@@ -119,6 +122,7 @@ export class SceneLighting {
   private used = new Uint8Array(0);
   private quality: QualityLevel = 'medium';
   private shadows = false;
+  private readonly fit: ShadowBounds = { left: 0, right: 0, top: 0, bottom: 0, near: 1, far: 90 };
 
   constructor() {
     this.sun.castShadow = false;
@@ -131,6 +135,9 @@ export class SceneLighting {
     sc.far = 90;
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.04;
+    // The shadow camera stays put (texel snapping needs a fixed eye); fitShadow() moves its bounds.
+    this.sun.target.position.set(0, 0, 0);
+    this.sun.position.copy(SUN_DIR).multiplyScalar(45);
     this.group.add(this.hemi, this.sun, this.sun.target, this.playerLight);
   }
 
@@ -149,7 +156,7 @@ export class SceneLighting {
     this.quality = q;
     this.shadows = q !== 'low';
     this.sun.castShadow = this.shadows;
-    const size = q === 'high' ? 2048 : 1024;
+    const size = q === 'low' ? 1024 : 2048;
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
       this.sun.shadow.map?.dispose();
@@ -178,12 +185,31 @@ export class SceneLighting {
     this.poolTimer = 99;
   }
 
+  /** Fit the sun's shadow frustum to the visible ground (the 4 ground points under the screen corners). */
+  fitShadow(corners: readonly { x: number; z: number }[]): void {
+    if (!this.shadows) return;
+    const f = fitShadowBounds(
+      this.sun.position,
+      this.sun.target.position,
+      corners,
+      CASTER_HEIGHT,
+      this.sun.shadow.mapSize.x,
+      this.fit,
+    );
+    const c = this.sun.shadow.camera;
+    if (c.left === f.left && c.right === f.right && c.top === f.top && c.bottom === f.bottom) {
+      if (Math.abs(c.near - f.near) < 0.5 && Math.abs(c.far - f.far) < 0.5) return;
+    }
+    c.left = f.left;
+    c.right = f.right;
+    c.top = f.top;
+    c.bottom = f.bottom;
+    c.near = f.near;
+    c.far = f.far;
+    c.updateProjectionMatrix();
+  }
+
   follow(tx: number, tz: number, px: number, pz: number, dt: number): void {
-    const sx = Math.round(tx * 4) / 4;
-    const sz = Math.round(tz * 4) / 4;
-    this.sun.target.position.set(sx, 0, sz);
-    this.sun.position.set(sx + SUN_DIR.x * 45, SUN_DIR.y * 45, sz + SUN_DIR.z * 45);
-    this.sun.target.updateMatrixWorld();
     this.playerLight.position.set(px, 3.2, pz);
 
     this.poolTimer += dt;

@@ -1,7 +1,8 @@
 /**
  * Post-processing: RenderPass -> UnrealBloom (high threshold, only emissive things glow) ->
- * per-act color grade + vignette -> OutputPass (tone mapping + sRGB).
- * Quality: low = no composer (direct render), medium = half-res bloom, high = full-res bloom + MSAA.
+ * per-act color grade + vignette -> OutputPass (tone mapping + sRGB) -> SMAA (when there is no MSAA)
+ * -> sharpen (when rendering below native resolution).
+ * Quality: low = no composer (direct render), medium = half-res bloom + SMAA, high = full-res bloom + MSAA.
  */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -9,8 +10,9 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import type { QualityLevel } from '../types';
-import { GRADE_FRAG, GRADE_VERT } from '../shaders/vfx';
+import { GRADE_FRAG, GRADE_VERT, SHARPEN_FRAG } from '../shaders/vfx';
 
 export interface PostFx {
   render(dt: number): void;
@@ -18,6 +20,8 @@ export interface PostFx {
   setQuality(q: QualityLevel): void;
   /** Per-act color grade key (e.g. 'endoor', 'tatoonie'). */
   setGrade(key: string | null): void;
+  /** Sharpen strength 0..1 (0 = pass off). Used to restore crispness when the resolution scale drops. */
+  setSharpen(amount: number): void;
   dispose(): void;
 }
 
@@ -63,7 +67,8 @@ export function createPostFx(
   composer.setSize(w, h);
   composer.addPass(new RenderPass(scene, camera));
 
-  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.45, 0.5, 0.9);
+  // Strength/radius kept modest: only sabers, bolts and Forse powers should glow, without a haze.
+  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.38, 0.35, 0.92);
   const bloomSetSize = bloom.setSize.bind(bloom);
   let bloomDivisor = 1;
   bloom.setSize = (bw: number, bh: number) => bloomSetSize(bw / bloomDivisor, bh / bloomDivisor);
@@ -85,6 +90,25 @@ export function createPostFx(
   });
   composer.addPass(gradePass);
   composer.addPass(new OutputPass());
+  // SMAA runs on the final sRGB image (where edge detection works best) whenever MSAA is off.
+  const smaa = new SMAAPass();
+  composer.addPass(smaa);
+  const sharpen = new ShaderPass({
+    uniforms: {
+      tDiffuse: { value: null },
+      uTexel: { value: new THREE.Vector2(1 / (w * dpr), 1 / (h * dpr)) },
+      uAmount: { value: 0 },
+    },
+    vertexShader: GRADE_VERT,
+    fragmentShader: SHARPEN_FRAG,
+  });
+  sharpen.enabled = false;
+  composer.addPass(sharpen);
+  const setTexel = () =>
+    (sharpen.uniforms['uTexel']!.value as THREE.Vector2).set(
+      1 / Math.max(1, w * dpr),
+      1 / Math.max(1, h * dpr),
+    );
 
   function applyUniforms(): void {
     const u = gradePass.uniforms as Record<string, { value: unknown }>;
@@ -100,6 +124,7 @@ export function createPostFx(
     bloom.enabled = quality !== 'low';
     bloomDivisor = quality === 'medium' ? 2 : 1;
     target.samples = quality === 'high' ? 4 : 0;
+    smaa.enabled = target.samples === 0;
     target.dispose();
     composer.renderTarget1.samples = composer.renderTarget2.samples = target.samples;
     composer.renderTarget1.dispose();
@@ -135,6 +160,7 @@ export function createPostFx(
       dpr = ndpr;
       composer.setPixelRatio(dpr);
       composer.setSize(w, h);
+      setTexel();
     },
     setQuality(q: QualityLevel): void {
       if (q === quality) return;
@@ -144,8 +170,13 @@ export function createPostFx(
     setGrade(key: string | null): void {
       tgt = gradeFor(key);
     },
+    setSharpen(amount: number): void {
+      sharpen.enabled = amount > 0;
+      sharpen.uniforms['uAmount']!.value = Math.min(1, Math.max(0, amount));
+    },
     dispose(): void {
       composer.dispose();
+      smaa.dispose();
       target.dispose();
       bloom.dispose();
     },

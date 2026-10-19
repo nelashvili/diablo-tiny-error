@@ -115,6 +115,21 @@ export class IsoCamera {
     return Math.abs(this.ndc.x) < 3 && Math.abs(this.ndc.y) < 3;
   }
 
+  /** The 4 ground points (world x, z) under the screen corners, pushed `pad` units outward. */
+  groundCorners(pad: number, out: { x: number; z: number }[]): void {
+    const g = this.gnd;
+    for (let i = 0; i < 4; i++) {
+      const c = out[i];
+      if (!c) continue;
+      ndcToGround(this.basis, this.center, i & 1 ? 1 : -1, i & 2 ? 1 : -1, this.halfW, this.halfH, g);
+      const dx = g.x - this.center.x;
+      const dz = g.z - this.center.z;
+      const len = Math.hypot(dx, dz) || 1;
+      c.x = g.x + (dx / len) * pad;
+      c.z = g.z + (dz / len) * pad;
+    }
+  }
+
   /** Axis-aligned ground rect (world x/z) that contains the visible area, padded. */
   groundBounds(pad: number, out: { minX: number; maxX: number; minZ: number; maxZ: number }): void {
     out.minX = Infinity;

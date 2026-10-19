@@ -41,6 +41,7 @@ await page.waitForFunction(() => window.__game !== undefined, null, { timeout: 3
 await page.evaluate(async () => {
   const g = window.__game;
   await g.newCharacter('yediKnight', 'Bench');
+  g.levels.reset(12345); // same maps every run, so before/after shots line up
 });
 await page.waitForTimeout(1500);
 

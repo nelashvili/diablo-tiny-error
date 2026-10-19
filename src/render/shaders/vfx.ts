@@ -161,3 +161,24 @@ void main() {
   gl_FragColor = vec4(max(col, 0.0), c.a);
 }
 `;
+
+/** Contrast-adaptive sharpen (CAS-style): sharpens soft edges, backs off where contrast is already high. */
+export const SHARPEN_FRAG = /* glsl */ `
+uniform sampler2D tDiffuse;
+uniform vec2 uTexel;
+uniform float uAmount;
+varying vec2 vUv;
+void main() {
+  vec4 c = texture2D(tDiffuse, vUv);
+  vec3 n = texture2D(tDiffuse, vUv + vec2(0.0, uTexel.y)).rgb;
+  vec3 s = texture2D(tDiffuse, vUv - vec2(0.0, uTexel.y)).rgb;
+  vec3 e = texture2D(tDiffuse, vUv + vec2(uTexel.x, 0.0)).rgb;
+  vec3 w = texture2D(tDiffuse, vUv - vec2(uTexel.x, 0.0)).rgb;
+  vec3 mn = min(c.rgb, min(min(n, s), min(e, w)));
+  vec3 mx = max(c.rgb, max(max(n, s), max(e, w)));
+  vec3 amp = sqrt(clamp(min(mn, 1.0 - mx) / max(mx, 1e-4), 0.0, 1.0));
+  vec3 wgt = -amp * mix(0.125, 0.2, uAmount);
+  vec3 col = (c.rgb + (n + s + e + w) * wgt) / (1.0 + 4.0 * wgt);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
+}
+`;

@@ -118,6 +118,12 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
   };
   bigRect();
   const lp = { x: 0, z: 0 };
+  const viewCorners = [
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+    { x: 0, z: 0 },
+  ];
   const gnd = { x: 0, z: 0 };
   const scr = { x: 0, y: 0 };
   const frameStats: RenderStats = {
@@ -141,6 +147,8 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
     gl.setPixelRatio(pr);
     gl.setSize(cssW, cssH, false);
     post?.resize(cssW, cssH, pr);
+    // Below native resolution, sharpen to win back crispness lost to upscaling.
+    post?.setSharpen(adaptive.scale < 1 ? (1 - adaptive.scale) * 2.5 : 0);
   };
 
   const collectStats = (): RenderStats => {
@@ -202,7 +210,9 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
         powerPreference: 'high-performance',
       });
       gl.outputColorSpace = THREE.SRGBColorSpace;
-      gl.toneMapping = THREE.ACESFilmicToneMapping;
+      // Neutral keeps the toon palette saturated (ACES desaturated and darkened it) while still
+      // rolling off bright glows.
+      gl.toneMapping = THREE.NeutralToneMapping;
       gl.toneMappingExposure = 1.0;
       gl.shadowMap.type = THREE.PCFShadowMap;
       gl.shadowMap.autoUpdate = true;
@@ -265,6 +275,8 @@ export function createRenderer(deps: RendererDeps = {}): RenderController {
       iso.update(lp.x, lp.z, dt);
       iso.groundBounds(3.5, rect);
       lighting.follow(iso.target.x, iso.target.z, lp.x, lp.z, dt);
+      iso.groundCorners(2, viewCorners);
+      lighting.fitShadow(viewCorners);
       map?.setFocus(lp.x, lp.z);
 
       scanEvents(events, view);

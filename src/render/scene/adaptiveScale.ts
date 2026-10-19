@@ -5,7 +5,7 @@ export class AdaptiveScale {
   private fast = 0;
 
   constructor(
-    private readonly minScale = 0.6,
+    private readonly minScale = 0.75,
     private readonly slowMs = 26,
     private readonly fastMs = 15,
   ) {}
