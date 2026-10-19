@@ -50,6 +50,17 @@ describe('Visual armor items', () => {
     expect(sockets.chest.children).toHaveLength(1);
   });
 
+  it('hangs no helm or chest items on bodies modelled in their own armor', () => {
+    const { r, sockets } = rig(false);
+    const v = new Visual(env, { ...r, armored: true });
+    v.setAttachment('head', 'item.trooperHelm');
+    v.setAttachment('chest', 'item.trooperArmor');
+    v.setAttachment('mainHand', 'item.scoutBlastur');
+    expect(sockets.head.children).toHaveLength(0);
+    expect(sockets.chest.children).toHaveLength(0);
+    expect(sockets.mainHand.children).toHaveLength(1);
+  });
+
   it('holds a saber clear of the body while idle: blade points forward and up', () => {
     const { r, sockets } = rig(false);
     const v = new Visual(env, r);

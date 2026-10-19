@@ -174,9 +174,14 @@ export class Visual implements EntityVisual {
     for (const m of this.rig.bodyMeshes) if (!m.userData.noTint) this.baseMats.set(m, m.material);
   }
 
-  /** Rigs that dress for armor wear the helm and skip the chest item (the outfit shows it). */
+  /**
+   * Rigs that dress for armor wear the helm and skip the chest item (the outfit shows it); armored
+   * bodies (Bounty Huntur plate, droids) keep their own helmet and plate and wear neither.
+   */
   private dressed(slot: AttachSlot): boolean {
-    return (slot === 'head' || slot === 'chest') && this.rig.wearHeadgear !== undefined;
+    return (
+      (slot === 'head' || slot === 'chest') && (this.rig.wearHeadgear !== undefined || !!this.rig.armored)
+    );
   }
 
   private wear(modelId: string | null): void {

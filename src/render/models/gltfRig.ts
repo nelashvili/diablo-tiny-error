@@ -108,6 +108,7 @@ export class GltfRig implements Rig {
   private readonly sockets: Record<AttachSlot, THREE.Object3D>;
   /** Set on universal-rig humans without built-in armor: helms are worn, not socketed. */
   readonly wearHeadgear?: (style: HeadgearStyle | null, color: number) => void;
+  readonly armored: boolean;
   /** Hoods and hair with their default visibility (helmets hide them). */
   private readonly headParts: { obj: THREE.Object3D; visible: boolean }[] = [];
   /** Bone rest transforms (helmets are fitted in the rest pose). */
@@ -117,6 +118,7 @@ export class GltfRig implements Rig {
 
   /** `anims`: the shared animation library when the entry names one (its clips replace the model's). */
   constructor(asset: LoadedAsset, entry: ModelEntry, anims: LoadedAsset | null = null) {
+    this.armored = !!(entry.armor || entry.helmet);
     this.model = SkeletonUtils.clone(asset.scene);
     this.model.scale.multiplyScalar(entry.scale);
     this.root.add(this.model);

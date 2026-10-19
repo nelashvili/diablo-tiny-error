@@ -94,6 +94,9 @@ export function createHeroPreview(): HeroPreview | null {
     }
     visual = factory.create(id);
     stage.add(visual.object);
+    // Skinned armor plates keep bind-pose bounds that a close perspective camera can wrongly cull
+    // (the hero fell apart into floating pieces); one model on a small stage never needs culling.
+    noCulling(visual.object);
     poseT = 0;
     visual.setMode(pose, 0, 1);
     dress = dressOf(worn);
@@ -119,6 +122,7 @@ export function createHeroPreview(): HeroPreview | null {
     fitTimer -= dt;
     if (fitTimer <= 0) {
       fitTimer = 0.3;
+      noCulling(visual.object); // gear and loaded models arrive after build()
       box.setFromObject(visual.object);
       if (!box.isEmpty()) fitHeight = THREE.MathUtils.clamp(box.getSize(size).y, 1, 3.5);
     }
@@ -193,6 +197,10 @@ export function createHeroPreview(): HeroPreview | null {
       }
     },
   };
+}
+
+function noCulling(root: THREE.Object3D): void {
+  root.traverse((o) => (o.frustumCulled = false));
 }
 
 function sameDress(a: Dress, b: Dress): boolean {

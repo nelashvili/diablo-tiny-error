@@ -20,6 +20,8 @@ export interface Rig {
    * sockets): put on a helm look (`null` takes it off). Adds/removes meshes in `bodyMeshes`.
    */
   wearHeadgear?(style: HeadgearStyle | null, color: number): void;
+  /** Bodies modelled in their own armor and helmet: helm and body-armor items recolor it, never hang on it. */
+  readonly armored?: boolean;
   dispose(): void;
 }
 
