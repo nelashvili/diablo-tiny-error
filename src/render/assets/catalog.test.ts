@@ -41,7 +41,12 @@ interface GltfJson {
     componentType: number;
     type: string;
   }[];
-  bufferViews: { byteOffset?: number; byteLength: number }[];
+  bufferViews: {
+    buffer?: number;
+    byteOffset?: number;
+    byteLength: number;
+    extensions?: { EXT_meshopt_compression?: { buffer: number; byteOffset?: number; byteLength: number } };
+  }[];
   buffers: { byteLength: number }[];
   meshes: { primitives: { attributes: Record<string, number>; indices?: number }[] }[];
 }
@@ -78,7 +83,15 @@ describe('model catalog', () => {
       expect(fs.existsSync(file), `${m.id} -> ${m.url}`).toBe(true);
       if (!cache.has(file)) cache.set(file, readGlb(file));
       const { json } = cache.get(file)!;
-      const clipNames = new Set((json.animations ?? []).map((a) => a.name));
+      // Clips come from the shared animation library when the entry names one.
+      let clipJson = json;
+      if (m.anims) {
+        const lib = path.join(PUBLIC, m.anims);
+        expect(fs.existsSync(lib), `${m.id} anims -> ${m.anims}`).toBe(true);
+        if (!cache.has(lib)) cache.set(lib, readGlb(lib));
+        clipJson = cache.get(lib)!.json;
+      }
+      const clipNames = new Set((clipJson.animations ?? []).map((a) => a.name));
       for (const [mode, clip] of Object.entries(m.clips ?? {})) {
         expect(clipNames.has(clip as string), `${m.id}: clip ${mode} -> ${clip}`).toBe(true);
       }
@@ -98,9 +111,16 @@ describe('model catalog', () => {
     for (const f of files) {
       const { json, binLength } = readGlb(path.join(dir, f));
       expect(json.buffers[0]?.byteLength ?? 0, f).toBeLessThanOrEqual(binLength);
-      for (const bv of json.bufferViews)
-        expect((bv.byteOffset ?? 0) + bv.byteLength, f).toBeLessThanOrEqual(binLength);
-      for (const mesh of json.meshes)
+      for (const bv of json.bufferViews) {
+        // Meshopt-compressed views decode from their extension's range in the GLB buffer; the view's
+        // own buffer is an uncompressed fallback that is never stored.
+        const m = bv.extensions?.EXT_meshopt_compression;
+        const v = m ?? { ...bv, buffer: bv.buffer ?? 0 };
+        if (v.buffer !== 0) continue;
+        expect((v.byteOffset ?? 0) + v.byteLength, f).toBeLessThanOrEqual(binLength);
+      }
+      for (const mesh of json.meshes ?? [])
+        // the animation library has no meshes
         for (const p of mesh.primitives) {
           expect(json.accessors[p.attributes.POSITION as number], f).toBeDefined();
           if (p.indices !== undefined) expect(json.accessors[p.indices]?.bufferView, f).toBeDefined();

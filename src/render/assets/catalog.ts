@@ -80,6 +80,60 @@ const QM_CLIPS: NonNullable<ModelEntry['clips']> = {
 };
 const QM_BONES = { rightHand: 'LowerArm.R', leftHand: 'LowerArm.L', head: 'Head' };
 
+// Universal-rig characters (scripts/assets/build-chars.mjs): Quaternius outfits + base-body heads,
+// all animated from one shared clip library.
+const UNI_ANIMS = '/assets/models/chars/anims.glb';
+const UNI_CLIPS: NonNullable<ModelEntry['clips']> = {
+  idle: 'Idle_Loop',
+  walk: 'Walk_Loop',
+  run: 'Jog_Fwd_Loop',
+  attack: 'Sword_Regular_A',
+  attack2: 'Sword_Regular_B',
+  cast: 'Spell_Simple_Shoot',
+  throw: 'OverhandThrow',
+  hit: 'Hit_Chest',
+  block: 'Sword_Block',
+  stunned: 'Hit_Head',
+  frozen: 'Idle_Loop',
+  dying: 'Death01',
+  dead: 'Death01',
+  interact: 'Interact',
+  pickup: 'PickUp_Table',
+  cheer: 'Dance_Loop',
+};
+const UNI_BONES = { rightHand: 'hand_r', leftHand: 'hand_l', head: 'Head' };
+/**
+ * Grip sockets matching the KayKit hand slots (the item poses in visual.ts are authored for those):
+ * the T-pose world rotations of handslot.r/.l relative to hand_r/_l, a little out toward the fingers.
+ */
+const UNI_GRIP: NonNullable<ModelEntry['handGrip']> = {
+  // KayKit hands sit on bones scaled ~0.75 and are chunky; these rigs are scaled ~0.94.
+  scale: 0.72,
+  right: { pos: [0, 0.075, 0.01], quat: [0.5, 0.5, 0.5, 0.5] },
+  left: { pos: [0, 0.075, 0.01], quat: [-0.5, 0.5, 0.5, -0.5] },
+};
+
+/** Universal-rig character from public/assets/models/chars (rangerM, rangerF, peasantM, peasantF). */
+const uni = (
+  id: string,
+  file: string,
+  color: number,
+  accent?: number,
+  scale = 0.94,
+  extra: Partial<ModelEntry> = {},
+): ModelEntry => ({
+  id,
+  url: M(`chars/${file}`),
+  anims: UNI_ANIMS,
+  scale,
+  clips: { ...UNI_CLIPS },
+  bones: { ...UNI_BONES },
+  handGrip: UNI_GRIP,
+  placeholder: ph('capsule', color, 1.75, 0.3),
+  accent,
+  ...extra,
+});
+
 const kay = (
   id: string,
   file: string,
@@ -134,11 +188,11 @@ const stat = (
 const ACTORS: ModelEntry[] = [
   // Heroes, dressed Star Wars style via palette swaps on the KayKit meshes:
   // Yedi Knight: hooded robe in Jedi browns (the rogue's greens/teals become robe cloth).
-  kay('hero.yediKnight', 'monsters/rogueHooded', 0x8a6a48, 0x4fc3ff, 0.75, {
-    recolor: [
-      { hue: [95, 200], color: 0x6e4a2c },
-      { hue: [55, 95], minSat: 0.35, color: 0xcdb48a },
-    ],
+  // Yedi Knight: the ranger with the hood down, its greens turned Jedi robe browns.
+  uni('hero.yediKnight', 'rangerM', 0x8a6a48, 0x4fc3ff, 0.94, {
+    clips: { ...UNI_CLIPS, idle: 'Sword_Idle' },
+    hide: ['Male_Ranger_Head_Hood'],
+    recolor: [{ hue: [60, 180], minSat: 0.15, color: 0x7a5434 }],
   }),
   // Bounty Huntur: visored helmet and armor in bounty-hunter green, crimson trim, worn brown cape.
   kay('hero.bountyHuntur', 'heroes/knight', 0x5d6b4a, 0xff8a3d, 0.75, {

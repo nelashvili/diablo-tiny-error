@@ -13,6 +13,48 @@ const FADE = 0.15;
 
 const KAY_HAND_PER_HEIGHT = 0.46;
 
+/** Bone whose translation track the shared animation library keeps (hips bob, falls, crouches). */
+const PELVIS = 'pelvis';
+const libClips = new WeakMap<LoadedAsset, WeakMap<LoadedAsset, THREE.AnimationClip[]>>();
+
+/**
+ * The animation library's clips fitted to one model: pelvis positions were keyed on the library's
+ * mannequin, so they are shifted by the difference in rest pose (keeps feet on the ground for taller
+ * or shorter bodies). Cached per (library, model) pair.
+ */
+export function clipsForModel(lib: LoadedAsset, model: LoadedAsset): THREE.AnimationClip[] {
+  let per = libClips.get(lib);
+  if (!per) {
+    per = new WeakMap();
+    libClips.set(lib, per);
+  }
+  let clips = per.get(model);
+  if (clips) return clips;
+  const libPelvis = lib.scene.getObjectByName(PELVIS);
+  const modelPelvis = model.scene.getObjectByName(PELVIS);
+  const track = `${PELVIS}.position`;
+  if (!libPelvis || !modelPelvis) clips = lib.animations;
+  else {
+    const d = modelPelvis.position.clone().sub(libPelvis.position);
+    clips = lib.animations.map((clip) => {
+      const i = clip.tracks.findIndex((t) => t.name === track);
+      if (i < 0 || d.lengthSq() < 1e-10) return clip;
+      const c = clip.clone();
+      const t = c.tracks[i]!;
+      const v = t.values.slice();
+      for (let k = 0; k < v.length; k += 3) {
+        v[k] = v[k]! + d.x;
+        v[k + 1] = v[k + 1]! + d.y;
+        v[k + 2] = v[k + 2]! + d.z;
+      }
+      c.tracks[i] = new THREE.VectorKeyframeTrack(t.name, t.times, v);
+      return c;
+    });
+  }
+  per.set(model, clips);
+  return clips;
+}
+
 export class GltfRig implements Rig {
   readonly root = new THREE.Group();
   readonly bodyMeshes: THREE.Mesh[] = [];
@@ -26,7 +68,8 @@ export class GltfRig implements Rig {
   private readonly procedural: boolean;
   private readonly sockets: Record<AttachSlot, THREE.Object3D>;
 
-  constructor(asset: LoadedAsset, entry: ModelEntry) {
+  /** `anims`: the shared animation library when the entry names one (its clips replace the model's). */
+  constructor(asset: LoadedAsset, entry: ModelEntry, anims: LoadedAsset | null = null) {
     this.model = SkeletonUtils.clone(asset.scene);
     this.model.scale.multiplyScalar(entry.scale);
     this.root.add(this.model);
@@ -47,15 +90,17 @@ export class GltfRig implements Rig {
       this.bodyMeshes.push(...replaceHelmet(this.model, oldHelm, headBone, hp.style, hp.color));
     this.mixer = new THREE.AnimationMixer(this.model);
     const byClip = new Map<string, THREE.AnimationAction>();
+    const clips = anims ? clipsForModel(anims, asset) : asset.animations;
+    const clipNames = anims ? anims.clipNames : asset.clipNames;
     for (const mode of ALL_MODES) {
-      const name = resolveClip(mode, asset.clipNames, entry.clips);
+      const name = resolveClip(mode, clipNames, entry.clips);
       if (name === null) {
         this.actions.set(mode, null);
         continue;
       }
       let a = byClip.get(name);
       if (!a) {
-        const clip = asset.animations.find((c) => c.name === name);
+        const clip = clips.find((c) => c.name === name);
         a = clip ? this.mixer.clipAction(clip) : undefined;
         if (a) byClip.set(name, a);
       }
@@ -86,9 +131,18 @@ export class GltfRig implements Rig {
     this.root.updateMatrixWorld(true);
     const rootScale = new THREE.Vector3();
     this.root.getWorldScale(rootScale);
-    const hand = (n?: string): THREE.Object3D | null => {
+    const grip = (bone: THREE.Object3D, g: NonNullable<ModelEntry['handGrip']>['right'], scale = 1) => {
+      const s = new THREE.Object3D();
+      s.position.set(...g.pos);
+      s.quaternion.set(...g.quat);
+      s.scale.setScalar(scale);
+      bone.add(s);
+      return s;
+    };
+    const hand = (n: string | undefined, side: 'right' | 'left'): THREE.Object3D | null => {
       const bone = find(n);
       if (!bone) return null;
+      if (entry.handGrip) return grip(bone, entry.handGrip[side], entry.handGrip.scale);
       const ws = new THREE.Vector3();
       bone.getWorldScale(ws);
       const rel = ws.x / (rootScale.x || 1);
@@ -101,8 +155,8 @@ export class GltfRig implements Rig {
       return s;
     };
     this.sockets = {
-      mainHand: hand(entry.bones?.rightHand) ?? mkSock(this.root, h * 0.5),
-      offHand: hand(entry.bones?.leftHand) ?? mkSock(this.root, h * 0.5),
+      mainHand: hand(entry.bones?.rightHand, 'right') ?? mkSock(this.root, h * 0.5),
+      offHand: hand(entry.bones?.leftHand, 'left') ?? mkSock(this.root, h * 0.5),
       head: find(entry.bones?.head) ?? mkSock(this.root, h),
       chest: mkSock(this.root, h * 0.65),
     };

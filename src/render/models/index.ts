@@ -52,14 +52,20 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
     },
   };
 
-  const buildRig = (id: string, entry: ModelEntry): Rig => {
+  /** The model and (when it uses one) its animation library, or null until both are loaded. */
+  const loadedRig = (entry: ModelEntry): Rig | null => {
     const asset = loader.peek(entry.url);
-    if (asset) return new GltfRig(asset, entry);
-    return buildPlaceholderRig(id, entry);
+    if (!asset) return null;
+    if (!entry.anims) return new GltfRig(asset, entry);
+    const anims = loader.peek(entry.anims);
+    return anims ? new GltfRig(asset, entry, anims) : null;
   };
 
+  const buildRig = (id: string, entry: ModelEntry): Rig => loadedRig(entry) ?? buildPlaceholderRig(id, entry);
+
   function loadFor(entry: ModelEntry): Promise<unknown> {
-    return entry.url ? loader.load(entry.url) : Promise.resolve(null);
+    if (!entry.url) return Promise.resolve(null);
+    return Promise.all([loader.load(entry.url), entry.anims ? loader.load(entry.anims) : null]);
   }
 
   return {
@@ -76,9 +82,14 @@ export function createVisualFactory(opts: VisualFactoryOptions = {}): VisualFact
       const entry = lookup(modelId) ?? fallbackEntry(modelId);
       const visual = new Visual(env, buildRig(modelId, entry));
       // Not loaded yet: show the placeholder now and hot-swap when the glTF arrives.
-      if (entry.url && !loader.peek(entry.url) && !loader.hasFailed(entry.url)) {
-        void loader.load(entry.url).then((asset) => {
-          if (asset) visual.swapRig(new GltfRig(asset, entry));
+      const pending =
+        entry.url &&
+        !loader.hasFailed(entry.url) &&
+        (!loader.peek(entry.url) || (entry.anims && !loader.peek(entry.anims)));
+      if (pending) {
+        void loadFor(entry).then(() => {
+          const rig = loadedRig(entry);
+          if (rig) visual.swapRig(rig);
         });
       }
       return visual;

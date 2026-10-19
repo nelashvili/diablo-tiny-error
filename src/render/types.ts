@@ -72,6 +72,21 @@ export interface ModelEntry {
   helmet?: { replace: string; style: 'mando' | 'trooper'; color: number };
   /** What a monster/NPC carries: an item base id per hand (e.g. a trooper's carbine), blade color. */
   gear?: { mainHand?: string; offHand?: string; accent?: number };
+  /**
+   * Shared animation library (glb holding only a skeleton + clips) used instead of the model's own
+   * clips. Clip names in `clips` then refer to that library. Tracks bind to bones by name.
+   */
+  anims?: string;
+  /**
+   * Where held items sit relative to the hand bones: position (bone units) and rotation (quaternion
+   * x, y, z, w) of the grip socket, so items authored for the KayKit hand slots fit other rigs.
+   * `scale` resizes held items for hands smaller than KayKit's.
+   */
+  handGrip?: {
+    scale?: number;
+    right: { pos: [number, number, number]; quat: [number, number, number, number] };
+    left: { pos: [number, number, number]; quat: [number, number, number, number] };
+  };
 }
 
 /** VFX toolkit keys referenced from SkillDef.vfx / MissileDef.vfx. */

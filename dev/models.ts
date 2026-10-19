@@ -1,6 +1,7 @@
 /**
  * Dev harness for render/models. Open /dev/models.html via `npm run dev`.
- * Query: ?mode=attack (freeze a mode), ?cols=8, ?zoom=1.
+ * Query: ?mode=attack (freeze a mode), ?cols=8, ?zoom=1, ?only=hero.yediKnight,mon.jawwa (just those,
+ * without the extra demo actors and tiles), ?nohelm.
  */
 import * as THREE from 'three';
 import { MODEL_CATALOG } from '../src/render/assets/catalog';
@@ -58,6 +59,7 @@ const params = new URLSearchParams(location.search);
 const fixedMode = params.get('mode') as ActorMode | null;
 const cols = Number(params.get('cols') ?? 8);
 const zoom = Number(params.get('zoom') ?? 1.15);
+const only = (params.get('only') ?? '').split(',').filter(Boolean);
 
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
@@ -80,7 +82,7 @@ scene.add(ground);
 
 const factory = createVisualFactory({ renderer });
 const catalogIds = MODEL_CATALOG.map((m) => m.id);
-const ids = [...new Set([...catalogIds, ...SAMPLE_IDS])];
+const ids = only.length ? only : [...new Set([...catalogIds, ...SAMPLE_IDS])];
 
 const visuals: { v: EntityVisual; t: number }[] = [];
 const SPACING = 2.6;
@@ -104,11 +106,11 @@ for (const id of ids) {
     v.setAttachment('mainHand', 'item.blueLitesaber', 0x4fc3ff);
     if (id.endsWith('forseAdept')) v.setAttachment('offHand', 'item.energyShield');
     if (id.endsWith('bountyHuntur')) v.setAttachment('mainHand', 'item.blasterPistol');
-    if (id.endsWith('yediKnight')) v.setAttachment('head', 'item.battleHelm');
+    if (id.endsWith('yediKnight') && !params.has('nohelm')) v.setAttachment('head', 'item.battleHelm');
   }
   add(v);
 }
-{
+if (!only.length) {
   const v = factory.create('hero.yediKnight');
   v.setAttachment('mainHand', 'item.doubleLitesaber', 0xff3030);
   v.setTint(0x66b3ff);
@@ -123,7 +125,7 @@ for (const id of ids) {
 const statics = new THREE.Group();
 scene.add(statics);
 let tileRow = Math.ceil(n / cols) + 1;
-for (const ts of TILESETS) {
+for (const ts of only.length ? [] : TILESETS) {
   let x = 0;
   for (const kind of TILE_KINDS) {
     for (const part of factory.getStaticMesh(`tile.${ts}.${kind}`)) {
@@ -139,8 +141,10 @@ for (const ts of TILESETS) {
   }
   tileRow += 1.2;
 }
-const maxX = Math.max((cols - 1) * SPACING, TILE_KINDS.length * 2.4) + 2;
-const maxZ = tileRow * SPACING + 2;
+const maxX = only.length
+  ? (Math.min(n, cols) - 1) * SPACING
+  : Math.max((cols - 1) * SPACING, TILE_KINDS.length * 2.4) + 2;
+const maxZ = only.length ? (Math.ceil(n / cols) - 1) * SPACING : tileRow * SPACING + 2;
 
 function resize() {
   const w = innerWidth;
@@ -148,9 +152,9 @@ function resize() {
   renderer.setSize(w, h, false);
   const cx = maxX / 2;
   const cz = maxZ / 2;
-  camera.position.set(cx + 30, 30 * 0.82, cz + 30);
-  camera.lookAt(cx, 0, cz);
-  const span = (Math.hypot(maxX, maxZ) / 2 + 1) / zoom;
+  camera.position.set(cx + 30, 30 * 0.82 + (only.length ? 0.8 : 0), cz + 30);
+  camera.lookAt(cx, only.length ? 0.8 : 0, cz);
+  const span = (Math.hypot(maxX, maxZ) / 2 + (only.length ? 1.6 : 1)) / zoom;
   const aspect = w / h;
   camera.left = -span * aspect * 0.75;
   camera.right = span * aspect * 0.75;

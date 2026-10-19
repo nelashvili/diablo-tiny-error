@@ -1,6 +1,7 @@
 // Graphics bench: fixed screenshots + render stats per tileset and quality, for before/after comparison.
 // Usage: npm run dev (port 5173), then
-//   node scripts/bench/shots.mjs [outDir] [--port 5173] [--qualities low,medium,high] [--headed]
+//   node scripts/bench/shots.mjs [outDir] [--port 5173] [--qualities low,medium,high]
+//   [--scenes town,forest,cave,temple] [--headed]
 // Writes <outDir>/<scene>-<quality>.png and <outDir>/stats.json.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -17,6 +18,7 @@ const out = path.resolve(
 );
 const port = flag('port', '5173');
 const qualities = flag('qualities', 'low,medium,high').split(',');
+const only = flag('scenes', '').split(',').filter(Boolean);
 fs.mkdirSync(out, { recursive: true });
 
 // One scene per tileset in use, plus a monster lineup for character models.
@@ -46,7 +48,7 @@ await page.evaluate(async () => {
 await page.waitForTimeout(1500);
 
 const stats = {};
-for (const scene of SCENES) {
+for (const scene of SCENES.filter((s) => !only.length || only.includes(s.name))) {
   await page.evaluate(
     async ({ level, lineup, ids }) => {
       const g = window.__game;

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { resolveAssetUrl } from './helpers';
 import { toToon } from './toon';
 
@@ -29,6 +30,8 @@ export class AssetLoader {
     const d = new DRACOLoader();
     d.setDecoderPath(DRACO_PATH);
     this.loader.setDRACOLoader(d);
+    // Characters and the animation library are meshopt-compressed (small, decoded in wasm, no fetch).
+    this.loader.setMeshoptDecoder(MeshoptDecoder);
     if (renderer) {
       const k = new KTX2Loader();
       k.setTranscoderPath(BASIS_PATH);

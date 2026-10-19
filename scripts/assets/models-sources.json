@@ -119,5 +119,10 @@
   "models/tiles/stationFloor.glb": "kenney/3d/space-station/floor.glb",
   "models/tiles/stationWall.glb": "kenney/3d/space-station/wall.glb",
   "models/tiles/roadStraight.glb": "kenney/3d/space/terrain_roadStraight.glb",
-  "models/tiles/terrain.glb": "kenney/3d/space/terrain.glb"
+  "models/tiles/terrain.glb": "kenney/3d/space/terrain.glb",
+  "models/chars/rangerM.glb": "quaternius/outfits/Male_Ranger + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted",
+  "models/chars/rangerF.glb": "quaternius/outfits/Female_Ranger + ubc/Superhero_Female_FullBody (head) + ubc/Hair_Buns",
+  "models/chars/peasantM.glb": "quaternius/outfits/Male_Peasant + ubc/Superhero_Male_FullBody (head) + ubc/Hair_SimpleParted",
+  "models/chars/peasantF.glb": "quaternius/outfits/Female_Peasant + ubc/Superhero_Female_FullBody (head) + ubc/Hair_Long",
+  "models/chars/anims.glb": "quaternius/ual1/AnimationLibrary_Godot_Standard + ual2/UAL2_Standard (selected clips)"
 }

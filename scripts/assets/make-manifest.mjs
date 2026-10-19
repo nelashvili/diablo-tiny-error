@@ -79,6 +79,15 @@ function modelSource(src) {
       licenseNote:
         'Quaternius publishes all packs as CC0; the mirror repository describes these files as CC0 / public domain',
     };
+  if (first === 'quaternius')
+    return {
+      pack: 'Quaternius Universal Base Characters, Modular Character Outfits - Fantasy, Universal Animation Library 1 & 2 (Standard)',
+      author: 'Quaternius',
+      ...CC0,
+      homepage: 'https://quaternius.com/packs/universalbasecharacters.html',
+      repo: 'https://quaternius.itch.io',
+      licenseNote: 'License_Standard.txt / License.txt in each downloaded pack states CC0 1.0 Universal',
+    };
   throw new Error(`unknown source ${src}`);
 }
 
@@ -96,6 +105,12 @@ for (const file of walk(PUB).sort()) {
     const src = sources[rel];
     if (!src) throw new Error(`no source recorded for ${rel}`);
     const mods = ['re-packed as single-file GLB (textures embedded)'];
+    if (rel.startsWith('models/chars/')) {
+      mods.length = 0;
+      mods.push(
+        'built by scripts/assets/build-chars.mjs: outfit + head cut from a base body + hairstyle merged on one skeleton, meshes simplified and joined per material, textures downsized to base color only, meshopt-compressed',
+      );
+    }
     if (rel.startsWith('models/heroes') || rel.startsWith('models/monsters')) {
       mods.push('unused animation clips and baked-in held items removed to cut size');
     }
