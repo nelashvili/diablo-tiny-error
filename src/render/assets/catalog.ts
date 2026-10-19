@@ -93,14 +93,15 @@ const SHOOTER_CLIPS: NonNullable<ModelEntry['clips']> = {
 const NPC_CLIPS: NonNullable<ModelEntry['clips']> = { ...UNI_CLIPS, idle: 'Idle_Talking_Loop' };
 const UNI_BONES = { rightHand: 'hand_r', leftHand: 'hand_l', head: 'Head' };
 /**
- * Grip sockets matching the KayKit hand slots (the item poses in visual.ts are authored for those):
- * the T-pose world rotations of handslot.r/.l relative to hand_r/_l, a little out toward the fingers.
+ * Grip sockets in the palm: rotated so that, after visual.ts's held-weapon pose, a blade leaves the fist
+ * on the thumb side (hand-local +Z, tilted a little toward the wrist) — out of the fist, not back along
+ * the forearm through the body.
  */
 const UNI_GRIP: NonNullable<ModelEntry['handGrip']> = {
   // KayKit hands sit on bones scaled ~0.75 and are chunky; these rigs are scaled ~0.94.
   scale: 0.72,
-  right: { pos: [0, 0.075, 0.01], quat: [0.5, 0.5, 0.5, 0.5] },
-  left: { pos: [0, 0.075, 0.01], quat: [-0.5, 0.5, 0.5, -0.5] },
+  right: { pos: [0, 0.075, 0.01], quat: [0.3846, 0.6944, 0.1042, 0.5992] },
+  left: { pos: [0, 0.075, 0.01], quat: [0.3846, 0.6944, 0.1042, 0.5992] },
 };
 
 /** Universal-rig character from public/assets/models/chars (rangerM, rangerF, peasantM, peasantF). */

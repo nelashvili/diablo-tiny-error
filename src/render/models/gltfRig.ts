@@ -14,6 +14,12 @@ const FADE = 0.15;
 
 const KAY_HAND_PER_HEIGHT = 0.46;
 
+/**
+ * Materials palette swaps never touch: skin, hair and eyes of the universal-rig characters (their
+ * browns share hues with leather, so robe recolors would paint faces). Armored entries excepted.
+ */
+const KEEP_MATERIAL = /Superhero|Regular_(Male|Female)|Hair|Eyes/;
+
 /** Bone whose translation track the shared animation library keeps (hips bob, falls, crouches). */
 const PELVIS = 'pelvis';
 const libClips = new WeakMap<LoadedAsset, WeakMap<LoadedAsset, THREE.AnimationClip[]>>();
@@ -80,7 +86,9 @@ export class GltfRig implements Rig {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.userData.rawMaterial = mesh.material; // pre-palette material, for armor outfits
-      if (entry.recolor?.length && !Array.isArray(mesh.material))
+      // Armored characters wear a full body glove, so their skin is recolored too.
+      const keep = !entry.armor && KEEP_MATERIAL.test((mesh.material as THREE.Material).name);
+      if (entry.recolor?.length && !Array.isArray(mesh.material) && !keep)
         mesh.material = recolorMaterial(mesh.material, entry.recolor, entry.id);
       this.bodyMeshes.push(mesh);
     });

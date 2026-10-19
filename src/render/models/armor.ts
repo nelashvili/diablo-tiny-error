@@ -113,8 +113,8 @@ function armorLayout(spec: ArmorSpec, L: Lengths): Piece[] {
       ball(`upperarm_${s}`, 0.02, 0.085, main),
       tube(`upperarm_${s}`, L(`upperarm_${s}`), 0.25, 0.85, 0.052, main),
       tube(`lowerarm_${s}`, L(`lowerarm_${s}`), 0.15, 0.9, 0.048, main),
-      tube(`thigh_${s}`, L(`thigh_${s}`), 0.1, 0.9, 0.1, main),
-      tube(`calf_${s}`, L(`calf_${s}`), 0.1, 0.92, 0.08, main),
+      tube(`thigh_${s}`, L(`thigh_${s}`), 0.04, 0.96, 0.118, main),
+      tube(`calf_${s}`, L(`calf_${s}`), 0.04, 0.95, 0.095, main),
       plate(`foot_${s}`, [0, L(`foot_${s}`) * 0.45, -0.01], [0.12, L(`foot_${s}`) * 1.35, 0.1], trim),
     );
   }

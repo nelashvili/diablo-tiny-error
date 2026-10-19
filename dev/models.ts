@@ -110,7 +110,9 @@ for (const id of ids) {
     if (id.endsWith('bountyHuntur')) v.setAttachment('mainHand', 'item.blasterPistol');
     if (id.endsWith('yediKnight') && !params.has('nohelm')) v.setAttachment('head', 'item.battleHelm');
     const armor = (params.get('armor') ?? '').split(',');
-    (['head', 'body', 'arms', 'legs'] as const).forEach((part, i) => v.setOutfit?.(part, armorLook(armor[i])));
+    (['head', 'body', 'arms', 'legs'] as const).forEach((part, i) =>
+      v.setOutfit?.(part, armorLook(armor[i])),
+    );
   }
   add(v);
 }
