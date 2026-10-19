@@ -4,6 +4,8 @@ import type { QualityLevel, VisualFactory } from '../types';
 import { CHUNK_SIZE, chunkGrid, chunkIndexOf, countKindsPerChunk, hash01 } from './chunking';
 import { TERRAIN_KINDS, buildTerrain } from '../terrain/terrain';
 import { depthInto, dressingFor, propVariant, scatterFor, tileTint } from './dressing';
+import { WALL_PIECES, buildWallKit, wallKitFor, wallPieces, type WallPiece } from './walls';
+import { vertexColorToon } from '../models/armor';
 
 type Part = { geometry: THREE.BufferGeometry; material: THREE.Material };
 
@@ -159,7 +161,10 @@ export function buildMap(
     CHUNK_SIZE,
     new Set<string>(['void', ...TERRAIN_KINDS]),
   );
-  const dressed = (k: TileKind) => dressingFor(tileset, k) !== undefined;
+  const kit = wallKitFor(tileset);
+  // Dressed kinds become props and kitted walls are built from pieces: neither is a plain block.
+  const dressed = (k: TileKind) =>
+    dressingFor(tileset, k) !== undefined || (kit !== undefined && k === 'wall');
 
   // ------------------------------------------------------------------ tiles
   interface Batch {
@@ -253,6 +258,46 @@ export function buildMap(
       mat.multiply(_tmpTranslate.makeTranslation(-norm.ax, -norm.ay, -norm.az));
       const shade = (style.shade ?? 1) * (0.86 + 0.28 * h);
       col.setHex(tileTint(tileset, kind)).multiplyScalar(shade);
+      const i = b.n++;
+      for (const im of b.meshes) {
+        im.setMatrixAt(i, mat);
+        im.setColorAt(i, col);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ wall kit
+  const kitGeos: THREE.BufferGeometry[] = [];
+  if (kit) {
+    const geos = buildWallKit(kit);
+    kitGeos.push(...Object.values(geos));
+    const material = vertexColorToon();
+    const pieces = wallPieces(map.kinds, width, height);
+    const kitCounts = new Map<string, number>();
+    const kitKey = (ci: number, piece: WallPiece) => `${ci}|${piece}`;
+    for (const w of pieces) {
+      const k = kitKey(chunkIndexOf(grid, w.tx, w.ty), w.piece);
+      kitCounts.set(k, (kitCounts.get(k) ?? 0) + 1);
+    }
+    const kitBatches = new Map<string, { meshes: THREE.InstancedMesh[]; n: number }>();
+    for (const [k, n] of kitCounts) {
+      const piece = k.slice(k.indexOf('|') + 1) as WallPiece;
+      if (!WALL_PIECES.includes(piece)) continue;
+      kitBatches.set(k, {
+        meshes: mkMesh([{ geometry: geos[piece], material }], n, true, false, true),
+        n: 0,
+      });
+    }
+    for (const w of pieces) {
+      const b = kitBatches.get(kitKey(chunkIndexOf(grid, w.tx, w.ty), w.piece));
+      if (!b) continue;
+      const idx = w.ty * width + w.tx;
+      pos.set(w.tx + 0.5, map.elevation?.[idx] ?? 0, w.ty + 0.5);
+      rotY.setFromAxisAngle(up, w.rot);
+      mat.compose(pos, rotY, scl.set(1, 1, 1));
+      // Each tile's stones differ a little in tone.
+      const shade = 0.9 + 0.16 * hash01(idx, 131);
+      col.setRGB(shade, shade, shade);
       const i = b.n++;
       for (const im of b.meshes) {
         im.setMatrixAt(i, mat);
@@ -427,6 +472,7 @@ export function buildMap(
     dispose() {
       terrain.dispose();
       for (const im of meshes) im.dispose();
+      for (const g of kitGeos) g.dispose();
       for (const m of ownedMaterials) m.dispose();
       group.removeFromParent();
       meshes.length = 0;
