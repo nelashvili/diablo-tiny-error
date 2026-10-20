@@ -33,6 +33,8 @@ const START_YAW = -0.45;
 const FOV = 28;
 /** Frame margin around the hero (fraction of its height). */
 const MARGIN = 0.12;
+/** Camera layer of the meshes whose alpha the stamp pass fixes. */
+const STAMP_LAYER = 1;
 
 export function createHeroPreview(): HeroPreview | null {
   let gl: THREE.WebGLRenderer;
@@ -64,6 +66,18 @@ export function createHeroPreview(): HeroPreview | null {
   scene.add(floor);
 
   const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
+  // Actor materials write alpha 0 (the world's paint mask, see toon.ts). On this transparent canvas the
+  // browser then drops the body (or adds it on washed out), leaving only weapons and boots; a second
+  // pass over the actor meshes writes alpha 1 and keeps the color.
+  const alphaStamp = new THREE.MeshBasicMaterial({
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.ZeroFactor,
+    blendDst: THREE.OneFactor,
+    blendSrcAlpha: THREE.OneFactor,
+    blendDstAlpha: THREE.ZeroFactor,
+    depthTest: false,
+    depthWrite: false,
+  });
   const factory: VisualFactory = createVisualFactory({ renderer: gl });
   const stage = new THREE.Group();
   scene.add(stage);
@@ -96,7 +110,7 @@ export function createHeroPreview(): HeroPreview | null {
     stage.add(visual.object);
     // Skinned armor plates keep bind-pose bounds that a close perspective camera can wrongly cull
     // (the hero fell apart into floating pieces); one model on a small stage never needs culling.
-    noCulling(visual.object);
+    prepare(visual.object);
     poseT = 0;
     visual.setMode(pose, 0, 1);
     dress = dressOf(worn);
@@ -122,13 +136,20 @@ export function createHeroPreview(): HeroPreview | null {
     fitTimer -= dt;
     if (fitTimer <= 0) {
       fitTimer = 0.3;
-      noCulling(visual.object); // gear and loaded models arrive after build()
+      prepare(visual.object); // gear and loaded models arrive after build()
       box.setFromObject(visual.object);
       if (!box.isEmpty()) fitHeight = THREE.MathUtils.clamp(box.getSize(size).y, 1, 3.5);
     }
     viewHeight += (fitHeight - viewHeight) * Math.min(1, dt * 4);
     frameCamera();
     gl.render(scene, camera);
+    gl.autoClear = false;
+    camera.layers.set(STAMP_LAYER);
+    scene.overrideMaterial = alphaStamp;
+    gl.render(scene, camera);
+    scene.overrideMaterial = null;
+    camera.layers.set(0);
+    gl.autoClear = true;
   };
 
   const frameCamera = () => {
@@ -199,8 +220,16 @@ export function createHeroPreview(): HeroPreview | null {
   };
 }
 
-function noCulling(root: THREE.Object3D): void {
-  root.traverse((o) => (o.frustumCulled = false));
+/** No culling (one model on a small stage), and actor meshes join the alpha stamp pass. */
+function prepare(root: THREE.Object3D): void {
+  root.traverse((o) => {
+    o.frustumCulled = false;
+    const mat = (o as THREE.Mesh).material;
+    if (!mat) return;
+    const actor = [mat].flat().some((m) => 'USE_RIM' in ((m as THREE.MeshToonMaterial).defines ?? {}));
+    if (actor) o.layers.enable(STAMP_LAYER);
+    else o.layers.disable(STAMP_LAYER);
+  });
 }
 
 function sameDress(a: Dress, b: Dress): boolean {
