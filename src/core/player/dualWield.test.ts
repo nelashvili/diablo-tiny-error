@@ -10,7 +10,7 @@ import type { SimWorld } from '../sim/world';
 import { createPlayer } from './create';
 import { equipItem, giveItem, unequipItem } from './inventory';
 import { recomputeStats } from './stats';
-import { getOffHandWeapon, heroDps } from './weapon';
+import { DUAL_WIELD, getOffHandWeapon, heroDps } from './weapon';
 
 const rng = new Rng(7);
 
@@ -133,6 +133,17 @@ describe('dual wielding', () => {
     expect(p.stats.offHand!.physMax).toBeLessThan(p.stats.physMax);
     expect(p.stats.attackSpeedMul).toBeGreaterThan(speed);
     expect(heroDps(p)).toBeGreaterThan(single * 1.15);
+  });
+
+  it('dual wielding lowers defense by a quarter', () => {
+    const { world, p } = hero();
+    equipItem(world, p, give(p, 'trainingLitesaber'), 'mainHand');
+    recomputeStats(p);
+    const guard = p.stats.defense;
+    p.stats = { ...p.stats, strength: 200 };
+    equipItem(world, p, give(p, 'trainingLitesaber'), 'offHand');
+    recomputeStats(p);
+    expect(p.stats.defense).toBe(Math.floor(guard * (1 + DUAL_WIELD.defensePct / 100)));
   });
 
   it('dps counts both hands', () => {

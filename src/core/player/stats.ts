@@ -78,7 +78,10 @@ function meleeMasteryMods(p: PlayerEntity): Modifier[] {
     { stat: 'damageReducedPct', op: 'flat', value: MELEE_MASTERY.damageReducedPct, source: 'melee' },
   ];
   if (getOffHandWeapon(p))
-    mods.push({ stat: 'ias', op: 'flat', value: DUAL_WIELD.attackSpeed, source: 'dualWield' });
+    mods.push(
+      { stat: 'ias', op: 'flat', value: DUAL_WIELD.attackSpeed, source: 'dualWield' },
+      { stat: 'defense', op: 'percent', value: DUAL_WIELD.defensePct, source: 'dualWield' },
+    );
   return mods;
 }
 

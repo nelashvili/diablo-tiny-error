@@ -7,6 +7,7 @@ import { compareItems, type ItemDescription } from '../../core/items/describe';
 import type { ItemInstance } from '../../core/items/types';
 import { upgradePct, upgradeVerdict } from '../../core/items/upgrade';
 import { DUAL_WIELD } from '../../core/player/weapon';
+import { isDualWieldBase } from '../../core/items/helpers';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { GroundItemEntity, PlayerEntity } from '../../core/sim/entities';
@@ -267,9 +268,18 @@ function compareWithEquipped(
     if (!verdict) continue;
     if (cur) compare.push({ desc: services.describeItem(cur), side });
     const deltas = compareItems(item, cur);
-    // A second blade in an empty off hand also brings the dual-wield speed.
-    if (!cur && s === 'offHand')
-      deltas.unshift({ text: t('item.cmp.dualWield', { ias: DUAL_WIELD.attackSpeed }), style: 'better' });
+    // A second blade in an empty off hand also brings the dual-wield speed (and weaker guard).
+    if (!cur && s === 'offHand' && isDualWieldBase(item.base))
+      deltas.unshift(
+        { text: t('item.cmp.dualWield', { ias: DUAL_WIELD.attackSpeed }), style: 'better' },
+        { text: t('item.cmp.dualWieldDef', { def: -DUAL_WIELD.defensePct }), style: 'worse' },
+      );
+    // A shield in place of the off-hand blade ends dual wielding.
+    if (cur && s === 'offHand' && isDualWieldBase(cur.base) && !isDualWieldBase(item.base))
+      deltas.unshift(
+        { text: t('item.cmp.noDualWield', { ias: DUAL_WIELD.attackSpeed }), style: 'worse' },
+        { text: t('item.cmp.noDualWieldDef', { def: -DUAL_WIELD.defensePct }), style: 'better' },
+      );
     verdicts.push({
       verdict,
       side: side && !cur ? `${side} (${t('ui.tip.side.empty')})` : side,

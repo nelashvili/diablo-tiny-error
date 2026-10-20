@@ -41,9 +41,10 @@ export const MELEE_MASTERY = { enhancedDamage: 30, damageReducedPct: 15, cleaveP
 
 /**
  * Swings take turns between the hands, so a second blade alone only averages the two weapons;
- * fighting with one in each hand makes every swing come quicker.
+ * fighting with one in each hand makes every swing come quicker, but with no shield arm the
+ * hero's guard is weaker (percent of total defense).
  */
-export const DUAL_WIELD = { attackSpeed: 35 };
+export const DUAL_WIELD = { attackSpeed: 35, defensePct: -25 };
 
 /** Is this actor fighting with a melee weapon (players/mercs)? */
 export function wieldsMelee(actor: Actor): boolean {
