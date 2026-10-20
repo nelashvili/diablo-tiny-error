@@ -7,7 +7,7 @@ import { DB } from '../../data/db';
 import { evalLevel } from '../../data/levelScaled';
 import type { SkillDef } from '../../data/schema';
 import { angleTo } from '../math';
-import { getEquippedWeapon, UNARMED_SPEED } from '../player/weapon';
+import { getEquippedWeapon, getOffHandWeapon, UNARMED_SPEED } from '../player/weapon';
 import { isActor, type ActionState, type Actor } from '../sim/entities';
 import { dealAttack } from '../sim/systems/damage';
 import { getSlowFactor } from '../sim/systems/effects';
@@ -127,7 +127,19 @@ interface Timing {
   hits: number;
 }
 
-function timingFor(actor: Actor, def: SkillDef, level: number): Timing {
+/** Dual wielders: whether the next weapon swing is the off hand's (swings take turns, D2 style). */
+const nextOffHand = new WeakMap<Actor, boolean>();
+
+/** Which hand makes this swing: undefined unless dual wielding a weapon skill. */
+function swingHand(actor: Actor, def: SkillDef): boolean | undefined {
+  if (def.anim === 'cast' || def.anim === 'throw' || def.anim === 'kick') return undefined;
+  if (!getOffHandWeapon(actor)) return undefined;
+  const off = nextOffHand.get(actor) ?? false;
+  nextOffHand.set(actor, !off);
+  return off;
+}
+
+function timingFor(actor: Actor, def: SkillDef, level: number, offHand = false): Timing {
   const hits = Math.max(1, Math.round(skillParam(actor, def, 'hits', level, 1)));
   const explicitFire = skillParam(actor, def, 'fireAt', level, -1);
   if (def.kind === 'whirl')
@@ -140,7 +152,7 @@ function timingFor(actor: Actor, def: SkillDef, level: number): Timing {
     base = explicit / (def.anim === 'cast' ? actor.stats.castSpeedMul : actor.stats.attackSpeedMul);
   else if (def.anim === 'cast') base = DEFAULT_CAST_SEC / Math.max(0.1, actor.stats.castSpeedMul);
   else {
-    const w = getEquippedWeapon(actor);
+    const w = offHand ? getOffHandWeapon(actor) : getEquippedWeapon(actor);
     const perSec = w ? w.speed : actor.kind === 'player' ? UNARMED_SPEED : 1 / DEFAULT_MONSTER_ATTACK_SEC;
     base = 1 / (perSec * Math.max(0.1, actor.stats.attackSpeedMul));
   }
@@ -165,7 +177,8 @@ export function startSkill(world: SimWorld, actor: Actor, skillId: DefId, target
   const cd = def.cooldownSec ? evalLevel(def.cooldownSec, level) : 0;
   if (cd > 0) actor.cooldowns[skillId] = cd;
 
-  const tm = timingFor(actor, def, level);
+  const offHand = swingHand(actor, def);
+  const tm = timingFor(actor, def, level, offHand);
   const act: ActionState = {
     skillId,
     targetId: target.id,
@@ -175,6 +188,7 @@ export function startSkill(world: SimWorld, actor: Actor, skillId: DefId, target
     fireAt: tm.fireAt,
     fired: false,
     repeats: tm.hits,
+    ...(offHand !== undefined ? { offHand } : {}),
   };
   const ex: ActionExtra = { hits: tm.hits };
   if (def.kind === 'movement' && skillParam(actor, def, 'teleport', level) <= 0) {
@@ -287,6 +301,7 @@ function whirlStep(
     });
     for (const a of hostilesNear(world, caster.team, caster.pos, radius))
       dealAttack(world, caster, a, spec, { melee: true, skillId: def.id });
+    if (act.offHand !== undefined) act.offHand = !act.offHand; // spin with both blades
     world.emit({
       type: 'skillImpact',
       skillId: def.id,
@@ -325,6 +340,7 @@ export function advanceAction(world: SimWorld, actor: Actor, dt: number): void {
       act.repeats = (act.repeats as number) - 1;
       fireSkill(world, actor, act);
       if (actor.action !== act) return; // interrupted by its own effect
+      if (act.offHand !== undefined) act.offHand = !act.offHand; // multi-hit skills use both blades
     }
   }
   act.fired = (act.repeats ?? 0) <= 0;

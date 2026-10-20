@@ -61,6 +61,12 @@ export function weaponInfo(item: ItemInstance): WeaponInfo | null {
   };
 }
 
+/** A one-handed weapon that also fits the off hand (dual wielding). */
+export function isDualWieldBase(baseId: string | undefined): boolean {
+  const b = baseId ? DB.items.get(baseId) : undefined;
+  return !!b?.weaponClass && b.slots.includes('offHand');
+}
+
 /**
  * All modifiers an equipped item contributes to the stat pipeline. Item-local stats (enhanced damage %,
  * enhanced defense %, requirement reduction) are NOT included: they are resolved into `weaponInfo` /

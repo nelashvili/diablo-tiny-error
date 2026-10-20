@@ -140,7 +140,8 @@ export interface ArmorLookRef {
 export interface EntityVisual {
   readonly object: Object3D;
   /** Play the clip for an actor mode; `t` = seconds in mode (for sync), speedMul for IAS/FCR. */
-  setMode(mode: ActorMode, t: number, speedMul?: number): void;
+  /** `offHand`: a dual wielder's swing with the left-hand weapon (attack clips play mirrored). */
+  setMode(mode: ActorMode, t: number, speedMul?: number, offHand?: boolean): void;
   /** Facing angle (sim radians, atan2 convention). */
   setFacing(rad: number): void;
   /** Attach/replace an equipment model at a slot (null = remove). accent = blade/glow color. */

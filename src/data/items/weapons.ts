@@ -20,7 +20,7 @@ function build(): ItemBaseDef[] {
         weaponClass: line.cls,
         tier: TIERS[t]!,
         ...(next ? { upgradesTo: camel(next) } : {}),
-        slots: ['mainHand'],
+        slots: info.dualWield ? ['mainHand', 'offHand'] : ['mainHand'],
         ...(info.twoHanded ? { twoHanded: true } : {}),
         size: info.size,
         qlvl,

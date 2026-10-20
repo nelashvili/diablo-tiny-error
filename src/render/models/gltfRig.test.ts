@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { GltfRig, clipSpec, clipsForModel, nextVariant } from './gltfRig';
+import { GltfRig, clipSpec, clipsForModel, mirrorClip, nextVariant } from './gltfRig';
 import type { LoadedAsset } from './loader';
 import type { ModelEntry } from '../types';
 
@@ -109,5 +109,25 @@ describe('attack and hit variants', () => {
     expect(playing(rig)?.name).toBe('Hurt');
     rig.setMode('hit', 0, 1);
     expect(playing(rig)?.name).toBe('Hurt');
+  });
+});
+
+describe('mirrorClip', () => {
+  it('swaps left/right tracks and reflects transforms across x', () => {
+    const clip = new THREE.AnimationClip('Swing', 1, [
+      new THREE.QuaternionKeyframeTrack('upperarm_r.quaternion', [0], [0.1, 0.2, 0.3, 0.9]),
+      new THREE.VectorKeyframeTrack('pelvis.position', [0], [0.5, 1, 2]),
+      new THREE.QuaternionKeyframeTrack('index_04_leaf_l.quaternion', [0], [0, 0, 0, 1]),
+    ]);
+    const m = mirrorClip(clip);
+    expect(m.tracks.map((t) => t.name)).toEqual([
+      'upperarm_l.quaternion',
+      'pelvis.position',
+      'index_04_leaf_r.quaternion',
+    ]);
+    expect(Array.from(m.tracks[0]!.values)).toEqual([0.1, -0.2, -0.3, 0.9].map(Math.fround));
+    expect(Array.from(m.tracks[1]!.values)).toEqual([-0.5, 1, 2]);
+    expect(m.tracks[0]).toBeInstanceOf(THREE.QuaternionKeyframeTrack);
+    expect(mirrorClip(clip)).toBe(m);
   });
 });

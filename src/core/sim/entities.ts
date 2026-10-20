@@ -73,6 +73,8 @@ export interface ActionState {
   fired: boolean;
   /** For channeled/multi-hit skills (Saber Flurry, Saber Cyclone): repeat count remaining. */
   repeats?: number;
+  /** Dual wielding: this swing (or hit of a multi-hit skill) is made with the off-hand weapon. */
+  offHand?: boolean;
 }
 
 export interface ActorBase extends EntityBase {

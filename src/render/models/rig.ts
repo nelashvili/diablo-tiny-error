@@ -9,7 +9,8 @@ export interface Rig {
   readonly root: THREE.Object3D;
   /** Meshes affected by setTint/setHighlight (excludes glows and attachments). */
   readonly bodyMeshes: THREE.Mesh[];
-  setMode(mode: ActorMode, t: number, speedMul: number): void;
+  /** `offHand`: swing with the left hand (rigs without mirrored clips ignore it). */
+  setMode(mode: ActorMode, t: number, speedMul: number, offHand?: boolean): void;
   update(dt: number): void;
   /** Object3D to parent an attachment to. */
   socket(slot: AttachSlot): THREE.Object3D;

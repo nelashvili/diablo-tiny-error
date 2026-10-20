@@ -129,6 +129,8 @@ export interface DerivedStats {
   /** Weapon/physical damage range after ED and str/dex bonus. */
   physMin: number;
   physMax: number;
+  /** Off-hand weapon damage while dual wielding (same pipeline as physMin/physMax with that weapon). */
+  offHand?: { physMin: number; physMax: number };
   /** Added elemental damage per type (on attack). */
   elemental: Record<'plasma' | 'cryo' | 'storm' | 'toxin' | 'magic', { min: number; max: number }>;
   /** Speed multipliers (1 = base). Continuous, no breakpoints (PLAN §4). */

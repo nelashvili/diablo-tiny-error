@@ -43,11 +43,15 @@ export function CharacterPanel(props: {
   const xp = xpProgress(p.xp, p.level, services.xpForLevel);
   const resource = cls ? t(cls.resourceName) : t('ui.resource');
   const raw = st.raw ?? {};
+  // Dual wielders show each hand's damage.
+  const damage = st.offHand
+    ? `${range(st.physMin, st.physMax)} / ${range(st.offHand.physMin, st.offHand.physMax)}`
+    : range(st.physMin, st.physMax);
   const alloc = (stat: AttrId, amount: number) =>
     api.dispatch({ type: 'allocateStat', stat, amount: Math.min(amount, p.statPointsUnspent) });
   const sideInfo: Record<AttrId, [string, string][]> = {
     strength: [
-      [t('ui.char.damage'), range(st.physMin, st.physMax)],
+      [t('ui.char.damage'), damage],
       [t('ui.char.dpsShort'), `${Math.round(heroDps(p))}`],
     ],
     dexterity: [
@@ -145,7 +149,7 @@ export function CharacterPanel(props: {
             <b>{Math.round(heroDps(p))}</b>
           </div>
           <Row label={t('ui.stat.attackRating')} value={Math.round(st.attackRating)} />
-          <Row label={t('ui.char.damage')} value={range(st.physMin, st.physMax)} />
+          <Row label={t('ui.char.damage')} value={damage} />
           {elemental.map((k) => (
             <Row
               key={k}

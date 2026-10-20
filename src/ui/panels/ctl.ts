@@ -3,7 +3,7 @@
  * tooltips (hover on mouse, long-press/tap on touch) and item quick actions.
  * One instance per <Panels>.
  */
-import { canEquip as coreCanEquip } from '../../core/items/helpers';
+import { canEquip as coreCanEquip, isDualWieldBase } from '../../core/items/helpers';
 import { upgradeVerdict, type UpgradeVerdict } from '../../core/items/upgrade';
 import { signal } from '@preact/signals';
 import { createContext } from 'preact';
@@ -107,7 +107,14 @@ export class PanelCtl {
   }
 
   canEquip(item: ItemInstance, slot: EquipSlot): boolean {
-    return this.slotsFor(item).includes(slot);
+    if (!this.slotsFor(item).includes(slot)) return false;
+    return slot !== 'offHand' || !this.offHandBlocked(item);
+  }
+
+  /** An off-hand weapon needs a weapon it can be dual wielded with in the main hand. */
+  private offHandBlocked(item: ItemInstance): boolean {
+    const main = this.player?.equipment.mainHand;
+    return isDualWieldBase(item.base) && !!main && !isDualWieldBase(main.base);
   }
 
   /**
@@ -134,7 +141,7 @@ export class PanelCtl {
     const slots = this.slotsFor(item);
     if (!slots.length) return null;
     const eq = this.player?.equipment ?? {};
-    return slots.find((s) => !eq[s]) ?? slots[0]!;
+    return slots.find((s) => !eq[s] && this.canEquip(item, s)) ?? slots[0]!;
   }
 
   isPanelOpen(id: PanelId) {

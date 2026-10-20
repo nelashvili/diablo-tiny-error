@@ -5,6 +5,7 @@
 import { DB } from '../../data/db';
 import type { ItemBaseDef } from '../../data/schema';
 import { autoSort, emptyGrid, placeItem, removeItem } from '../items/grid';
+import { isDualWieldBase } from '../items/helpers';
 import type { ItemInstance, ItemUid } from '../items/types';
 import { addHealOverTime, removeEffects } from '../sim/systems/effects';
 import { healActor } from '../sim/systems/damage';
@@ -118,13 +119,23 @@ export function equipItem(world: SimWorld, p: PlayerEntity, uid: ItemUid, slot: 
   if (!requirementsMet(p, base)) return (toast(world, 'toast.requirementsNotMet'), false);
   const main = p.equipment.mainHand ? DB.items.get(p.equipment.mainHand.base) : undefined;
   if (slot === 'offHand' && main?.twoHanded) return (toast(world, 'toast.twoHanded'), false);
+  // Dual wielding: an off-hand weapon needs a one-handed melee weapon in the main hand (an empty
+  // main hand takes it instead).
+  const weapon = !!base.weaponClass;
+  if (slot === 'offHand' && weapon && !main) slot = 'mainHand';
+  else if (slot === 'offHand' && weapon && !isDualWieldBase(main?.id))
+    return (toast(world, 'toast.dualWield'), false);
+  const offWeapon = isDualWieldBase(p.equipment.offHand?.base);
 
   const item = detach(p, uid);
   if (!item) return false;
   const displaced: ItemInstance[] = [];
   const old = p.equipment[slot];
   if (old) displaced.push(old);
-  if (base.twoHanded && slot === 'mainHand' && p.equipment.offHand) displaced.push(p.equipment.offHand);
+  // Two-handers free the off hand; weapons that can't be dual wielded free an off-hand weapon.
+  const clearsOff =
+    slot === 'mainHand' && (base.twoHanded || (weapon && offWeapon && !isDualWieldBase(base.id)));
+  if (clearsOff && p.equipment.offHand) displaced.push(p.equipment.offHand);
 
   // Make room: displaced items go to the inventory.
   const placed: ItemInstance[] = [];
@@ -141,7 +152,7 @@ export function equipItem(world: SimWorld, p: PlayerEntity, uid: ItemUid, slot: 
     }
   }
   if (old) delete p.equipment[slot];
-  if (base.twoHanded && slot === 'mainHand') delete p.equipment.offHand;
+  if (clearsOff) delete p.equipment.offHand;
   p.equipment[slot] = item;
   p.statsDirty = true;
   changed(world, p);
@@ -153,6 +164,12 @@ export function unequipItem(world: SimWorld, p: PlayerEntity, slot: EquipSlot): 
   if (!item) return false;
   if (!placeItem(p.inventory, item)) return (toast(world, 'toast.inventoryFull'), false);
   delete p.equipment[slot];
+  // The off-hand weapon of a dual wielder moves over to the main hand.
+  const off = p.equipment.offHand;
+  if (slot === 'mainHand' && off && isDualWieldBase(off.base)) {
+    p.equipment.mainHand = off;
+    delete p.equipment.offHand;
+  }
   p.statsDirty = true;
   changed(world, p);
   return true;

@@ -60,10 +60,12 @@ export function toCombatant(a: Actor): CombatantView {
     if (any) flags.immune = immune;
   }
   const off = a.kind === 'player' || a.kind === 'merc' ? a.equipment.offHand : undefined;
+  // A dual wielder's off-hand swing hits with that weapon's damage.
+  const hand = a.action?.offHand ? a.stats.offHand : undefined;
   return {
     id: a.id,
     level: a.level,
-    stats: a.stats,
+    stats: hand ? { ...a.stats, physMin: hand.physMin, physMax: hand.physMax } : a.stats,
     moving: a.mode === 'walk' || a.mode === 'run',
     isPlayerSide: a.team === 'players',
     flags,

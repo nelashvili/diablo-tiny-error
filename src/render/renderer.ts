@@ -39,10 +39,14 @@ import { GROUND_WETNESS, setTerrainAnisotropy } from './terrain/terrain';
 const SABER_SPARKS = 'vfx.saber.sparks';
 const SABER_SWING = 'vfx.saber.attack';
 
-/** The attacker's litesaber: undefined when not swinging one, else its blade color (null = plain). */
+/**
+ * The litesaber in the attacker's swinging hand (a dual wielder's off hand on its turn): undefined
+ * when not swinging one, else its blade color (null = plain).
+ */
 function saberOf(view: WorldView, id: EntityId): BladeColor | null | undefined {
   const e = view.get(id);
-  const item = e && 'equipment' in e ? e.equipment.mainHand : undefined;
+  const eq = e && 'equipment' in e ? e.equipment : undefined;
+  const item = eq && e && 'action' in e && e.action?.offHand ? eq.offHand : eq?.mainHand;
   return item && isSaberBase(item.base) ? bladeColor(item) : undefined;
 }
 

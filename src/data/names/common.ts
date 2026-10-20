@@ -12,6 +12,7 @@ export default {
   'toast.cannotEquip': "You can't equip that there.",
   'toast.requirementsNotMet': "You aren't strong enough to use that yet.",
   'toast.twoHanded': 'You need both hands for that weapon.',
+  'toast.dualWield': 'Dual wielding needs a one-handed melee weapon in your main hand.',
   'toast.notAvailable': "That isn't available right now.",
   'toast.skillNotAvailable': "You haven't learned that skill.",
   'toast.cannotAllocate': "You can't spend a point there.",

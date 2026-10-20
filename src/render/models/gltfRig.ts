@@ -43,6 +43,39 @@ export function nextVariant(prev: number, n: number, rnd: () => number): number 
 
 const KAY_HAND_PER_HEIGHT = 0.46;
 
+const mirrored = new WeakMap<THREE.AnimationClip, THREE.AnimationClip>();
+
+/**
+ * A clip played by the other hand: left and right bone tracks trade places and every transform is
+ * reflected across the body's center plane (x). The universal rig's left/right bones are modelled
+ * as mirror images (rest rotations (x, y, z, w) <-> (x, -y, -z, w)), so the reflection is per key.
+ */
+export function mirrorClip(clip: THREE.AnimationClip): THREE.AnimationClip {
+  const hit = mirrored.get(clip);
+  if (hit) return hit;
+  const tracks = clip.tracks.map((tr) => {
+    const dot = tr.name.lastIndexOf('.');
+    const node = tr.name.slice(0, dot).replace(/_([lr])$/, (_, s: string) => (s === 'l' ? '_r' : '_l'));
+    const prop = tr.name.slice(dot + 1);
+    const v = tr.values.slice();
+    if (prop === 'quaternion')
+      for (let k = 0; k < v.length; k += 4) {
+        v[k + 1] = -v[k + 1]!;
+        v[k + 2] = -v[k + 2]!;
+      }
+    else if (prop === 'position') for (let k = 0; k < v.length; k += 3) v[k] = -v[k]!;
+    const Track = tr.constructor as new (
+      n: string,
+      t: ArrayLike<number>,
+      v: ArrayLike<number>,
+    ) => THREE.KeyframeTrack;
+    return new Track(`${node}.${prop}`, tr.times, v);
+  });
+  const out = new THREE.AnimationClip(`${clip.name}~mirror`, clip.duration, tracks);
+  mirrored.set(clip, out);
+  return out;
+}
+
 /**
  * Materials palette swaps never touch: skin, hair and eyes of the universal-rig characters (their
  * browns share hues with leather, so robe recolors would paint faces). Armored entries excepted.
@@ -101,6 +134,9 @@ export class GltfRig implements Rig {
   private currentMode: ActorMode | null = null;
   private readonly variants = new Map<ActorMode, Variant[]>();
   private readonly variantAt = new Map<ActorMode, number>();
+  /** Off-hand swings: the attack clips mirrored (dual wielders), taking turns like `variants`. */
+  private offSwings: Variant[] = [];
+  private offAt = -1;
   private fit = 1;
   private readonly pose = makePose();
   private readonly model: THREE.Object3D;
@@ -191,6 +227,14 @@ export class GltfRig implements Rig {
       }
       if (list.length > 1) this.variants.set(mode, list);
     }
+    const swing = this.actions.get('attack');
+    if (swing) {
+      const list = this.variants.get('attack') ?? [{ action: swing, fit: 1 }];
+      this.offSwings = list.map((v) => ({
+        action: this.mixer.clipAction(mirrorClip(v.action.getClip())),
+        fit: v.fit,
+      }));
+    }
     this.procedural = byClip.size === 0;
     for (const [name, sc] of Object.entries(entry.boneScale ?? {})) {
       const bone = this.model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(name));
@@ -247,7 +291,7 @@ export class GltfRig implements Rig {
     };
   }
 
-  setMode(mode: ActorMode, t: number, speedMul: number): void {
+  setMode(mode: ActorMode, t: number, speedMul: number, offHand = false): void {
     const sp = speedMul > 0 ? speedMul : 1;
     if (this.procedural) {
       const p = computePose(mode, t, sp, this.pose);
@@ -263,7 +307,11 @@ export class GltfRig implements Rig {
     const vars = this.variants.get(mode);
     let next = this.actions.get(mode) ?? null;
     this.fit = 1;
-    if (vars) {
+    if (offHand && mode === 'attack' && this.offSwings.length) {
+      if (fresh || this.offAt < 0) this.offAt = nextVariant(this.offAt, this.offSwings.length, Math.random);
+      next = this.offSwings[this.offAt]!.action;
+      this.fit = this.offSwings[this.offAt]!.fit;
+    } else if (vars) {
       let i = this.variantAt.get(mode) ?? -1;
       if (fresh || i < 0) {
         i = nextVariant(i, vars.length, Math.random);

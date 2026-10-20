@@ -47,7 +47,16 @@ export function wieldsMelee(actor: Actor): boolean {
 
 export function getEquippedWeapon(actor: Actor): EquippedWeapon | undefined {
   if (actor.kind !== 'player' && actor.kind !== 'merc') return undefined;
-  const item = actor.equipment.mainHand;
+  return weaponOf(actor.equipment.mainHand);
+}
+
+/** The weapon in the off hand when dual wielding (a shield or empty hand is undefined). */
+export function getOffHandWeapon(actor: Actor): EquippedWeapon | undefined {
+  if (actor.kind !== 'player' && actor.kind !== 'merc') return undefined;
+  return weaponOf(actor.equipment.offHand);
+}
+
+function weaponOf(item: ItemInstance | undefined): EquippedWeapon | undefined {
   if (!item) return undefined;
   const base = DB.items.get(item.base);
   const info = weaponInfo(item);
@@ -77,14 +86,20 @@ export const UNARMED_SPEED = 1.6;
 export function heroDps(actor: Actor): number {
   const st = actor.stats;
   const w = getEquippedWeapon(actor);
-  const perSec = (w ? w.speed : UNARMED_SPEED) * Math.max(0.1, st.attackSpeedMul);
+  const ias = Math.max(0.1, st.attackSpeedMul);
   const raw = st.raw ?? {};
   const ds = Math.min(100, raw.deadlyStrike ?? 0) / 100;
   const cs = Math.min(100, raw.criticalStrike ?? 0) / 100;
   const crit = 1 - (1 - ds) * (1 - cs);
-  let hit = ((st.physMin + st.physMax) / 2) * (1 + crit);
-  for (const e of Object.values(st.elemental ?? {})) hit += (e.min + e.max) / 2;
-  return hit * perSec;
+  let elem = 0;
+  for (const e of Object.values(st.elemental ?? {})) elem += (e.min + e.max) / 2;
+  const hit = (min: number, max: number) => ((min + max) / 2) * (1 + crit) + elem;
+  const main = hit(st.physMin, st.physMax);
+  const mainSec = 1 / ((w ? w.speed : UNARMED_SPEED) * ias);
+  const off = getOffHandWeapon(actor);
+  if (!off || !st.offHand) return main / mainSec;
+  // Swings take turns between the hands, each at its own weapon's speed.
+  return (main + hit(st.offHand.physMin, st.offHand.physMax)) / (mainSec + 1 / (off.speed * ias));
 }
 
 /**

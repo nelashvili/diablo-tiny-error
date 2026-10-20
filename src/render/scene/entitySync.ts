@@ -527,7 +527,7 @@ export class EntitySync {
                   : 1;
             // Basic attacks with blasters/javelins/discs play the shooting clip, not a sword slash.
             const shoot = e.mode === 'attack' && r.ranged;
-            v.setMode(shoot ? 'throw' : e.mode, e.modeTime, mul);
+            v.setMode(shoot ? 'throw' : e.mode, e.modeTime, mul, !!e.action?.offHand);
             r.mode = e.mode;
           }
           r.modeTime = e.modeTime;

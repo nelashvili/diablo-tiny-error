@@ -11,7 +11,13 @@ import type { DerivedStats, Modifier, StatSources } from '../stats/types';
 import type { Difficulty } from '../types';
 import type { Actor, PlayerEntity } from '../sim/entities';
 import type { Equipment, ItemInstance } from '../items/types';
-import { MELEE_MASTERY, getEquippedWeapon, wieldsMelee } from './weapon';
+import {
+  MELEE_MASTERY,
+  getEquippedWeapon,
+  getOffHandWeapon,
+  wieldsMelee,
+  type EquippedWeapon,
+} from './weapon';
 import { itemModifiers, setBonusModifiers } from '../items/helpers';
 
 function equipmentMods(eq: Equipment, out: Modifier[]): void {
@@ -91,18 +97,32 @@ export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSou
     allocated: p.allocated,
     modifiers: [...gatherModifiers(p), ...meleeMasteryMods(p)],
     difficulty,
-    weapon: w
-      ? {
-          min: w.min,
-          max: w.max,
-          strBonus: w.strBonus,
-          dexBonus: w.dexBonus,
-          eneBonus: w.eneBonus,
-          speed: w.speed,
-        }
-      : undefined,
+    weapon: w ? weaponSource(w) : undefined,
     growth: cls?.growth,
   };
+}
+
+function weaponSource(w: EquippedWeapon): NonNullable<StatSources['weapon']> {
+  return {
+    min: w.min,
+    max: w.max,
+    strBonus: w.strBonus,
+    dexBonus: w.dexBonus,
+    eneBonus: w.eneBonus,
+    speed: w.speed,
+  };
+}
+
+/** Player stats; a dual wielder also gets the off-hand weapon's damage through the same pipeline. */
+function playerStats(p: PlayerEntity, difficulty: Difficulty): DerivedStats {
+  const src = statSourcesFor(p, difficulty);
+  const stats = computeStats(src);
+  const off = getOffHandWeapon(p);
+  if (off) {
+    const o = computeStats({ ...src, weapon: weaponSource(off) });
+    stats.offHand = { physMin: o.physMin, physMax: o.physMax };
+  }
+  return stats;
 }
 
 const baselines = new WeakMap<Actor, { base: DerivedStats; applied: DerivedStats }>();
@@ -136,7 +156,7 @@ function applyBuffsToBaseline(base: DerivedStats, a: Actor): DerivedStats {
  */
 export function recomputeStats(actor: Actor, difficulty: Difficulty = 'normal'): void {
   if (actor.kind === 'player') {
-    actor.stats = computeStats(statSourcesFor(actor, difficulty));
+    actor.stats = playerStats(actor, difficulty);
   } else {
     const rec = baselines.get(actor);
     // If someone else swapped in fresh stats, treat them as the new baseline.

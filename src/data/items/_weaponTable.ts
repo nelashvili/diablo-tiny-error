@@ -12,6 +12,8 @@ export interface WeaponClassInfo {
   maxSockets: number;
   durability: number;
   classOnly?: ClassId;
+  /** One-handed melee weapons that also fit the off hand (dual wielding). */
+  dualWield?: boolean;
 }
 
 export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
@@ -22,6 +24,7 @@ export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
     speed: 1.3,
     maxSockets: 3,
     durability: 24,
+    dualWield: true,
   },
   doubleLitesaber: {
     twoHanded: true,
@@ -31,7 +34,15 @@ export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
     maxSockets: 4,
     durability: 28,
   },
-  vibroAxe: { twoHanded: false, size: { w: 2, h: 3 }, range: 1.5, speed: 1.1, maxSockets: 4, durability: 26 },
+  vibroAxe: {
+    twoHanded: false,
+    size: { w: 2, h: 3 },
+    range: 1.5,
+    speed: 1.1,
+    maxSockets: 4,
+    durability: 26,
+    dualWield: true,
+  },
   shockBaton: {
     twoHanded: false,
     size: { w: 1, h: 3 },
@@ -39,6 +50,7 @@ export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
     speed: 1.2,
     maxSockets: 3,
     durability: 24,
+    dualWield: true,
   },
   vibroPike: { twoHanded: true, size: { w: 2, h: 4 }, range: 2.6, speed: 0.9, maxSockets: 5, durability: 30 },
   throwingDisc: {
@@ -83,6 +95,7 @@ export const WEAPON_CLASSES: Record<WeaponClass, WeaponClassInfo> = {
     maxSockets: 3,
     durability: 20,
     classOnly: 'forseAdept',
+    dualWield: true,
   },
 };
 

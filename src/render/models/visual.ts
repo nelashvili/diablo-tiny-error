@@ -206,14 +206,14 @@ export class Visual implements EntityVisual {
     sock.add(att.object);
   }
 
-  setMode(mode: ActorMode, t: number, speedMul = 1): void {
+  setMode(mode: ActorMode, t: number, speedMul = 1, offHand = false): void {
     // Shot skills use D2's "throw" animation slot; with a gun in hand that's a shot, not an overhand
     // throw (javelins and darts thrown without a gun keep the throw).
     if (mode === 'throw' && this.attached.get('mainHand')?.att.grip === 'aimed') mode = 'attack';
     this.mode = mode;
     this.modeT = t;
     this.speedMul = speedMul;
-    this.rig.setMode(mode, t, speedMul);
+    this.rig.setMode(mode, t, speedMul, offHand);
   }
 
   setFacing(rad: number): void {
