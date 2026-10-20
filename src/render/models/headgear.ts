@@ -32,15 +32,22 @@ export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
     ];
   if (style === 'mando')
     return [
-      mk(unit.sphere(), main, 1, 0.9, 1, 0, 0.08, 0),
-      mk(unit.cylinder(), main, 0.94, 0.5, 0.94, 0, -0.18, 0),
-      // T visor: brow slit and a nose strip down the middle.
-      mk(unit.box(), visor, 0.72, 0.13, 0.12, 0, 0.04, 0.44),
-      mk(unit.box(), visor, 0.17, 0.36, 0.12, 0, -0.17, 0.44),
-      // Ear caps and a rangefinder stalk on the left.
-      mk(unit.cylinder(), metal, 0.2, 0.08, 0.2, 0.48, -0.02, 0).rotateZ(Math.PI / 2),
-      mk(unit.cylinder(), metal, 0.2, 0.08, 0.2, -0.48, -0.02, 0).rotateZ(Math.PI / 2),
-      mk(unit.cylinder(), metal, 0.05, 0.5, 0.05, 0.52, 0.28, 0.04),
+      // Bucket: a dome over straight sides, with a flat face plate in front.
+      mk(unit.sphere(), main, 0.98, 0.84, 0.96, 0, 0.12, 0),
+      mk(unit.cylinder(), main, 0.96, 0.6, 0.92, 0, -0.14, 0),
+      mk(unit.box(), main, 0.64, 0.66, 0.1, 0, -0.08, 0.41),
+      // T visor set into the face: brow slit and the strip down the middle.
+      mk(unit.box(), visor, 0.6, 0.12, 0.06, 0, 0.07, 0.46),
+      mk(unit.box(), visor, 0.15, 0.36, 0.06, 0, -0.14, 0.46),
+      // Cheek flares angled back, and a chin vent.
+      mk(unit.box(), main, 0.2, 0.24, 0.08, 0.36, -0.3, 0.3).rotateY(0.65),
+      mk(unit.box(), main, 0.2, 0.24, 0.08, -0.36, -0.3, 0.3).rotateY(-0.65),
+      mk(unit.box(), metal, 0.18, 0.05, 0.04, 0, -0.38, 0.46),
+      // Ear caps; a rangefinder stalk on the left with its eyepiece swung down.
+      mk(unit.cylinder(), metal, 0.22, 0.07, 0.22, 0.49, -0.04, 0).rotateZ(Math.PI / 2),
+      mk(unit.cylinder(), metal, 0.22, 0.07, 0.22, -0.49, -0.04, 0).rotateZ(Math.PI / 2),
+      mk(unit.cylinder(), metal, 0.045, 0.42, 0.045, 0.53, 0.2, 0.02),
+      mk(unit.box(), metal, 0.06, 0.08, 0.16, 0.53, 0.39, 0.1),
     ];
   return [
     mk(unit.sphere(), main, 1, 0.95, 1, 0, 0.05, 0),

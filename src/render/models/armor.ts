@@ -421,24 +421,37 @@ export function bindPieces(
     const c = CHILD[n] && boneOf(CHILD[n]!)?.bone;
     return b && c ? c.position.length() : 0.12;
   };
-  // Model front (+Z) in world space, for each bone's segment frame.
-  const front = new THREE.Vector3(0, 0, 1).applyQuaternion(model.getWorldQuaternion(_q)).normalize();
-  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(_q).normalize();
+  // The model's front (+Z) and up in the skeleton's bind space. Only bind data and the mesh's place
+  // in the model are used, never world rotations: a hero turned in the scene (or mid-animation)
+  // would otherwise fit everything turned with it.
+  const meshInModel = new THREE.Matrix4().copy(model.matrixWorld).invert().multiply(host.matrixWorld);
+  const toBind = new THREE.Quaternion()
+    .setFromRotationMatrix(new THREE.Matrix4().extractRotation(host.bindMatrix))
+    .multiply(
+      new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(meshInModel)).invert(),
+    );
+  const front = new THREE.Vector3(0, 0, 1).applyQuaternion(toBind).normalize();
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(toBind).normalize();
   const pieces = layout(lengths);
   // Not `host.bindMatrixInverse`: attached skinned meshes overwrite it with their world inverse every
   // frame, so gear fitted on a hero already in the scene would come out turned with the hero.
   const bindInverse = host.bindMatrix.clone().invert();
+  const boneBind = (i: number) => new THREE.Matrix4().copy(skeleton.boneInverses[i]!).invert();
 
   const solid: THREE.BufferGeometry[] = [];
   const glowing: THREE.BufferGeometry[] = [];
   for (const p of pieces) {
     const hit = boneOf(p.bone);
     if (!hit) continue;
-    const { i, bone } = hit;
+    const { i } = hit;
     // Segment frame in bone-local space: y toward the child bone, z toward the model's front.
-    const child = CHILD[p.bone] ? boneOf(CHILD[p.bone]!)?.bone : undefined;
-    _y.copy(child ? child.position : _y.set(0, 1, 0)).normalize();
-    bone.getWorldQuaternion(_q).invert();
+    const B = boneBind(i);
+    const Binv = skeleton.boneInverses[i]!;
+    const child = CHILD[p.bone] ? boneOf(CHILD[p.bone]!) : null;
+    if (child) _y.setFromMatrixPosition(boneBind(child.i)).applyMatrix4(Binv);
+    else _y.set(0, 1, 0);
+    _y.normalize();
+    _q.setFromRotationMatrix(new THREE.Matrix4().extractRotation(B)).invert();
     _z.copy(front).applyQuaternion(_q);
     // Bones running front-to-back (feet) take "up" as their second axis instead.
     if (Math.abs(_z.dot(_y)) > 0.7) _z.copy(up).applyQuaternion(_q);
@@ -449,7 +462,7 @@ export function bindPieces(
     _f.makeBasis(_x, _y, _z);
     // piece -> bone local -> bind space of the host mesh (inverse of the bone's inverse bind matrix).
     pieceMatrix(p, _m).premultiply(_f);
-    _m.premultiply(new THREE.Matrix4().copy(skeleton.boneInverses[i]!).invert());
+    _m.premultiply(B);
     _m.premultiply(bindInverse);
     const g = pieceGeometry(p, _m);
     const n = g.getAttribute('position').count;

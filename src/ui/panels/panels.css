@@ -2151,6 +2151,17 @@
 .dte-hero-bar .dte-btn.active {
   border-color: var(--ui-border-hi);
 }
+.dte-hero-trying {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+  text-align: center;
+  color: var(--ui-text-hi, #fff);
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
 .dte-hero-sets {
   max-height: 240px;
   overflow-y: auto;

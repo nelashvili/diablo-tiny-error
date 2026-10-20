@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { WornSlot, WornSpec } from '../types';
 import { shade, unit } from './rig';
-import { glowMaterial } from './toon';
+import { getGradientMap, glowMaterial } from './toon';
 import {
   SIDES,
   ball,
@@ -21,7 +21,6 @@ import {
   pieceMatrix,
   plate,
   tube,
-  vertexColorToon,
   type Lengths,
   type Piece,
 } from './armor';
@@ -591,6 +590,16 @@ function displayTorso(spec: WornSpec): Piece[] {
   ];
 }
 
+let displayMat: THREE.MeshToonMaterial | null = null;
+/**
+ * Its own material, not the shared vertexColorToon(): heroes wearing gear turn that one into an
+ * actor material (rim light, alpha 0 as the world's paint mask), which leaves icons blank.
+ */
+function displayMaterial(): THREE.MeshToonMaterial {
+  displayMat ??= new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: getGradientMap() });
+  return displayMat;
+}
+
 const _pm = new THREE.Matrix4();
 /**
  * A worn item on its own (inventory icon, item on the ground): its pieces on the display mannequin,
@@ -613,7 +622,7 @@ export function buildWornDisplay(spec: WornSpec): THREE.Group {
     for (const geo of geos) geo.dispose();
     if (merged) g.add(new THREE.Mesh(merged, mat));
   };
-  add(solid, vertexColorToon());
+  add(solid, displayMaterial());
   add(glowing, glowMaterial(wornGlowColor(spec)));
   // Center it (the frames put boots at the feet, gloves at the hips).
   const box = new THREE.Box3().setFromObject(g);

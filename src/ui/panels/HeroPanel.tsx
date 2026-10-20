@@ -7,6 +7,9 @@ import type { Equipment } from '../../core/items/types';
 import { createItem } from '../../core/items/create';
 import { Rng } from '../../core/rng';
 import { PanelFrame, Tabs } from './common';
+import { useCtl, type PanelCtl } from './ctl';
+import { freesOffHand } from '../../core/items/helpers';
+import type { ItemInstance } from '../../core/items/types';
 import { usePanelEnv, type HeroPose } from './services';
 
 const POSES: HeroPose[] = ['idle', 'walk', 'attack', 'cast'];
@@ -46,7 +49,14 @@ export function HeroPanel({ player, onClose }: { player: PlayerEntity; onClose?:
   }, [preview]);
 
   // Re-dressed every render (the panels re-render each frame while open); a no-op when nothing changed.
-  useEffect(() => preview?.show(player.modelId, tried ?? player.equipment));
+  // Hovering an item in the bag (or stash, vendor...) tries it on.
+  const ctl = useCtl();
+  const hovered = hoveredGear(ctl);
+  const hoverEq = useMemo(
+    () => (hovered ? withItem(tried ?? player.equipment, hovered, ctl) : null),
+    [hovered, tried, player.equipment, ctl],
+  );
+  useEffect(() => preview?.show(player.modelId, hoverEq ?? tried ?? player.equipment));
   useEffect(() => preview?.setPose(pose), [preview, pose]);
   useEffect(() => preview?.setAutoSpin(spin), [preview, spin]);
 
@@ -70,6 +80,11 @@ export function HeroPanel({ player, onClose }: { player: PlayerEntity; onClose?:
         onPointerCancel={() => (drag.current = null)}
       >
         {!preview && <p class="dte-dim dte-hero-none">{t('ui.hero.unavailable')}</p>}
+        {hovered && (
+          <p class="dte-hero-trying">
+            {t('ui.hero.tryingOn', { name: services.describeItem(hovered).name })}
+          </p>
+        )}
       </div>
       <div class="dte-hero-bar">
         <Tabs
@@ -171,4 +186,20 @@ function SetList({
       <ul>{any.map(row)}</ul>
     </div>
   );
+}
+
+/** The carried item under the pointer, if the hero could wear it. */
+function hoveredGear(ctl: PanelCtl): ItemInstance | null {
+  const c = ctl.tip.value?.content;
+  if (c?.kind !== 'item' || c.where.kind !== 'grid') return null;
+  return ctl.bestSlot(c.item) ? c.item : null;
+}
+
+/** Equipment with `item` put on where it would go (a two-hander also frees the off hand). */
+function withItem(eq: Equipment, item: ItemInstance, ctl: PanelCtl): Equipment {
+  const slot = ctl.compareSlots(item)[0] ?? ctl.bestSlot(item);
+  if (!slot) return eq;
+  const out: Equipment = { ...eq, [slot]: item };
+  if (slot === 'mainHand' && freesOffHand(item.base, eq.offHand?.base)) delete out.offHand;
+  return out;
 }

@@ -228,6 +228,7 @@ export default {
   'item.set.worn': '{name} (worn)',
   'item.set.full': 'Full set: an aura surrounds you',
   'ui.hero.sets': 'Sets',
+  'ui.hero.tryingOn': 'Trying on: {name}',
   'ui.hero.setFound': '{n}/{m} found',
   'ui.hero.tryOn': 'Try on',
   'ui.hero.tryOff': 'Take off',
