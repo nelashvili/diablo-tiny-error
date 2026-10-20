@@ -218,6 +218,14 @@
 .dte-tip-verdict.v-same .dte-tip-verdict-title {
   color: var(--ui-text-dim);
 }
+/* Which ring / hand this verdict is against, and the overall change. */
+.dte-tip-verdict-side {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+.dte-tip-verdict-pct {
+  font-variant-numeric: tabular-nums;
+}
 .dte-tip-footer {
   margin-top: 8px;
   color: var(--q-unique);

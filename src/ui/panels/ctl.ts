@@ -106,6 +106,20 @@ export class PanelCtl {
     return slots;
   }
 
+  /**
+   * The equipped slots an item is measured against: both rings; both hands for a weapon a dual
+   * wielder could hold in either (the off hand empty or holding a weapon); else its own slot.
+   */
+  compareSlots(item: ItemInstance): EquipSlot[] {
+    const slots = this.slotsFor(item);
+    if (slots === RING_SLOTS) return slots;
+    const eq = this.player?.equipment;
+    const off = eq?.offHand;
+    if (eq?.mainHand && isDualWieldBase(eq.mainHand.base) && isDualWieldBase(item.base))
+      if (!off || isDualWieldBase(off.base)) return ['mainHand', 'offHand'];
+    return slots.slice(0, 1);
+  }
+
   canEquip(item: ItemInstance, slot: EquipSlot): boolean {
     if (!this.slotsFor(item).includes(slot)) return false;
     return slot !== 'offHand' || !this.offHandBlocked(item);
@@ -129,7 +143,8 @@ export class PanelCtl {
     if (!slots.length || slots.some((s) => p.equipment[s]?.uid === item.uid)) return null;
     const st = { level: p.level, strength: p.stats.strength, dexterity: p.stats.dexterity };
     if (!anyReqs && !coreCanEquip(item, slots[0]!, p.classId, st)) return null;
-    const cmp = slots === RING_SLOTS ? slots : slots.slice(0, 1);
+    // An upgrade over either ring / either blade counts (measured against the weaker one).
+    const cmp = this.compareSlots(item);
     return upgradeVerdict(
       item,
       cmp.map((s) => p.equipment[s]),

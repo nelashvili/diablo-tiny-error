@@ -90,9 +90,8 @@ export function ItemTooltip(props: {
   footerTone?: 'ok' | 'bad';
   actions?: TipAction[];
   colorblind?: boolean;
-  /** Upgrade verdict vs the equipped item, with the stat changes it brings. */
-  verdict?: UpgradeVerdict | null;
-  deltas?: ItemLine[];
+  /** Upgrade verdicts vs the equipped item(s) (one per ring / hand), with the stat changes each brings. */
+  verdicts?: VerdictView[];
 }) {
   const d = props.desc;
   return (
@@ -112,34 +111,58 @@ export function ItemTooltip(props: {
           </div>
         ))}
       </div>
-      {props.verdict && (
-        <div class={`dte-tip-verdict v-${props.verdict}`}>
-          <div class="dte-tip-verdict-title">{t(`ui.tip.verdict.${props.verdict}`)}</div>
-          {props.deltas?.map((l, i) => (
+      {props.verdicts?.map((v, k) => (
+        <div key={k} class={`dte-tip-verdict v-${v.verdict}`}>
+          <div class="dte-tip-verdict-title">
+            {t(`ui.tip.verdict.${v.verdict}`)}
+            {v.side && <span class="dte-tip-verdict-side"> · {v.side}</span>}
+            {!!v.pct && (
+              <span class="dte-tip-verdict-pct">
+                {' '}
+                {v.pct > 0 ? '+' : ''}
+                {v.pct}%
+              </span>
+            )}
+          </div>
+          {v.deltas.map((l, i) => (
             <div key={i} class={`dte-tip-line s-${l.style}`}>
               {l.style === 'better' ? '▲ ' : l.style === 'worse' ? '▼ ' : ''}
               {l.text}
             </div>
           ))}
         </div>
-      )}
+      ))}
       {props.footer && <div class={`dte-tip-footer ${props.footerTone ?? ''}`}>{props.footer}</div>}
       <Actions actions={props.actions} />
     </div>
   );
 }
 
+/** One comparison against an equipped item: `side` names the ring / hand when there are two. */
+export interface VerdictView {
+  verdict: UpgradeVerdict;
+  side?: string;
+  /** Overall change in percent (rough power score); absent for an empty slot. */
+  pct?: number;
+  deltas: ItemLine[];
+}
+
 /** Item tooltip with optional side-by-side comparison against equipped item(s). */
 export function ItemCompareTooltip(props: {
   main: Parameters<typeof ItemTooltip>[0];
-  compare?: ItemDescription[];
+  compare?: { desc: ItemDescription; side?: string }[];
   colorblind?: boolean;
 }) {
   return (
     <div class="dte-tip-compare">
       <ItemTooltip {...props.main} />
       {props.compare?.map((c, i) => (
-        <ItemTooltip key={i} desc={c} header={t('ui.tip.compare')} colorblind={props.colorblind} />
+        <ItemTooltip
+          key={i}
+          desc={c.desc}
+          header={c.side ? `${t('ui.tip.compare')} · ${c.side}` : t('ui.tip.compare')}
+          colorblind={props.colorblind}
+        />
       ))}
     </div>
   );

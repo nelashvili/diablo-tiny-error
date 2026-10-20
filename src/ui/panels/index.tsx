@@ -3,18 +3,25 @@
  * Desktop/iPad: D2 layout (left + right docks, centered dialogs). Phone/narrow: full-screen
  * sheet with tabs. Owns the held-item ghost, tooltips and Esc handling.
  */
-import { compareItems, type ItemDescription, type ItemLine } from '../../core/items/describe';
+import { compareItems, type ItemDescription } from '../../core/items/describe';
 import type { ItemInstance } from '../../core/items/types';
-import { itemScore, type UpgradeVerdict } from '../../core/items/upgrade';
+import { upgradePct, upgradeVerdict } from '../../core/items/upgrade';
+import { DUAL_WIELD } from '../../core/player/weapon';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { GroundItemEntity, PlayerEntity } from '../../core/sim/entities';
 import type { Difficulty } from '../../core/types';
 import type { PanelId, UiApi } from '../types';
-import { ItemCompareTooltip, SkillTooltip, TooltipLayer, type TipAction } from '../tooltips';
+import {
+  ItemCompareTooltip,
+  SkillTooltip,
+  TooltipLayer,
+  type TipAction,
+  type VerdictView,
+} from '../tooltips';
 import { CharacterPanel } from './CharacterPanel';
 import { HeldGhost, Tabs } from './common';
-import { CtlContext, PanelCtl, RING_SLOTS, useCtl as ctlFromContext, type TipState } from './ctl';
+import { CtlContext, PanelCtl, useCtl as ctlFromContext, type TipState } from './ctl';
 import { Icon } from './icons';
 import { HeroPanel } from './HeroPanel';
 import { InventoryPanel } from './InventoryPanel';
@@ -233,31 +240,48 @@ export function Panels(props: PanelsProps) {
 }
 
 interface Comparison {
-  compare?: ItemDescription[];
-  verdict: UpgradeVerdict | null;
-  deltas?: ItemLine[];
+  compare?: { desc: ItemDescription; side?: string }[];
+  verdicts?: VerdictView[];
 }
-const NO_COMPARE: Comparison = { verdict: null };
+const NO_COMPARE: Comparison = {};
 
-/** What the player wears in the item's slot(s), the upgrade verdict and the stat deltas. */
+/**
+ * What the player wears in the item's slot(s) and how the item compares with each: with two rings
+ * or two blades, one verdict per side (which one it beats, and by how much).
+ */
 function compareWithEquipped(
   ctl: PanelCtl,
   services: PanelServices,
   player: PlayerEntity,
   item: ItemInstance,
 ): Comparison {
-  const slots = ctl.slotsFor(item);
-  const eq = (slots === RING_SLOTS ? RING_SLOTS : slots.slice(0, 1))
-    .map((s) => player.equipment[s])
-    .filter((i) => !!i && i.uid !== item.uid);
-  const verdict = ctl.upgradeOf(item, true);
-  // Against the weaker ring, matching the verdict; an empty slot shows the item's own stats.
-  const worst = eq.length > 1 ? eq.reduce((a, b) => (itemScore(a!) <= itemScore(b!) ? a : b)) : eq[0];
-  return {
-    compare: eq.map((i) => services.describeItem(i!)),
-    verdict,
-    ...(verdict ? { deltas: compareItems(item, worst ?? undefined) } : {}),
-  };
+  if (!ctl.upgradeOf(item, true)) return NO_COMPARE;
+  const slots = ctl.compareSlots(item);
+  const two = slots.length > 1;
+  const compare: NonNullable<Comparison['compare']> = [];
+  const verdicts: VerdictView[] = [];
+  for (const s of slots) {
+    const cur = player.equipment[s];
+    const side = two ? t(`ui.tip.side.${s}`) : undefined;
+    const verdict = upgradeVerdict(item, [cur]);
+    if (!verdict) continue;
+    if (cur) compare.push({ desc: services.describeItem(cur), side });
+    const deltas = compareItems(item, cur);
+    // A second blade in an empty off hand also brings the dual-wield speed.
+    if (!cur && s === 'offHand')
+      deltas.unshift({ text: t('item.cmp.dualWield', { ias: DUAL_WIELD.attackSpeed }), style: 'better' });
+    verdicts.push({
+      verdict,
+      side: side && !cur ? `${side} (${t('ui.tip.side.empty')})` : side,
+      ...(cur ? { pct: upgradePct(item, cur) } : {}),
+      deltas,
+    });
+  }
+  // The side it improves most comes first.
+  const rank = (v: VerdictView) =>
+    (v.verdict === 'up' ? 2 : v.verdict === 'same' ? 1 : 0) * 1000 + (v.pct ?? 999);
+  verdicts.sort((a, b) => rank(b) - rank(a));
+  return { compare, verdicts };
 }
 
 /** Hovering an item lying in the world shows its full tooltip (stats + upgrade verdict). */
@@ -274,7 +298,7 @@ function GroundItemTip({ api, player }: { api: UiApi; player: PlayerEntity }) {
   const at = api.store.worldToScreen(g.pos, 0.2);
   if (!at) return null;
   const colorblind = api.store.settings.value.colorblind !== 'none';
-  const { compare, verdict, deltas } = compareWithEquipped(ctl, env.services, player, g.item);
+  const { compare, verdicts } = compareWithEquipped(ctl, env.services, player, g.item);
   return (
     <TooltipLayer
       anchor={{ x: at.x - 24, y: at.y - 24, w: 48, h: 48 }}
@@ -283,7 +307,7 @@ function GroundItemTip({ api, player }: { api: UiApi; player: PlayerEntity }) {
       <ItemCompareTooltip
         colorblind={colorblind}
         compare={compare}
-        main={{ desc: env.services.describeItem(g.item), colorblind, verdict, deltas }}
+        main={{ desc: env.services.describeItem(g.item), colorblind, verdicts }}
       />
     </TooltipLayer>
   );
@@ -298,7 +322,7 @@ function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }
   const c = tip.content;
   if (c.kind === 'item') {
     const desc = services.describeItem(c.item);
-    const { compare, verdict, deltas } =
+    const { compare, verdicts } =
       c.where.kind === 'grid' ? compareWithEquipped(ctl, services, player, c.item) : NO_COMPARE;
     let footer: string | undefined;
     let footerTone: 'ok' | 'bad' | undefined;
@@ -315,7 +339,7 @@ function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }
         <ItemCompareTooltip
           colorblind={colorblind}
           compare={compare}
-          main={{ desc, footer, footerTone, actions, colorblind, verdict, deltas }}
+          main={{ desc, footer, footerTone, actions, colorblind, verdicts }}
         />
       </TooltipLayer>
     );

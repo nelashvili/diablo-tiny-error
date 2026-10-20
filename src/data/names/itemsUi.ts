@@ -53,6 +53,7 @@ const out: Record<string, string> = {
   'item.damage.ranged': 'Ranged Damage: {min} to {max}',
   'item.speed': 'Attack Speed: {v}/sec',
   'item.dps': 'Damage per second: {v}',
+  'item.cmp.dualWield': 'A blade in each hand: +{ias}% attack speed',
   'item.dualWield': 'Dual wield: a weapon in each hand gives +{ias}% attack speed',
   'item.defense': 'Defense: {v}',
   'item.block': 'Chance to Block: {v}%',

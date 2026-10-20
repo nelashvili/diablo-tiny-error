@@ -86,6 +86,14 @@ export function itemScore(item: ItemInstance): number {
 
 export type UpgradeVerdict = 'up' | 'down' | 'same';
 
+/** How much stronger `candidate` is than `equipped`, in percent of the equipped item's score. */
+export function upgradePct(candidate: ItemInstance, equipped: ItemInstance): number {
+  const cur = itemScore(equipped);
+  const mine = itemScore(candidate);
+  if (cur <= 0) return mine > 0 ? 100 : 0;
+  return Math.round((mine / cur - 1) * 100);
+}
+
 /**
  * Compare `candidate` with what is equipped in the slot(s) it would go into. With several slots
  * (rings) it is measured against the weaker one; an empty slot is always an upgrade.
