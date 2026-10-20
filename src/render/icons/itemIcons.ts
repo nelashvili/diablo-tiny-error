@@ -13,10 +13,12 @@ import { parseWeaponStyle } from '../models/weaponStyle';
 import { AssetLoader } from '../models/loader';
 import { buildItemShape } from '../models/placeholders';
 import { KIND_COLORS, itemLook } from '../models/itemLook';
+import { buildWornDisplay } from '../models/wearables';
+import { parseLookKey } from '../../core/items/lookup';
 
 export interface ItemIconSource {
   /** PNG data URL for the base, or null while it is being prepared (`onReady` fires when it is). */
-  get(baseId: string, onReady?: () => void): string | null;
+  get(lookKey: string, onReady?: () => void): string | null;
 }
 
 /** Pixels per inventory cell; icons are rendered at the item's cell aspect. */
@@ -110,11 +112,13 @@ export function createItemIcons(): ItemIconSource {
   ) => {
     const r = context();
     if (!r) return null;
-    const { id, kind, glow, body: lineBody } = itemLook(baseId, base);
+    const { id, kind, glow, body: lineBody, worn } = itemLook(baseId, base);
     const entry = getModelEntry(id);
     let obj: THREE.Object3D;
     if (procedural(id)) asset = null;
-    if (isLitesaberId(id)) obj = buildLitesaber(undefined, isDoubleSaberId(id), parseWeaponStyle(id)).object;
+    if (worn) obj = buildWornDisplay(worn);
+    else if (isLitesaberId(id))
+      obj = buildLitesaber(undefined, isDoubleSaberId(id), parseWeaponStyle(id)).object;
     else if (asset) obj = createAttachment('mainHand', id, undefined, entry, asset).object;
     else if (HELD.has(kind) || AIMED.has(kind)) {
       obj = createAttachment('mainHand', id, undefined, undefined, null).object;
@@ -164,9 +168,9 @@ export function createItemIcons(): ItemIconSource {
         if (onReady) waiting.add(onReady);
         return null;
       }
-      const base = DB.items.get(baseId);
-      const { id } = itemLook(baseId, base);
-      const url = procedural(id) ? null : getModelEntry(id).url;
+      const base = DB.items.get(parseLookKey(baseId).base);
+      const { id, worn } = itemLook(baseId, base);
+      const url = procedural(id) || worn ? null : getModelEntry(id).url;
       if (!context()) return null;
       const ready = url ? loader!.peek(url) : null;
       if (!url || ready || loader!.hasFailed(url)) {

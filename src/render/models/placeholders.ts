@@ -8,6 +8,7 @@ import { glowMaterial, toonMaterial } from './toon';
 import { buildLitesaber } from './attachments';
 import { isDoubleSaberId } from './helpers';
 import { KIND_COLORS, itemLook } from './itemLook';
+import { buildWornDisplay } from './wearables';
 import { parseWeaponStyle } from './weaponStyle';
 
 type Placeholder = ModelEntry['placeholder'];
@@ -717,8 +718,10 @@ class ItemRig implements Rig {
       body = ('body' in look && look.body) || kc?.[0] || body;
       glow = ('glow' in look && look.glow) || kc?.[1] || glow;
     } else kind = classifyItem(name);
-    const shape =
-      kind === 'litesaber'
+    const worn = name.startsWith('drop.') ? itemLook(name.slice(5)).worn : undefined;
+    const shape = worn
+      ? buildWornDisplay(worn)
+      : kind === 'litesaber'
         ? buildLitesaber(accent, isDoubleSaberId(name), parseWeaponStyle(name)).object
         : buildItemShape(kind, body, glow);
     shape.traverse((o) => {

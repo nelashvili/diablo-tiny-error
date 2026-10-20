@@ -2151,6 +2151,62 @@
 .dte-hero-bar .dte-btn.active {
   border-color: var(--ui-border-hi);
 }
+.dte-hero-sets {
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.dte-hero-sets p,
+.dte-hero-sets h4 {
+  margin: 0 0 6px;
+}
+.dte-hero-sets ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dte-hero-set {
+  padding: 6px 0;
+  border-top: 1px solid var(--ui-border);
+}
+.dte-hero-set-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dte-hero-set-head .dte-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.dte-hero-set-head .dte-btn.active {
+  border-color: var(--ui-border-hi);
+}
+.dte-hero-set-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.dte-hero-set-name {
+  flex: 1;
+  color: var(--q-set);
+  font-weight: 600;
+}
+.dte-hero-set-pieces {
+  padding-left: 18px !important;
+  margin-top: 4px !important;
+}
+.dte-hero-set-pieces li.found {
+  color: var(--q-set);
+}
+.dte-hero-set-pieces li.worn {
+  color: var(--q-set);
+  font-weight: 600;
+}
+.dte-hero-set-pieces li.missing {
+  opacity: 0.45;
+  font-style: italic;
+}
 .compact .p-hero .dte-hero-stage {
   height: auto;
   flex: 1;

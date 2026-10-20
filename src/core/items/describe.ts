@@ -10,7 +10,7 @@ import type { ItemInstance } from './types';
 
 export interface ItemLine {
   text: string;
-  /** Style hint: 'base' | 'mod' | 'req' | 'reqFail' | 'set' | 'flavor' | 'socket' | 'blade' | 'better' | 'worse'. */
+  /** Style hint: 'base' | 'mod' | 'req' | 'reqFail' | 'set' | 'setMissing' | 'flavor' | 'socket' | 'blade' | 'better' | 'worse'. */
   style: string;
 }
 
@@ -25,6 +25,8 @@ export interface ItemDescription {
 export interface DescribeCtx {
   stats?: { level?: number; strength?: number; dexterity?: number };
   classId?: ClassId;
+  /** Set item ids the hero is wearing (set tooltips mark them). */
+  worn?: ReadonlySet<string>;
 }
 
 const signed = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
@@ -201,14 +203,27 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
   const ref = item.setItemId ? findSetItem(item.setItemId) : undefined;
   if (ref) {
     push(t(ref.set.name), 'set');
-    for (const it of ref.set.items) push(t('item.set.owned', { name: t(it.name) }), 'set');
+    if (ref.set.forClass) push(t('item.set.for', { class: t(`class.${ref.set.forClass}`) }), 'set');
+    for (const it of ref.set.items)
+      push(
+        t(ctx?.worn?.has(it.id) ? 'item.set.worn' : 'item.set.owned', { name: t(it.name) }),
+        ctx?.worn && !ctx.worn.has(it.id) ? 'setMissing' : 'set',
+      );
     for (const [n, mods] of Object.entries(ref.set.bonuses)) {
       const text = modLines(
         mods.map((m) => ({ stat: m.stat, op: m.op, value: m.max, ...(m.param ? { param: m.param } : {}) })),
       );
       push(t('item.set.bonus', { n, text: text.join(', ') }), 'set');
     }
+    if (ref.set.look) push(t('item.set.full'), 'set');
   }
+  // history
+  const flavor = ref
+    ? `flavor.setitem.${ref.item.id}`
+    : item.quality === 'unique' && item.uniqueId
+      ? `flavor.uniq.${item.uniqueId}`
+      : b.flavor;
+  if (flavor && hasName(flavor)) push(t(flavor), 'flavor');
   return { name, ...(baseName ? { baseName } : {}), quality: item.quality, lines };
 }
 

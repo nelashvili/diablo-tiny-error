@@ -10,6 +10,7 @@ import type { GameEvent } from '../core/sim/events';
 import type { GeneratedLevel } from '../core/world/types';
 import type { ActorMode } from '../core/sim/entities';
 import type { BufferGeometry, Material, Object3D } from 'three';
+import type { WearShape } from '../data/items/_armorTable';
 
 export type QualityLevel = 'low' | 'medium' | 'high';
 
@@ -137,6 +138,27 @@ export interface ArmorLookRef {
   glow: number;
 }
 
+/** Worn gear slots built as shapes on the hero's bones (render/models/wearables.ts). */
+export type WornSlot = 'chest' | 'gloves' | 'belt' | 'boots';
+
+/** What one worn piece looks like (render/models/wornSpec.ts builds it from an equipped item). */
+export interface WornSpec {
+  /** Same key, same mesh: the visual only rebuilds when it changes. */
+  key: string;
+  slot: WornSlot;
+  shape: WearShape;
+  primary: number;
+  trim: number;
+  /** Glow strips (elite tier, set and unique pieces); 0 = none. */
+  glow: number;
+  /** 0 normal, 1 exceptional (trim, rivets), 2 elite (gold and glow). */
+  tier: number;
+  /** 0..1, fixed per item (from its uid): small differences between drops of the same base. */
+  vary: number;
+  /** A colored gem on rare, set and unique pieces (0 = none). */
+  accent: number;
+}
+
 export interface EntityVisual {
   readonly object: Object3D;
   /** Play the clip for an actor mode; `t` = seconds in mode (for sync), speedMul for IAS/FCR. */
@@ -152,6 +174,10 @@ export interface EntityVisual {
   ): void;
   /** Armor look for a body part (glTF heroes only; placeholders ignore it). null = the hero's own. */
   setOutfit?(part: 'head' | 'body' | 'arms' | 'legs', look: ArmorLookRef | null): void;
+  /** Worn gear on the body (glTF heroes only). null takes it off. */
+  setWorn?(slot: WornSlot, spec: WornSpec | null): void;
+  /** A full set's aura around the hero's feet (its color), or null. */
+  setAura?(color: number | null): void;
   /** Hover/target highlight (outline) on/off. */
   setHighlight(on: boolean, color?: number): void;
   /** Tint for champions/uniques/status (frozen blue, toxin green). null = clear. */

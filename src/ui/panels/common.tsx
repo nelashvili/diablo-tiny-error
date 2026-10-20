@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../data/names';
 import type { ContainerRef } from '../../core/sim/commands';
 import type { GridContainer, ItemInstance } from '../../core/items/types';
+import { itemLookKey } from '../../core/items/lookup';
 import type { EquipSlot } from '../../core/types';
 import { useCtl, type Holder } from './ctl';
 import { Icon, itemGlyph, SLOT_GLYPH } from './icons';
@@ -70,7 +71,7 @@ export function ItemVisual({ item, compact }: { item: ItemInstance; compact?: bo
   const base = services.itemBase(item.base);
   const glyph = itemGlyph(base, item.base);
   const [, iconReady] = useState(0);
-  const art = services.itemIcon?.(item.base, () => iconReady((n) => n + 1)) ?? null;
+  const art = services.itemIcon?.(itemLookKey(item), () => iconReady((n) => n + 1)) ?? null;
   const verdict = compact ? null : ctl.upgradeOf(item);
   const broken = item.durability && item.durability.cur <= 0;
   const low = item.durability && item.durability.cur / Math.max(1, item.durability.max) < 0.2;

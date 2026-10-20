@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ActorMode } from '../../core/sim/entities';
 import type { HeadgearStyle } from './outfit';
+import type { WornSlot, WornSpec } from '../types';
 
 export type AttachSlot = 'mainHand' | 'offHand' | 'head' | 'chest';
 
@@ -21,6 +22,8 @@ export interface Rig {
    * sockets): put on a helm look (`null` takes it off). Adds/removes meshes in `bodyMeshes`.
    */
   wearHeadgear?(style: HeadgearStyle | null, color: number): void;
+  /** Rigs that build worn gear on the body (heroes): put on a slot's gear (`null` takes it off). */
+  wearItem?(slot: WornSlot, spec: WornSpec | null): void;
   /** Bodies modelled in their own armor and helmet: helm and body-armor items recolor it, never hang on it. */
   readonly armored?: boolean;
   dispose(): void;

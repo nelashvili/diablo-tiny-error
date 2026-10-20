@@ -49,6 +49,7 @@ import { QuestTracker } from './quests';
 import { isVendor, repairCost } from '@/core/player/vendor';
 import { STASH_GRID } from '@/core/player/inventory';
 import { emptyGrid } from '@/core/items/grid';
+import { findSetItem } from '@/core/items/lookup';
 import type { LoreView, QuestLogView, StashView, VendorView } from '@/ui/panels/services';
 import type { DialogueView, WaypointView } from '@/ui/panels/services';
 import type { ActId } from '@/core/types';
@@ -208,12 +209,12 @@ export class Game {
     const quests = this.quests.activeQuests();
     return {
       entries: [...DB.lore.values()]
-        .filter((l) => l.act === act)
+        .filter((l) => l.act === act || (l.unlock && 'set' in l.unlock))
         .map((l) => ({
           id: l.id,
           titleKey: l.title,
           textKey: l.text,
-          unlocked: loreUnlocked(l, quests, this.quests.state),
+          unlocked: loreUnlocked(l, quests, this.quests.state, this.setsFound()),
         })),
     };
   }
@@ -241,9 +242,40 @@ export class Game {
     this.resetWorld();
   }
 
+  /** Set pieces this hero has ever held (set item ids), kept in the save. */
+  private readonly setPieces = new Set<string>();
+
+  /** Ids of the sets with at least one piece found. */
+  setsFound(): Set<string> {
+    const out = new Set<string>();
+    for (const id of this.setPieces) {
+      const set = findSetItem(id)?.set;
+      if (set) out.add(set.id);
+    }
+    return out;
+  }
+
+  /** Every set piece the hero ever found (set item ids). */
+  setPiecesFound(): ReadonlySet<string> {
+    return this.setPieces;
+  }
+
+  /** Remember the set pieces the hero carries, wears or stashed. */
+  private noteSetPieces(): void {
+    const p = this.player;
+    if (!p) return;
+    const note = (it: { setItemId?: string } | undefined) => {
+      if (it?.setItemId) this.setPieces.add(it.setItemId);
+    };
+    for (const it of Object.values(p.equipment)) note(it);
+    for (const e of p.inventory.items) note(e.item);
+    for (const e of p.stash?.items ?? []) note(e.item);
+  }
+
   private resetWorld(): void {
     const w = this.world;
     this.loreOpen = null;
+    this.setPieces.clear();
     w.entities.clear();
     w.localPlayerId = null;
     w.level = null;
@@ -304,6 +336,7 @@ export class Game {
     const save = await this.store.loadCharacter(id);
     if (!save) return false;
     this.save = save;
+    for (const id of save.setPiecesFound ?? []) this.setPieces.add(id);
     const init = saveToPlayerInit(save);
     const town = this.levels.townOf(save.progress[save.currentDifficulty]?.currentAct ?? 1);
     this.world.difficulty = save.currentDifficulty;
@@ -358,6 +391,7 @@ export class Game {
       ...init.extra,
       ...(p.stash ? { stash: p.stash } : {}),
       progress,
+      setPiecesFound: [...this.setPieces],
       updatedAt: Date.now(),
       playTimeSec: Math.round(this.playTime),
     });
@@ -506,7 +540,9 @@ export class Game {
   /** Announce Holocron entries that the story just unlocked. */
   private checkLore(): void {
     const quests = this.quests.activeQuests();
-    const open = [...DB.lore.values()].filter((l) => loreUnlocked(l, quests, this.quests.state));
+    this.noteSetPieces();
+    const found = this.setsFound();
+    const open = [...DB.lore.values()].filter((l) => loreUnlocked(l, quests, this.quests.state, found));
     const first = this.loreOpen === null;
     const seen = (this.loreOpen ??= new Set());
     for (const l of open) {

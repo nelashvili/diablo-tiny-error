@@ -60,6 +60,7 @@ export function App({ game }: { game: Game }): JSX.Element {
     () => ({
       itemIcon: game.itemIcons.get,
       heroPreview: game.heroPreview,
+      setPiecesFound: () => game.setPiecesFound(),
       price: itemValue,
       speak: (keys: readonly string[]) => game.speak(keys),
     }),

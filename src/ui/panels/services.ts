@@ -9,14 +9,14 @@ import { useContext } from 'preact/hooks';
 import { DB } from '../../data/db';
 import { describeItem } from '../../core/items/describe';
 import { itemSize } from '../../core/items/grid';
-import type { ItemDescription } from '../../core/items/describe';
+import type { DescribeCtx, ItemDescription } from '../../core/items/describe';
 import type { Equipment, GridContainer, ItemInstance } from '../../core/items/types';
 import type { ActId, ClassId, DefId, EntityId, ItemQuality } from '../../core/types';
 import type { ClassDef, ItemBaseDef, SkillDef } from '../../data/schema';
 
 export interface PanelServices {
   itemSize(item: ItemInstance): { w: number; h: number };
-  describeItem(item: ItemInstance): ItemDescription;
+  describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescription;
   itemBase(baseId: DefId): ItemBaseDef | undefined;
   classDef(id: ClassId): ClassDef | undefined;
   skillsForClass(id: ClassId): SkillDef[];
@@ -24,12 +24,17 @@ export interface PanelServices {
   xpForLevel?(level: number): number;
   /** Vendor price for buying an item from a vendor / selling one to it. */
   price(item: ItemInstance, mode: 'buy' | 'sell'): number;
-  /** Rendered item art (image URL), or null to use the SVG glyph; `onReady` fires once it exists. */
-  itemIcon?(baseId: DefId, onReady: () => void): string | null;
+  /**
+   * Rendered item art (image URL) for an item look key (core/items itemLookKey: the base, or the set
+   * or unique it wears the colors of), or null to use the SVG glyph; `onReady` fires once it exists.
+   */
+  itemIcon?(lookKey: string, onReady: () => void): string | null;
   /** Speak these lines aloud (recorded voices), replacing any current speech; [] stops it. */
   speak?(lineKeys: readonly string[]): void;
   /** The live 3D hero for the Hero screen, or null without WebGL. */
   heroPreview?(): HeroPreviewView | null;
+  /** Set pieces the hero has ever found (set item ids). */
+  setPiecesFound?(): ReadonlySet<string>;
 }
 
 export type HeroPose = 'idle' | 'walk' | 'attack' | 'cast';

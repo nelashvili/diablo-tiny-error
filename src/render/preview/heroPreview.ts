@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { EntityVisual, VisualFactory } from '../types';
 import { createVisualFactory } from '../models';
-import { applyDress, dressOf, type Dress, type WornItem } from '../models/dress';
+import { applyDress, dressKey, dressOf, type Dress, type WornItem } from '../models/dress';
 
 export type PreviewPose = 'idle' | 'walk' | 'attack' | 'cast';
 
@@ -233,14 +233,7 @@ function prepare(root: THREE.Object3D): void {
 }
 
 function sameDress(a: Dress, b: Dress): boolean {
-  return (
-    a.mainHand === b.mainHand &&
-    a.offHand === b.offHand &&
-    a.head === b.head &&
-    a.chest === b.chest &&
-    a.gloves === b.gloves &&
-    a.boots === b.boots
-  );
+  return dressKey(a) === dressKey(b);
 }
 
 /** Radial glow texture for the floor disc. */

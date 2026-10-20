@@ -122,6 +122,13 @@ describe('Holocron unlocks', () => {
     expect(ids).not.toContain('theError');
   });
 
+  it('opens a set story once a piece of that set is found', () => {
+    expect(open({})).not.toContain('set.templeGuard');
+    const ids = lore.filter((l) => loreUnlocked(l, quests, {}, new Set(['templeGuard']))).map((l) => l.id);
+    expect(ids).toContain('set.templeGuard');
+    expect(ids).not.toContain('set.fettsonsLegacy');
+  });
+
   it('every entry and NPC topic has text', () => {
     for (const l of lore) {
       expect(hasName(l.title), l.title).toBe(true);

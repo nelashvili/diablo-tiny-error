@@ -39,6 +39,8 @@ export interface CharacterSave {
   respecs: Record<Difficulty, number>;
   /** Permanent quest bonuses already applied (so they're not double-counted). */
   questBonuses: { lifeMax: number; resistAll: number; skillPoints: number; statPoints: number };
+  /** Set pieces this hero has ever found (set item ids): opens set stories and the Hero screen's sets. */
+  setPiecesFound?: DefId[];
 }
 
 export interface DifficultyProgress {

@@ -3,7 +3,7 @@ import { DB } from '../../data/db';
 import { hasName } from '../../data/names';
 import { Rng } from '../rng';
 import { compareItems, describeItem } from './describe';
-import { createItem } from './create';
+import { createItem, setAffinity } from './create';
 import {
   canEquip,
   isTwoHanded,
@@ -423,5 +423,14 @@ describe('describeItem', () => {
     expect(lines.find((l) => l.text.includes('Attack Speed'))!.style).toBe('better');
     expect(lines.find((l) => l.text.includes('Hit Recovery'))!.style).toBe('worse');
     expect(compareItems(a, undefined).length).toBeGreaterThan(0);
+  });
+});
+
+describe('class sets', () => {
+  it('set pieces lean toward the sets tailored for the hero', () => {
+    expect(setAffinity({ forClass: 'yediKnight' }, 'yediKnight')).toBeGreaterThan(1);
+    expect(setAffinity({ forClass: 'yediKnight' }, 'forseAdept')).toBeLessThan(1);
+    expect(setAffinity({}, 'forseAdept')).toBe(1);
+    expect(setAffinity({ forClass: 'yediKnight' }, undefined)).toBe(1);
   });
 });

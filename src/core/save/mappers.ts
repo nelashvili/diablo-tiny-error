@@ -16,6 +16,7 @@ export interface PlayerSaveExtra {
   currentDifficulty: Difficulty;
   merc?: CharacterSave['merc'];
   questBonuses: CharacterSave['questBonuses'];
+  setPiecesFound?: DefId[];
 }
 
 /** Plain data the sim uses to construct a PlayerEntity (level, items, skills...). */
@@ -95,6 +96,7 @@ export function playerToSave(p: SavablePlayer, extra: PlayerSaveExtra): Characte
   };
   if (p.swap) save.swap = clone(p.swap);
   if (extra.merc) save.merc = clone(extra.merc);
+  if (extra.setPiecesFound?.length) save.setPiecesFound = [...extra.setPiecesFound];
   return save;
 }
 
@@ -130,5 +132,6 @@ export function saveToPlayerInit(save: CharacterSave): PlayerInit {
   };
   if (save.swap) init.swap = clone(save.swap);
   if (save.merc) init.extra.merc = clone(save.merc);
+  if (save.setPiecesFound?.length) init.extra.setPiecesFound = [...save.setPiecesFound];
   return init;
 }

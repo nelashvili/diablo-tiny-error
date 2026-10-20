@@ -3,7 +3,7 @@ import type { EntityId } from '../../core/types';
 import type { WorldView } from '../../core/sim/world';
 import type { Entity, EntityKind } from '../../core/sim/entities';
 import type { EntityVisual, VfxSystem, VisualFactory } from '../types';
-import { applyDress, dressOf, type Dress } from '../models/dress';
+import { applyDress, dressOf, type Dress, type WornItem } from '../models/dress';
 import { getModelEntry } from '../assets/catalog';
 import { DB } from '../../data/db';
 import { MotionBuffer, type MotionSample } from './interp';
@@ -14,6 +14,7 @@ import { RANGED_WEAPON_CLASSES } from '../models/helpers';
 import { weaponModelId, weaponModelOf } from '../models/weaponStyle';
 import { BLADE_LOOKS } from '../models/bladeLook';
 import { bladeColor } from '../../core/items/blade';
+import { itemLookKey } from '../../core/items/lookup';
 
 /** Model id for an item base: weapons by class, line and tier (see weaponStyle), the rest by base id. */
 function itemModelId(baseId: string, quality?: string): string {
@@ -21,8 +22,8 @@ function itemModelId(baseId: string, quality?: string): string {
 }
 
 /** Items on the ground: weapons by their class model; everything else from its data (itemLook). */
-function groundModelId(item: Parameters<typeof weaponModelOf>[0]): string {
-  return DB.items.get(item.base)?.weaponClass ? weaponModelOf(item) : `item.drop.${item.base}`;
+function groundModelId(item: WornItem): string {
+  return DB.items.get(item.base)?.weaponClass ? weaponModelOf(item) : `item.drop.${itemLookKey(item)}`;
 }
 
 const TINT_NONE = -1;
@@ -615,7 +616,7 @@ export class EntitySync {
   private applyEquipment(
     r: Rec,
     v: EntityVisual,
-    eq: Readonly<Record<string, { base: string; quality?: string }>>,
+    eq: Readonly<Partial<Record<string, WornItem>>>,
     emptyHand = false,
   ): void {
     const d = dressOf(eq, emptyHand);

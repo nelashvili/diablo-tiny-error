@@ -9,6 +9,8 @@ export default [
   {
     id: 'ewokzHunter',
     name: 'set.ewokzHunter',
+    // Fur, leaves and moss: forest browns and greens.
+    look: { primary: 0x6a5032, trim: 0x5f8a34, glow: 0x9be36a },
     items: [
       {
         id: 'ewokzHunterHelm',
@@ -40,6 +42,8 @@ export default [
   {
     id: 'tuskinRaider',
     name: 'set.tuskinRaider',
+    // Sand-colored wraps with rusty metal.
+    look: { primary: 0xc8a878, trim: 0x7a4a2a, glow: 0xffa040 },
     items: [
       {
         id: 'tuskinRaiderGloves',

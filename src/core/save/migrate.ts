@@ -224,6 +224,8 @@ export function migrateCharacter(raw: unknown): MigrateResult<CharacterSave> {
       skillPoints: num(qb['skillPoints'], 0),
       statPoints: num(qb['statPoints'], 0),
     };
+    const found = r['setPiecesFound'];
+    if (Array.isArray(found)) out.setPiecesFound = found.filter((x): x is string => typeof x === 'string');
     const problems = sanityCheckCharacter(out);
     if (problems.length) return { ok: false, error: problems.join('; ') };
     return { ok: true, value: out, migratedFrom: m.from, repairs };

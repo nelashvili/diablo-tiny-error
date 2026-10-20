@@ -10,6 +10,8 @@ import { enableRim, recolorMaterial } from './toon';
 import { replaceHelmet } from './headgear';
 import { buildArmor, buildHelmet, vertexColorToon } from './armor';
 import type { HeadgearStyle } from './outfit';
+import { buildWorn } from './wearables';
+import type { WornSlot, WornSpec } from '../types';
 
 const FADE = 0.15;
 /** Modes with alternative clips (`clips['attack.2']`, `clips['hit.3']`, ...), picked in turn so repeated swings and flinches differ. */
@@ -151,6 +153,9 @@ export class GltfRig implements Rig {
   private readonly rest: { o: THREE.Object3D; p: THREE.Vector3; q: THREE.Quaternion; s: THREE.Vector3 }[] =
     [];
   private worn: { key: string; mesh: THREE.Mesh | null } | null = null;
+  /** Worn gear per slot: its key and meshes (solid, glow). */
+  private readonly gear = new Map<WornSlot, { key: string; meshes: THREE.SkinnedMesh[] }>();
+  readonly wearItem?: (slot: WornSlot, spec: WornSpec | null) => void;
 
   /** `anims`: the shared animation library when the entry names one (its clips replace the model's). */
   constructor(asset: LoadedAsset, entry: ModelEntry, anims: LoadedAsset | null = null) {
@@ -180,12 +185,16 @@ export class GltfRig implements Rig {
       const parts = buildArmor(this.model, entry.armor, entry.armor.hideBody ?? false);
       this.bodyMeshes.push(...parts.filter((m) => m.name !== 'Armor_Glow'));
     }
-    if (entry.anims && !entry.armor && !entry.helmet && entry.bones?.head) {
+    if (entry.anims && entry.bones?.head) {
       this.model.traverse((o) => {
         if ((o as THREE.Bone).isBone)
           this.rest.push({ o, p: o.position.clone(), q: o.quaternion.clone(), s: o.scale.clone() });
       });
-      this.wearHeadgear = (style, color) => this.putOnHeadgear(style, color);
+      if (!entry.armor && !entry.helmet)
+        this.wearHeadgear = (style, color) => this.putOnHeadgear(style, color);
+      // Gear goes on over built-in armor plates a size up.
+      const bulk = entry.armor ? 1.2 : 1;
+      this.wearItem = (slot, spec) => this.putOnGear(slot, spec, bulk);
     }
     // Actors get the rim light (outfit recolors start from rawMaterial, so mark that too).
     for (const mesh of this.bodyMeshes) {
@@ -368,7 +377,15 @@ export class GltfRig implements Rig {
     for (const p of style === 'circlet' ? hood : [...hood, ...hair]) p.obj.visible = false;
     const mat = vertexColorToon(color);
     enableRim(mat);
-    // Fit in the rest pose, then put the animated pose back.
+    const mesh = this.inRestPose(() => buildHelmet(this.model, style, mat));
+    if (!mesh) return;
+    mesh.userData.rawMaterial = mat;
+    worn.mesh = mesh;
+    this.bodyMeshes.push(mesh);
+  }
+
+  /** Fit something in the rest pose, then put the animated pose back. */
+  private inRestPose<T>(fit: () => T): T {
     const now = this.rest.map(
       ({ o }) => [o.position.clone(), o.quaternion.clone(), o.scale.clone()] as const,
     );
@@ -377,17 +394,37 @@ export class GltfRig implements Rig {
       r.o.quaternion.copy(r.q);
       r.o.scale.copy(r.s);
     }
-    const mesh = buildHelmet(this.model, style, mat);
+    const out = fit();
     this.rest.forEach(({ o }, i) => {
       const [p, q, s] = now[i]!;
       o.position.copy(p);
       o.quaternion.copy(q);
       o.scale.copy(s);
     });
-    if (!mesh) return;
-    mesh.userData.rawMaterial = mat;
-    worn.mesh = mesh;
-    this.bodyMeshes.push(mesh);
+    return out;
+  }
+
+  /** Boots, gloves, belt, chest extras: skinned pieces bound to the skeleton (wearables.ts). */
+  private putOnGear(slot: WornSlot, spec: WornSpec | null, bulk: number): void {
+    const had = this.gear.get(slot);
+    if ((had?.key ?? null) === (spec?.key ?? null)) return;
+    for (const m of had?.meshes ?? []) {
+      m.removeFromParent();
+      m.geometry.dispose();
+      const i = this.bodyMeshes.indexOf(m);
+      if (i >= 0) this.bodyMeshes.splice(i, 1);
+    }
+    this.gear.delete(slot);
+    if (!spec) return;
+    const mat = vertexColorToon();
+    enableRim(mat);
+    const meshes = this.inRestPose(() => buildWorn(this.model, spec, mat, bulk));
+    for (const m of meshes) {
+      if (m.name.endsWith('_Glow')) continue;
+      m.userData.rawMaterial = mat;
+      this.bodyMeshes.push(m);
+    }
+    this.gear.set(slot, { key: spec.key, meshes });
   }
 
   update(dt: number): void {

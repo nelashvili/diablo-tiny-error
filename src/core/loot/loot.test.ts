@@ -133,7 +133,7 @@ describe('quality & magic find', () => {
   });
 
   it('observed quality distribution follows ratios and MF', () => {
-    const base = DB.items.get('knightSaber')!; // has a... no unique; check rare/magic only
+    const base = DB.items.get('templarBlade')!; // no unique or set piece: rare/magic only
     const count = (mf: number): Record<string, number> => {
       const rng = new Rng(11);
       const out: Record<string, number> = {};

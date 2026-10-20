@@ -7,6 +7,7 @@ import { compareItems, itemDps, type ItemDescription } from '../../core/items/de
 import type { ItemInstance } from '../../core/items/types';
 import { upgradePct, upgradeVerdict } from '../../core/items/upgrade';
 import { DUAL_WIELD } from '../../core/player/weapon';
+import type { DescribeCtx } from '../../core/items/describe';
 import { isDualWieldBase } from '../../core/items/helpers';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { t } from '../../data/names';
@@ -347,10 +348,17 @@ function GroundItemTip({ api, player }: { api: UiApi; player: PlayerEntity }) {
       <ItemCompareTooltip
         colorblind={colorblind}
         compare={compare}
-        main={{ desc: env.services.describeItem(g.item), colorblind, verdicts }}
+        main={{ desc: env.services.describeItem(g.item, wornCtx(player)), colorblind, verdicts }}
       />
     </TooltipLayer>
   );
+}
+
+/** Tooltip context: the hero's class and worn set pieces (set tooltips mark what is worn). */
+function wornCtx(player: PlayerEntity): DescribeCtx {
+  const worn = new Set<string>();
+  for (const it of Object.values(player.equipment)) if (it?.setItemId) worn.add(it.setItemId);
+  return { classId: player.classId, worn };
 }
 
 function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }) {
@@ -361,7 +369,7 @@ function TipView({ tip, player }: { tip: TipState | null; player: PlayerEntity }
   const colorblind = ctl.api.store.settings.value.colorblind !== 'none';
   const c = tip.content;
   if (c.kind === 'item') {
-    const desc = services.describeItem(c.item);
+    const desc = services.describeItem(c.item, wornCtx(player));
     const { compare, verdicts } =
       c.where.kind === 'grid' ? compareWithEquipped(ctl, services, player, c.item) : NO_COMPARE;
     let footer: string | undefined;

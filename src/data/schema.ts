@@ -196,6 +196,8 @@ export interface ItemBaseDef {
   maxSockets: number;
   /** Class-specific item (gets class skill affixes). */
   classOnly?: ClassId;
+  /** A line of the item's history shown at the bottom of its tooltip. */
+  flavor?: NameKey;
   /** Sell value base, in Creditz. */
   cost: number;
   /** Consumables: what it does. */
@@ -229,6 +231,16 @@ export interface AffixDef {
   mods: { stat: StatId; op: 'flat' | 'percent'; min: number; max: number; param?: string }[];
 }
 
+/**
+ * A unique's or set's own colors on the hero: they replace the base line's palette, and `glow` lights
+ * its gems and strips (render/models/wornSpec.ts).
+ */
+export interface GearLook {
+  primary: number;
+  trim: number;
+  glow: number;
+}
+
 export interface UniqueDef {
   id: DefId;
   name: NameKey;
@@ -237,14 +249,20 @@ export interface UniqueDef {
   reqLevel: number;
   rarity: number;
   mods: { stat: StatId; op: 'flat' | 'percent'; min: number; max: number; param?: string }[];
+  /** Own colors (default: the base's palette with gold trim). Flavor text: `flavor.uniq.<id>`. */
+  look?: GearLook;
 }
 
 export interface SetDef {
   id: DefId;
   name: NameKey;
   items: { id: DefId; name: NameKey; base: DefId; mods: UniqueDef['mods']; reqLevel: number }[];
-  /** Partial set bonuses keyed by number of items worn. */
+  /** Partial set bonuses keyed by number of items worn (the full count is the full-set bonus). */
   bonuses: Record<number, UniqueDef['mods']>;
+  /** Tailored to one class: its drops lean toward that class's heroes (a set on class-only bases is theirs alone). */
+  forClass?: ClassId;
+  /** Every piece wears the set's colors; the full set lights an aura in `look.glow`. */
+  look?: GearLook;
 }
 
 export interface GemDef {
@@ -442,8 +460,11 @@ export interface LoreDef {
   title: NameKey;
   /** Body text; paragraphs separated by a blank line. */
   text: NameKey;
-  /** Opens when this quest starts or is finished; open from the start without it. */
-  unlock?: { quest: DefId; when: 'started' | 'done' };
+  /**
+   * Opens when this quest starts or is finished, or (set stories) once a piece of that set is found;
+   * open from the start without it. Set stories show in every act.
+   */
+  unlock?: { quest: DefId; when: 'started' | 'done' } | { set: DefId };
 }
 
 export interface QuestDef {

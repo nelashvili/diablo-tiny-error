@@ -26,9 +26,9 @@ export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
   if (style === 'circlet')
     // Forse Adept circlet: a thin band around the brow (hair stays out) with a crystal at the front.
     return [
-      mk(unit.torus(), main, 1.06, 1.06, 1.2, 0, 0.02, -0.02).rotateX(Math.PI / 2),
-      mk(unit.box(), main, 0.2, 0.16, 0.06, 0, 0.06, 0.52),
-      mk(unit.gem(), metal, 0.12, 0.18, 0.08, 0, 0.07, 0.56),
+      mk(unit.torus(), main, 0.8, 0.8, 1.2, 0, 0.11, 0.02).rotateX(Math.PI / 2 + 0.12),
+      mk(unit.box(), main, 0.15, 0.13, 0.05, 0, 0.07, 0.41),
+      mk(unit.gem(), metal, 0.1, 0.14, 0.07, 0, 0.08, 0.44),
     ];
   if (style === 'mando')
     return [

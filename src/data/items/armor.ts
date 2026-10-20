@@ -55,6 +55,7 @@ function build(): ItemBaseDef[] {
         durability: Math.round((DURABILITY[line.cls] ?? 12) * TIER_MUL.dur[t]!),
         maxSockets: sockets(line.cls, line.size.h),
         ...(line.classOnly ? { classOnly: line.classOnly } : {}),
+        flavor: `flavor.line.${camel(line.names[0])}`,
         cost: Math.round(line.cost * TIER_MUL.cost[t]!),
         modelId: `item.${id}`,
         icon: `icon.${id}`,

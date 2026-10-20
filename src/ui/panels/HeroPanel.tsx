@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../data/names';
+import { DB } from '../../data/db';
+import type { SetDef } from '../../data/schema';
 import type { PlayerEntity } from '../../core/sim/entities';
+import type { Equipment } from '../../core/items/types';
+import { createItem } from '../../core/items/create';
+import { Rng } from '../../core/rng';
 import { PanelFrame, Tabs } from './common';
 import { usePanelEnv, type HeroPose } from './services';
 
@@ -15,6 +20,13 @@ export function HeroPanel({ player, onClose }: { player: PlayerEntity; onClose?:
   const stage = useRef<HTMLDivElement>(null);
   const [pose, setPose] = useState<HeroPose>('idle');
   const [spin, setSpin] = useState(false);
+  const [showSets, setShowSets] = useState(false);
+  /** A set tried on in the preview (its id), or null for what is equipped. */
+  const [tryOn, setTryOn] = useState<string | null>(null);
+  const tried = useMemo(
+    () => (tryOn ? tryOnEquipment(player.equipment, tryOn) : null),
+    [tryOn, player.equipment],
+  );
   const drag = useRef<{ id: number; x: number } | null>(null);
 
   useEffect(() => {
@@ -34,7 +46,7 @@ export function HeroPanel({ player, onClose }: { player: PlayerEntity; onClose?:
   }, [preview]);
 
   // Re-dressed every render (the panels re-render each frame while open); a no-op when nothing changed.
-  useEffect(() => preview?.show(player.modelId, player.equipment));
+  useEffect(() => preview?.show(player.modelId, tried ?? player.equipment));
   useEffect(() => preview?.setPose(pose), [preview, pose]);
   useEffect(() => preview?.setAutoSpin(spin), [preview, spin]);
 
@@ -73,7 +85,90 @@ export function HeroPanel({ player, onClose }: { player: PlayerEntity; onClose?:
         >
           {t('ui.hero.spin')}
         </button>
+        <button
+          class={`dte-btn ${showSets ? 'active' : ''}`}
+          aria-pressed={showSets}
+          onClick={() => setShowSets((s) => !s)}
+        >
+          {t('ui.hero.sets')}
+        </button>
       </div>
+      {showSets && (
+        <SetList
+          player={player}
+          found={services.setPiecesFound?.() ?? new Set()}
+          tryOn={tryOn}
+          onTry={(id) => setTryOn((cur) => (cur === id ? null : id))}
+        />
+      )}
     </PanelFrame>
+  );
+}
+
+/** The hero's equipment with every piece of `setId` put on in its slot (the preview's "try on"). */
+function tryOnEquipment(eq: Equipment, setId: string): Equipment {
+  const set = DB.sets.get(setId);
+  const out: Equipment = { ...eq };
+  set?.items.forEach((piece, i) => {
+    const slot = DB.items.get(piece.base)?.slots[0];
+    if (slot) out[slot] = createItem(piece.base, { setItemId: piece.id, ilvl: 99 }, new Rng(i + 1));
+  });
+  return out;
+}
+
+/** Sets tailored for the hero first (by level), then the ones any hero can wear. */
+function setsFor(classId: string): { own: SetDef[]; any: SetDef[] } {
+  const minLevel = (s: SetDef) => Math.min(...s.items.map((i) => i.reqLevel));
+  const all = [...DB.sets.values()].sort((a, b) => minLevel(a) - minLevel(b));
+  return { own: all.filter((s) => s.forClass === classId), any: all.filter((s) => !s.forClass) };
+}
+
+function SetList({
+  player,
+  found,
+  tryOn,
+  onTry,
+}: {
+  player: PlayerEntity;
+  found: ReadonlySet<string>;
+  tryOn: string | null;
+  onTry: (setId: string) => void;
+}) {
+  const { own, any } = useMemo(() => setsFor(player.classId), [player.classId]);
+  const worn = new Set(Object.values(player.equipment).map((it) => it?.setItemId));
+  const row = (s: SetDef) => {
+    const n = s.items.filter((i) => found.has(i.id)).length;
+    const glow = s.look ? `#${s.look.glow.toString(16).padStart(6, '0')}` : undefined;
+    return (
+      <li key={s.id} class="dte-hero-set">
+        <div class="dte-hero-set-head">
+          <span
+            class="dte-hero-set-dot"
+            style={glow ? { background: glow, boxShadow: `0 0 6px ${glow}` } : undefined}
+          />
+          <span class="dte-hero-set-name">{t(s.name)}</span>
+          <span class="dte-dim">{t('ui.hero.setFound', { n, m: s.items.length })}</span>
+          <button class={`dte-btn ${tryOn === s.id ? 'active' : ''}`} onClick={() => onTry(s.id)}>
+            {t(tryOn === s.id ? 'ui.hero.tryOff' : 'ui.hero.tryOn')}
+          </button>
+        </div>
+        <ul class="dte-hero-set-pieces">
+          {s.items.map((i) => (
+            <li key={i.id} class={worn.has(i.id) ? 'worn' : found.has(i.id) ? 'found' : 'missing'}>
+              {found.has(i.id) || worn.has(i.id) ? t(i.name) : t('ui.hero.pieceMissing')}
+              {worn.has(i.id) && <span class="dte-dim"> ({t('ui.hero.pieceWorn')})</span>}
+            </li>
+          ))}
+        </ul>
+      </li>
+    );
+  };
+  return (
+    <div class="dte-hero-sets">
+      <p class="dte-dim">{t('ui.hero.setsHint')}</p>
+      <ul>{own.map(row)}</ul>
+      {any.length > 0 && <h4>{t('ui.hero.setsOther')}</h4>}
+      <ul>{any.map(row)}</ul>
+    </div>
   );
 }

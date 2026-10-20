@@ -150,8 +150,14 @@ export function nextHop(from: DefId, to: DefId, levels: readonly LevelDef[]): De
  * Whether a Holocron entry is open. A quest counts as started once it has progress or it is the
  * first unfinished quest (the one the hero has been briefed on).
  */
-export function loreUnlocked(def: LoreDef, quests: readonly QuestDef[], state: QuestStateMap): boolean {
+export function loreUnlocked(
+  def: LoreDef,
+  quests: readonly QuestDef[],
+  state: QuestStateMap,
+  setsFound: ReadonlySet<string> = new Set(),
+): boolean {
   if (!def.unlock) return true;
+  if ('set' in def.unlock) return setsFound.has(def.unlock.set);
   const { quest, when } = def.unlock;
   const p = state[quest];
   if (when === 'done') return !!p?.completed;

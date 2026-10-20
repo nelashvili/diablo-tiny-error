@@ -78,8 +78,9 @@ export function plate(
   pos: [number, number, number],
   size: [number, number, number],
   color: number,
+  rot?: [number, number, number],
 ): Piece {
-  return { bone, geo: unit.box(), pos, size, color };
+  return { bone, geo: unit.box(), pos, size, color, ...(rot ? { rot } : {}) };
 }
 
 /** Helmet meshes (headgear.ts) fitted around the head: centered above the Head bone, ~0.27 m. */
@@ -424,6 +425,9 @@ export function bindPieces(
   const front = new THREE.Vector3(0, 0, 1).applyQuaternion(model.getWorldQuaternion(_q)).normalize();
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(_q).normalize();
   const pieces = layout(lengths);
+  // Not `host.bindMatrixInverse`: attached skinned meshes overwrite it with their world inverse every
+  // frame, so gear fitted on a hero already in the scene would come out turned with the hero.
+  const bindInverse = host.bindMatrix.clone().invert();
 
   const solid: THREE.BufferGeometry[] = [];
   const glowing: THREE.BufferGeometry[] = [];
@@ -446,7 +450,7 @@ export function bindPieces(
     // piece -> bone local -> bind space of the host mesh (inverse of the bone's inverse bind matrix).
     pieceMatrix(p, _m).premultiply(_f);
     _m.premultiply(new THREE.Matrix4().copy(skeleton.boneInverses[i]!).invert());
-    _m.premultiply(host.bindMatrixInverse);
+    _m.premultiply(bindInverse);
     const g = pieceGeometry(p, _m);
     const n = g.getAttribute('position').count;
     const si = new Uint16Array(n * 4);

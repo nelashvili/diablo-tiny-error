@@ -8,12 +8,17 @@ import type { ItemBaseDef } from '../../data/schema';
 import { classifyItem, type ItemKind } from './helpers';
 import { weaponModelId } from './weaponStyle';
 import { armorLook } from './outfit';
+import { wornSpecOfKey } from './wornSpec';
+import { parseLookKey } from '../../core/items/lookup';
+import type { WornSpec } from '../types';
 
 export interface ItemLook {
   id: string;
   kind: ItemKind;
   glow?: number;
   body?: number;
+  /** Worn gear (gloves, boots, belts, chest pieces): shown as the hero wears it (wearables.ts). */
+  worn?: WornSpec;
 }
 
 /** Model ids for non-weapon bases, by armor class. */
@@ -53,8 +58,15 @@ const USE_GLOW: Record<string, number> = {
   thaw: 0xff8a30,
 };
 
-/** Which model shows an item base (inventory icon and ground drop), its kind and line colors. */
-export function itemLook(baseId: string, base: ItemBaseDef | undefined = DB.items.get(baseId)): ItemLook {
+/**
+ * Which model shows an item (inventory icon and ground drop), its kind and line colors. `key` is a
+ * base id, or a look key naming the set or unique whose colors it wears (core/items itemLookKey).
+ */
+export function itemLook(
+  key: string,
+  base: ItemBaseDef | undefined = DB.items.get(parseLookKey(key).base),
+): ItemLook {
+  const baseId = parseLookKey(key).base;
   if (base?.weaponClass) {
     const id = weaponModelId(baseId);
     return { id, kind: classifyItem(id) };
@@ -69,10 +81,12 @@ export function itemLook(baseId: string, base: ItemBaseDef | undefined = DB.item
           ? 'suit'
           : classifyItem(ARMOR_MODEL[base.armorClass] as string);
     const look = armorLook(baseId);
+    const worn = wornSpecOfKey(key);
     return {
       id: `item.${baseId}`,
       kind,
       ...(look ? { body: look.primary, glow: look.glow || undefined } : {}),
+      ...(worn ? { worn } : {}),
     };
   }
   if (base?.use) {

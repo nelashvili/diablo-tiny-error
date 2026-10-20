@@ -7,7 +7,7 @@ import type { AttachSlot, Rig } from './rig';
 import { recolorMaterial, variantMaterial } from './toon';
 import { isLitesaberId } from './helpers';
 import { armorLook, headgearStyle, outfitPartOf, outfitRules, type OutfitPart } from './outfit';
-import type { ArmorLookRef } from '../types';
+import type { ArmorLookRef, WornSlot, WornSpec } from '../types';
 import type { ModelEntry } from '../types';
 import type { LoadedAsset } from './loader';
 
@@ -136,6 +136,8 @@ export class Visual implements EntityVisual {
   private disposed = false;
   private readonly attached = new Map<AttachSlot, AttachState>();
   private readonly outfit = new Map<OutfitPart, ArmorLookRef>();
+  private readonly worn = new Map<WornSlot, WornSpec>();
+  private aura: { color: number; mesh: THREE.Mesh } | null = null;
   /** 0 = ready stance, 1 = saber trailing (walk/run). */
   private trail = 0;
   /** 0 = ready stance, 1 = blade held in the body-frame guard (idle, cast, ...). */
@@ -166,6 +168,8 @@ export class Visual implements EntityVisual {
     this.collect();
     rig.setMode(this.mode, this.modeT, this.speedMul);
     for (const [slot, a] of this.attached) this.mount(slot, a.att, a.modelId);
+    for (const [slot, spec] of this.worn) rig.wearItem?.(slot, spec);
+    if (this.worn.size) this.collect();
     this.applyLook();
   }
 
@@ -187,7 +191,8 @@ export class Visual implements EntityVisual {
   private wear(modelId: string | null): void {
     if (!this.rig.wearHeadgear) return;
     const base = modelId?.replace(/^item\./, '') ?? '';
-    this.rig.wearHeadgear(base ? headgearStyle(base) : null, armorLook(base)?.primary ?? 0xd8d8d8);
+    const color = this.outfit.get('head')?.primary ?? armorLook(base)?.primary ?? 0xd8d8d8;
+    this.rig.wearHeadgear(base ? headgearStyle(base) : null, color);
     this.collect();
     this.applyLook();
   }
@@ -264,7 +269,49 @@ export class Visual implements EntityVisual {
     if ((this.outfit.get(part)?.key ?? null) === (look?.key ?? null)) return;
     if (look) this.outfit.set(part, look);
     else this.outfit.delete(part);
+    // A worn helm takes the head's palette (a set helm on the same base changes only its color).
+    const head = this.attached.get('head');
+    if (part === 'head' && head && this.dressed('head')) this.wear(head.modelId);
+    else this.applyLook();
+  }
+
+  setWorn(slot: WornSlot, spec: WornSpec | null): void {
+    if ((this.worn.get(slot)?.key ?? null) === (spec?.key ?? null)) return;
+    if (spec) this.worn.set(slot, spec);
+    else this.worn.delete(slot);
+    if (!this.rig.wearItem) return;
+    this.rig.wearItem(slot, spec);
+    this.collect();
     this.applyLook();
+  }
+
+  /** A full set's aura: a soft glowing ring around the feet that breathes (see update). */
+  setAura(color: number | null): void {
+    if ((this.aura?.color ?? null) === color) return;
+    if (this.aura) {
+      this.object.remove(this.aura.mesh);
+      this.aura.mesh.geometry.dispose();
+      (this.aura.mesh.material as THREE.Material).dispose();
+      this.aura = null;
+    }
+    if (color === null) return;
+    const mesh = new THREE.Mesh(
+      new THREE.RingGeometry(0.34, 0.62, 40),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = 0.03;
+    mesh.renderOrder = 2;
+    mesh.name = 'SetAura';
+    this.object.add(mesh);
+    this.aura = { color, mesh };
   }
 
   /** The mesh's material with its part's armor palette (from the raw, pre-hero-palette material). */
@@ -293,6 +340,12 @@ export class Visual implements EntityVisual {
   update(dt: number): void {
     this.time += dt;
     this.rig.update(dt);
+    if (this.aura) {
+      const k = 0.5 + 0.5 * Math.sin(this.time * 2.4);
+      (this.aura.mesh.material as THREE.MeshBasicMaterial).opacity = 0.28 + k * 0.3;
+      this.aura.mesh.scale.setScalar(0.94 + k * 0.1);
+      this.aura.mesh.rotation.z = this.time * 0.4;
+    }
     const moving = this.mode === 'walk' || this.mode === 'run';
     const step = dt / TRAIL_BLEND_SEC;
     this.trail = Math.min(1, Math.max(0, this.trail + (moving ? step : -step)));
@@ -379,6 +432,7 @@ export class Visual implements EntityVisual {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.setAura(null);
     for (const [slot, a] of this.attached) this.rig.socket(slot).remove(a.att.object);
     this.attached.clear();
     this.object.remove(this.rig.root);

@@ -159,7 +159,7 @@ export function rollDrops(ctx: DropContext, rng: Rng): DropResult {
       if (QUALITY_ORDER.indexOf(quality) < QUALITY_ORDER.indexOf('rare')) quality = 'rare';
       guaranteeRare = false;
     }
-    const item = createItem(baseId, { quality, ilvl }, rng);
+    const item = createItem(baseId, { quality, ilvl, ...(ctx.classId ? { classId: ctx.classId } : {}) }, rng);
     rollSuperior(item, rng);
     result.items.push(item);
   };

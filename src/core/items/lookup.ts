@@ -64,3 +64,21 @@ export function setCandidates(baseId: DefId, ilvl: number): SetItemRef[] {
     for (const item of set.items) if (item.base === baseId && item.reqLevel <= ilvl) out.push({ set, item });
   return out.sort((a, b) => (a.item.id < b.item.id ? -1 : 1));
 }
+
+/**
+ * Look key of an item (inventory icon, ground model): its base, plus the set or unique whose own colors
+ * it wears (`base~set.<setId>`, `base~u.<uniqueId>`).
+ */
+export function itemLookKey(item: { base: DefId; setItemId?: DefId; uniqueId?: DefId }): string {
+  const set = item.setItemId ? findSetItem(item.setItemId)?.set : undefined;
+  if (set) return `${item.base}~set.${set.id}`;
+  if (item.uniqueId && DB.uniques.has(item.uniqueId)) return `${item.base}~u.${item.uniqueId}`;
+  return item.base;
+}
+
+export function parseLookKey(key: string): { base: DefId; setId?: DefId; uniqueId?: DefId } {
+  const [base, tag] = key.split('~') as [DefId, string | undefined];
+  if (tag?.startsWith('set.')) return { base, setId: tag.slice(4) };
+  if (tag?.startsWith('u.')) return { base, uniqueId: tag.slice(2) };
+  return { base };
+}

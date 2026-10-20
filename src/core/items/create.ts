@@ -2,7 +2,7 @@ import { DB, req } from '../../data/db';
 import type { AffixDef, ItemBaseDef } from '../../data/schema';
 import type { Rng } from '../rng';
 import type { Modifier } from '../stats/types';
-import type { DefId, ItemQuality } from '../types';
+import type { ClassId, DefId, ItemQuality } from '../types';
 import { affixMatchesBase, affixPool, isGear, setCandidates, uniqueCandidates } from './lookup';
 import type { ItemInstance } from './types';
 
@@ -17,6 +17,14 @@ export interface CreateItemOpts {
   /** Force a specific unique / set item (quality is then 'unique' / 'set'). */
   uniqueId?: DefId;
   setItemId?: DefId;
+  /** Hero the drop is for: a set piece on a shared base leans toward that class's sets. */
+  classId?: ClassId;
+}
+
+/** Class sets drop mostly for their own class (x4); other classes' sets rarely (x0.25). */
+export function setAffinity(set: { forClass?: ClassId }, classId: ClassId | undefined): number {
+  if (!classId || !set.forClass) return 1;
+  return set.forClass === classId ? 4 : 0.25;
 }
 
 const RARE_NAME_POOL = 20;
@@ -173,7 +181,11 @@ export function createItem(baseId: DefId, opts: CreateItemOpts, rng: Rng): ItemI
   } else if (quality === 'set') {
     const pool = setCandidates(baseId, ilvl);
     const ref = opts.setItemId ? pool.find((p) => p.item.id === opts.setItemId) : undefined;
-    const pick = ref ?? (pool.length && !opts.setItemId ? rng.pick(pool) : undefined);
+    const pick =
+      ref ??
+      (pool.length && !opts.setItemId
+        ? rng.weighted(pool, (r) => setAffinity(r.set, opts.classId))
+        : undefined);
     if (pick) {
       item.setItemId = pick.item.id;
       item.mods = rollMods(pick.item.mods, rng, `set:${pick.item.id}`);

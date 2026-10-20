@@ -122,6 +122,10 @@
 .dte-tip-line.s-set {
   color: var(--q-set);
 }
+.dte-tip-line.s-setMissing {
+  color: var(--q-set);
+  opacity: 0.45;
+}
 .dte-tip-line.s-flavor {
   color: var(--q-unique);
   font-style: italic;
