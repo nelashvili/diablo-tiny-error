@@ -365,7 +365,7 @@ export class GltfRig implements Rig {
       for (const p of hair) p.obj.visible = false;
       return;
     }
-    for (const p of [...hood, ...hair]) p.obj.visible = false;
+    for (const p of style === 'circlet' ? hood : [...hood, ...hair]) p.obj.visible = false;
     const mat = vertexColorToon(color);
     enableRim(mat);
     // Fit in the rest pose, then put the animated pose back.

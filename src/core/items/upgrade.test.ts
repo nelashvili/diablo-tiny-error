@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Rng } from '../rng';
 import { createItem } from './create';
 import type { ItemInstance } from './types';
-import { itemScore, upgradePct, upgradeVerdict } from './upgrade';
+import { handsScore, handsVerdict, itemScore, upgradePct, upgradeVerdict } from './upgrade';
 
 const normal = (base: string): ItemInstance => createItem(base, { quality: 'normal', ilvl: 10 }, new Rng(1));
 
@@ -62,5 +62,26 @@ describe('upgradePct', () => {
     expect(upgradeVerdict(mid, [main])).toBe('down');
     expect(upgradeVerdict(mid, [off])).toBe('up');
     expect(upgradeVerdict(mid, [main, off])).toBe('up');
+  });
+});
+
+describe('handsVerdict', () => {
+  it('a two-hander is measured against both blades it takes off, not just the main one', () => {
+    const axe = normal('vibroAxe');
+    const pair = handsScore(axe, normal('vibroAxe'));
+    const rod = normal('gnarledRod');
+    expect(pair).toBeGreaterThan(itemScore(axe));
+    // Better than one axe alone, worse than dual wielding two.
+    expect(upgradeVerdict(rod, [axe])).toBe('up');
+    expect(itemScore(rod)).toBeLessThan(pair);
+    const v = handsVerdict(rod, axe, normal('vibroAxe'));
+    expect(v?.verdict).toBe('down');
+    expect(v?.pct).toBeLessThan(0);
+  });
+
+  it('a shield in the off hand adds its own score', () => {
+    const saber = normal('trainingLitesaber');
+    const shield = normal('buckler');
+    expect(handsScore(saber, shield)).toBeCloseTo(itemScore(saber) + itemScore(shield));
   });
 });

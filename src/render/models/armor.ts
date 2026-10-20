@@ -23,7 +23,7 @@ export interface ArmorSpec {
 }
 
 /** One piece: a unit shape placed in its bone's segment frame (x side, y along the bone, z forward). */
-interface Piece {
+export interface Piece {
   bone: string;
   geo: THREE.BufferGeometry;
   pos: [number, number, number];
@@ -34,7 +34,7 @@ interface Piece {
 }
 
 /** Segment frame of a bone: y along the bone toward `child`, z toward the model's front. */
-const CHILD: Record<string, string> = {
+export const CHILD: Record<string, string> = {
   pelvis: 'spine_01',
   spine_01: 'spine_02',
   spine_02: 'spine_03',
@@ -54,12 +54,12 @@ const CHILD: Record<string, string> = {
   foot_r: 'ball_r',
 };
 
-const SIDES = ['l', 'r'] as const;
+export const SIDES = ['l', 'r'] as const;
 
 /** Bone lengths (bind pose) the layouts scale with; fallbacks are a ~1.8 m human. */
-type Lengths = (bone: string) => number;
+export type Lengths = (bone: string) => number;
 
-function tube(bone: string, len: number, from: number, to: number, r: number, color: number): Piece {
+export function tube(bone: string, len: number, from: number, to: number, r: number, color: number): Piece {
   return {
     bone,
     geo: unit.cylinder(),
@@ -69,11 +69,11 @@ function tube(bone: string, len: number, from: number, to: number, r: number, co
   };
 }
 
-function ball(bone: string, y: number, r: number, color: number, glow = false): Piece {
+export function ball(bone: string, y: number, r: number, color: number, glow = false): Piece {
   return { bone, geo: unit.sphere(), pos: [0, y, 0], size: [r * 2, r * 2, r * 2], color, glow };
 }
 
-function plate(
+export function plate(
   bone: string,
   pos: [number, number, number],
   size: [number, number, number],
@@ -174,7 +174,7 @@ function droidLayout(spec: ArmorSpec, L: Lengths): Piece[] {
 }
 
 /** A shape placed in a bone's segment frame. */
-function part(
+export function part(
   bone: string,
   geo: THREE.BufferGeometry,
   pos: [number, number, number],
@@ -369,7 +369,33 @@ export function buildHelmet(
   return bindPieces(model, () => helmet(style, 0xffffff), material, 'Helmet_Worn', 0)[0] ?? null;
 }
 
-function bindPieces(
+/** A piece's own transform (unit shape -> its place in the bone frame). */
+export function pieceMatrix(p: Piece, out: THREE.Matrix4): THREE.Matrix4 {
+  return out.compose(
+    new THREE.Vector3(...p.pos),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot ?? [0, 0, 0]))),
+    new THREE.Vector3(...p.size),
+  );
+}
+
+/** A piece's geometry moved by `m`, its color baked into vertex colors (no uvs). */
+export function pieceGeometry(p: Piece, m: THREE.Matrix4): THREE.BufferGeometry {
+  const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone();
+  g.deleteAttribute('uv');
+  g.applyMatrix4(m);
+  const n = g.getAttribute('position').count;
+  const col = new Float32Array(n * 3);
+  _c.setHex(p.color);
+  for (let k = 0; k < n; k++) col.set([_c.r, _c.g, _c.b], k * 3);
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return g;
+}
+
+/**
+ * Bind `layout`'s pieces to the model's skeleton as one vertex-colored SkinnedMesh (plus one for the
+ * glowing pieces), added next to the model's body mesh. The model must be in its bind/rest pose.
+ */
+export function bindPieces(
   model: THREE.Object3D,
   layout: (L: Lengths) => Piece[],
   solidMat: THREE.Material,
@@ -418,22 +444,11 @@ function bindPieces(
     _x.crossVectors(_y, _z).normalize();
     _f.makeBasis(_x, _y, _z);
     // piece -> bone local -> bind space of the host mesh (inverse of the bone's inverse bind matrix).
-    _m.compose(
-      new THREE.Vector3(...p.pos),
-      new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot ?? [0, 0, 0]))),
-      new THREE.Vector3(...p.size),
-    );
-    _m.premultiply(_f);
+    pieceMatrix(p, _m).premultiply(_f);
     _m.premultiply(new THREE.Matrix4().copy(skeleton.boneInverses[i]!).invert());
     _m.premultiply(host.bindMatrixInverse);
-    const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone();
-    g.deleteAttribute('uv');
-    g.applyMatrix4(_m);
+    const g = pieceGeometry(p, _m);
     const n = g.getAttribute('position').count;
-    const col = new Float32Array(n * 3);
-    _c.setHex(p.color);
-    for (let k = 0; k < n; k++) col.set([_c.r, _c.g, _c.b], k * 3);
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     const si = new Uint16Array(n * 4);
     const sw = new Float32Array(n * 4);
     for (let k = 0; k < n; k++) {

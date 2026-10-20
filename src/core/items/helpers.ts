@@ -68,6 +68,17 @@ export function isDualWieldBase(baseId: string | undefined): boolean {
 }
 
 /**
+ * Does putting `baseId` in the main hand take the off-hand item off? Two-handers always do; a weapon
+ * that can't be dual wielded frees an off-hand weapon (a shield stays).
+ */
+export function freesOffHand(baseId: string, offBaseId: string | undefined): boolean {
+  const b = DB.items.get(baseId);
+  if (!b || !offBaseId) return false;
+  if (b.twoHanded) return true;
+  return !!b.weaponClass && isDualWieldBase(offBaseId) && !isDualWieldBase(baseId);
+}
+
+/**
  * All modifiers an equipped item contributes to the stat pipeline. Item-local stats (enhanced damage %,
  * enhanced defense %, requirement reduction) are NOT included: they are resolved into `weaponInfo` /
  * `itemDefense`. The item's own total defense and shield block are emitted as flat `defense` /

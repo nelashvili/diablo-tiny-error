@@ -5,7 +5,7 @@
 import { DB } from '../../data/db';
 import type { ItemBaseDef } from '../../data/schema';
 import { autoSort, emptyGrid, placeItem, removeItem } from '../items/grid';
-import { isDualWieldBase } from '../items/helpers';
+import { freesOffHand, isDualWieldBase } from '../items/helpers';
 import type { ItemInstance, ItemUid } from '../items/types';
 import { addHealOverTime, removeEffects } from '../sim/systems/effects';
 import { healActor } from '../sim/systems/damage';
@@ -125,7 +125,6 @@ export function equipItem(world: SimWorld, p: PlayerEntity, uid: ItemUid, slot: 
   if (slot === 'offHand' && weapon && !main) slot = 'mainHand';
   else if (slot === 'offHand' && weapon && !isDualWieldBase(main?.id))
     return (toast(world, 'toast.dualWield'), false);
-  const offWeapon = isDualWieldBase(p.equipment.offHand?.base);
 
   const item = detach(p, uid);
   if (!item) return false;
@@ -133,8 +132,7 @@ export function equipItem(world: SimWorld, p: PlayerEntity, uid: ItemUid, slot: 
   const old = p.equipment[slot];
   if (old) displaced.push(old);
   // Two-handers free the off hand; weapons that can't be dual wielded free an off-hand weapon.
-  const clearsOff =
-    slot === 'mainHand' && (base.twoHanded || (weapon && offWeapon && !isDualWieldBase(base.id)));
+  const clearsOff = slot === 'mainHand' && freesOffHand(base.id, p.equipment.offHand?.base);
   if (clearsOff && p.equipment.offHand) displaced.push(p.equipment.offHand);
 
   // Make room: displaced items go to the inventory.

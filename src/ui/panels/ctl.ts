@@ -3,8 +3,8 @@
  * tooltips (hover on mouse, long-press/tap on touch) and item quick actions.
  * One instance per <Panels>.
  */
-import { canEquip as coreCanEquip, isDualWieldBase } from '../../core/items/helpers';
-import { upgradeVerdict, type UpgradeVerdict } from '../../core/items/upgrade';
+import { canEquip as coreCanEquip, freesOffHand, isDualWieldBase } from '../../core/items/helpers';
+import { handsVerdict, upgradeVerdict, type UpgradeVerdict } from '../../core/items/upgrade';
 import { signal } from '@preact/signals';
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
@@ -107,6 +107,19 @@ export class PanelCtl {
   }
 
   /**
+   * A main-hand weapon that would take the off-hand item off (a two-hander, or one that ends dual
+   * wielding) is measured against what both hands hold now; null otherwise.
+   */
+  handsCompare(item: ItemInstance): ReturnType<typeof handsVerdict> {
+    const eq = this.player?.equipment;
+    const main = eq?.mainHand;
+    const off = eq?.offHand;
+    if (!main || !off || main.uid === item.uid || off.uid === item.uid) return null;
+    if (this.compareSlots(item)[0] !== 'mainHand' || this.compareSlots(item).length > 1) return null;
+    return freesOffHand(item.base, off.base) ? handsVerdict(item, main, off) : null;
+  }
+
+  /**
    * The equipped slots an item is measured against: both rings; both hands for a weapon a dual
    * wielder could hold in either (the off hand empty or holding a weapon); else its own slot.
    */
@@ -143,6 +156,8 @@ export class PanelCtl {
     if (!slots.length || slots.some((s) => p.equipment[s]?.uid === item.uid)) return null;
     const st = { level: p.level, strength: p.stats.strength, dexterity: p.stats.dexterity };
     if (!anyReqs && !coreCanEquip(item, slots[0]!, p.classId, st)) return null;
+    const hands = this.handsCompare(item);
+    if (hands) return hands.verdict;
     // An upgrade over either ring / either blade counts (measured against the weaker one).
     const cmp = this.compareSlots(item);
     return upgradeVerdict(

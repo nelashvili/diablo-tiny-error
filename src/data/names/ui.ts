@@ -74,6 +74,8 @@ export default {
   'ui.tip.side.ring1': 'Left ring',
   'ui.tip.side.ring2': 'Right ring',
   'ui.tip.side.empty': 'empty slot',
+  'ui.tip.side.bothHands': 'Both hands',
+  'ui.tip.takesOff': 'Takes off {name}',
   'ui.tip.sockets': 'Sockets: {n}',
   'ui.quality.inferior': 'Junk',
   'ui.quality.normal': 'Normal',

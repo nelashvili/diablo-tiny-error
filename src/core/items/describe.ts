@@ -239,10 +239,14 @@ function summarize(item: ItemInstance): { avg: number; def: number; stats: Map<s
   return { avg: w ? itemDps(item) : 0, def: itemDefense(item), stats };
 }
 
-/** Compare candidate `a` against currently equipped `b`: green/red delta lines. */
-export function compareItems(a: ItemInstance, b?: ItemInstance): ItemLine[] {
+/**
+ * Compare candidate `a` against currently equipped `b`: green/red delta lines. `vsDps` replaces
+ * `b`'s damage per second (a dual wielder's two blades together).
+ */
+export function compareItems(a: ItemInstance, b?: ItemInstance, vsDps?: number): ItemLine[] {
   const sa = summarize(a);
   const sb = b ? summarize(b) : { avg: 0, def: 0, stats: new Map<string, Modifier>() };
+  if (vsDps !== undefined) sb.avg = vsDps;
   const out: ItemLine[] = [];
   const delta = (d: number, key: string): void => {
     const r = Math.round(d * 10) / 10;

@@ -44,7 +44,7 @@ describe('headgear styles', () => {
     const { headgearStyle } = await import('./outfit');
     const helms = [...DB.items.values()].filter((b) => b.armorClass === 'helm');
     expect(helms.length).toBeGreaterThan(0);
-    for (const h of helms) expect(['trooper', 'mando', 'hood']).toContain(headgearStyle(h.id));
+    for (const h of helms) expect(['trooper', 'mando', 'hood', 'circlet']).toContain(headgearStyle(h.id));
     expect(headgearStyle('trooperHelm')).toBe('trooper');
     expect(headgearStyle('yediHood')).toBe('hood');
     expect(headgearStyle('battleVisor')).toBe('mando');

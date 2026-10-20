@@ -5,7 +5,8 @@
  */
 import type { StatId } from '../stats/types';
 import { baseOf, isGear } from './lookup';
-import { itemDefense, itemModifiers, weaponInfo } from './helpers';
+import { DUAL_WIELD } from '../player/weapon';
+import { isDualWieldBase, itemDefense, itemModifiers, weaponInfo } from './helpers';
 import type { ItemInstance } from './types';
 
 /** Score per point of each stat (flat op). Unlisted stats count DEFAULT_WEIGHT. */
@@ -66,15 +67,24 @@ const isRanged = (item: ItemInstance): boolean => RANGED.has(baseOf(item)?.weapo
 
 /** Rough power of an item on its own. */
 export function itemScore(item: ItemInstance): number {
+  return weaponScore(item) + gearScore(item);
+}
+
+/** The weapon-damage part of the score (0 for armor). */
+function weaponScore(item: ItemInstance): number {
+  const w = weaponInfo(item);
+  if (!w) return 0;
+  const flat = item.mods.reduce(
+    (s, m) => (m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage') ? s + m.value / 2 : s),
+    0,
+  );
+  return ((w.min + w.max) / 2 + flat) * w.speed * DPS_WEIGHT;
+}
+
+/** Everything but weapon damage: modifiers and defense. */
+function gearScore(item: ItemInstance): number {
   let score = 0;
   const w = weaponInfo(item);
-  if (w) {
-    const flat = item.mods.reduce(
-      (s, m) => (m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage') ? s + m.value / 2 : s),
-      0,
-    );
-    score += ((w.min + w.max) / 2 + flat) * w.speed * DPS_WEIGHT;
-  }
   for (const m of itemModifiers(item)) {
     if (m.stat === 'defense' && m.op === 'flat') continue; // counted from itemDefense below
     if (w && m.op === 'flat' && (m.stat === 'minDamage' || m.stat === 'maxDamage')) continue;
@@ -84,14 +94,50 @@ export function itemScore(item: ItemInstance): number {
   return score;
 }
 
+/**
+ * What both hands hold together. Two blades take turns (their damage averages) and swing faster
+ * with the dual-wield bonus; a shield or other off-hand item simply adds its own score.
+ */
+export function handsScore(main: ItemInstance, off: ItemInstance | undefined): number {
+  if (!off) return itemScore(main);
+  if (!isDualWieldBase(main.base) || !isDualWieldBase(off.base)) return itemScore(main) + itemScore(off);
+  const blades = ((weaponScore(main) + weaponScore(off)) / 2) * (1 + DUAL_WIELD.attackSpeed / 100);
+  return blades + gearScore(main) + gearScore(off);
+}
+
 export type UpgradeVerdict = 'up' | 'down' | 'same';
+
+function verdictOf(mine: number, cur: number): UpgradeVerdict {
+  const band = Math.max(1, Math.abs(cur) * SAME_BAND);
+  if (mine > cur + band) return 'up';
+  if (mine < cur - band) return 'down';
+  return 'same';
+}
+
+/** `pct`-style change between two scores. */
+export function scorePct(mine: number, cur: number): number {
+  if (cur <= 0) return mine > 0 ? 100 : 0;
+  return Math.round((mine / cur - 1) * 100);
+}
+
+/**
+ * A main-hand weapon that takes the off-hand item off (a two-hander, or a weapon that ends dual
+ * wielding) measured against everything both hands hold now. Null when it is not comparable.
+ */
+export function handsVerdict(
+  candidate: ItemInstance,
+  main: ItemInstance,
+  off: ItemInstance,
+): { verdict: UpgradeVerdict; pct: number } | null {
+  if (isRanged(main) !== isRanged(candidate)) return null;
+  const cur = handsScore(main, off);
+  const mine = itemScore(candidate);
+  return { verdict: verdictOf(mine, cur), pct: scorePct(mine, cur) };
+}
 
 /** How much stronger `candidate` is than `equipped`, in percent of the equipped item's score. */
 export function upgradePct(candidate: ItemInstance, equipped: ItemInstance): number {
-  const cur = itemScore(equipped);
-  const mine = itemScore(candidate);
-  if (cur <= 0) return mine > 0 ? 100 : 0;
-  return Math.round((mine / cur - 1) * 100);
+  return scorePct(itemScore(candidate), itemScore(equipped));
 }
 
 /**
@@ -109,9 +155,5 @@ export function upgradeVerdict(
   // A blaster vs a litesaber is a change of playstyle, not an upgrade: don't judge it.
   if (equipped.some((e) => isRanged(e!) !== isRanged(candidate))) return null;
   const cur = Math.min(...equipped.map((e) => itemScore(e!)));
-  const mine = itemScore(candidate);
-  const band = Math.max(1, Math.abs(cur) * SAME_BAND);
-  if (mine > cur + band) return 'up';
-  if (mine < cur - band) return 'down';
-  return 'same';
+  return verdictOf(itemScore(candidate), cur);
 }

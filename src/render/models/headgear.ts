@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { mk, unit } from './rig';
 import { toonMaterial } from './toon';
 
-export type HelmetStyle = 'mando' | 'trooper' | 'hood';
+export type HelmetStyle = 'mando' | 'trooper' | 'hood' | 'circlet';
 
 /** Shapes in a unit box centered on the origin (x across, y up, z toward the face). */
 export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
@@ -23,6 +23,13 @@ export function helmetShapes(style: HelmetStyle, color: number): THREE.Mesh[] {
       mk(unit.taper(), main, 1.15, 0.5, 1.0, 0, -0.42, -0.2),
     ];
   }
+  if (style === 'circlet')
+    // Forse Adept circlet: a thin band around the brow (hair stays out) with a crystal at the front.
+    return [
+      mk(unit.torus(), main, 1.06, 1.06, 1.2, 0, 0.02, -0.02).rotateX(Math.PI / 2),
+      mk(unit.box(), main, 0.2, 0.16, 0.06, 0, 0.06, 0.52),
+      mk(unit.gem(), metal, 0.12, 0.18, 0.08, 0, 0.07, 0.56),
+    ];
   if (style === 'mando')
     return [
       mk(unit.sphere(), main, 1, 0.9, 1, 0, 0.08, 0),

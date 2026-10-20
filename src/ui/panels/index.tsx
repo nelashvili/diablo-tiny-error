@@ -3,7 +3,7 @@
  * Desktop/iPad: D2 layout (left + right docks, centered dialogs). Phone/narrow: full-screen
  * sheet with tabs. Owns the held-item ghost, tooltips and Esc handling.
  */
-import { compareItems, type ItemDescription } from '../../core/items/describe';
+import { compareItems, itemDps, type ItemDescription } from '../../core/items/describe';
 import type { ItemInstance } from '../../core/items/types';
 import { upgradePct, upgradeVerdict } from '../../core/items/upgrade';
 import { DUAL_WIELD } from '../../core/player/weapon';
@@ -257,6 +257,36 @@ function compareWithEquipped(
   item: ItemInstance,
 ): Comparison {
   if (!ctl.upgradeOf(item, true)) return NO_COMPARE;
+  const hands = ctl.handsCompare(item);
+  const { mainHand, offHand } = player.equipment;
+  if (hands && mainHand && offHand) {
+    // Against both hands: the off-hand item comes off too (and dual wielding ends). Two blades'
+    // damage per second is their average, sped up by dual wielding.
+    const dual = isDualWieldBase(mainHand.base) && isDualWieldBase(offHand.base);
+    const pairDps = dual
+      ? ((itemDps(mainHand) + itemDps(offHand)) / 2) * (1 + DUAL_WIELD.attackSpeed / 100)
+      : undefined;
+    const deltas = compareItems(item, mainHand, pairDps);
+    deltas.unshift({
+      text: t('ui.tip.takesOff', { name: services.describeItem(offHand).name }),
+      style: 'worse',
+    });
+    if (dual)
+      deltas.splice(
+        1,
+        0,
+        { text: t('item.cmp.noDualWield', { ias: DUAL_WIELD.attackSpeed }), style: 'worse' },
+        { text: t('item.cmp.noDualWieldDef', { def: -DUAL_WIELD.defensePct }), style: 'better' },
+      );
+    const side = t('ui.tip.side.bothHands');
+    return {
+      compare: [
+        { desc: services.describeItem(mainHand), side: t('ui.tip.side.mainHand') },
+        { desc: services.describeItem(offHand), side: t('ui.tip.side.offHand') },
+      ],
+      verdicts: [{ verdict: hands.verdict, side, pct: hands.pct, deltas }],
+    };
+  }
   const slots = ctl.compareSlots(item);
   const two = slots.length > 1;
   const compare: NonNullable<Comparison['compare']> = [];
