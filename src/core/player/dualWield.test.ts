@@ -121,6 +121,20 @@ describe('dual wielding', () => {
     expect(p.action!.offHand).toBeUndefined();
   });
 
+  it('a weaker off-hand blade still raises dps (dual wield attack speed)', () => {
+    const { world, p } = hero();
+    equipItem(world, p, give(p, 'scoutLitesaber'), 'mainHand');
+    recomputeStats(p);
+    const single = heroDps(p);
+    const speed = p.stats.attackSpeedMul;
+    p.stats = { ...p.stats, strength: 200 };
+    expect(equipItem(world, p, give(p, 'trainingLitesaber'), 'offHand')).toBe(true);
+    recomputeStats(p);
+    expect(p.stats.offHand!.physMax).toBeLessThan(p.stats.physMax);
+    expect(p.stats.attackSpeedMul).toBeGreaterThan(speed);
+    expect(heroDps(p)).toBeGreaterThan(single * 1.15);
+  });
+
   it('dps counts both hands', () => {
     const { world, p } = hero();
     equipItem(world, p, give(p, 'trainingLitesaber'), 'mainHand');

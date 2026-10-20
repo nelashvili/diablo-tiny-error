@@ -1,6 +1,6 @@
 import { DB } from '../../data/db';
 import { bladeColor } from './blade';
-import { MELEE_MASTERY, weaponDps } from '../player/weapon';
+import { DUAL_WIELD, MELEE_MASTERY, weaponDps } from '../player/weapon';
 import { hasName, t } from '../../data/names';
 import type { Modifier, StatId } from '../stats/types';
 import type { ClassId, ItemQuality } from '../types';
@@ -138,7 +138,7 @@ export function describeItem(item: ItemInstance, ctx?: DescribeCtx): ItemDescrip
     const ranged = w.weaponClass === 'blasturPistol' || w.weaponClass === 'blasturRifle';
     const key = ranged ? 'item.damage.ranged' : w.twoHanded ? 'item.damage.2h' : 'item.damage.1h';
     push(t(key, { min: w.min, max: w.max }), 'base');
-    if (b.slots.includes('offHand')) push(t('item.dualWield'), 'base');
+    if (b.slots.includes('offHand')) push(t('item.dualWield', { ias: DUAL_WIELD.attackSpeed }), 'magic');
     push(t('item.speed', { v: w.speed.toFixed(2) }), 'base');
     const melee = !ranged && w.weaponClass !== 'javelin' && w.weaponClass !== 'throwingDisc';
     push(t('item.dps', { v: itemDps(item).toFixed(1) }), 'dps');

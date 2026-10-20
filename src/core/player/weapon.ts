@@ -39,6 +39,12 @@ export const RANGED_WEAPON_MISSILE: Partial<Record<WeaponClass, string>> = {
  */
 export const MELEE_MASTERY = { enhancedDamage: 30, damageReducedPct: 15, cleavePct: 50, cleaveArcDeg: 120 };
 
+/**
+ * Swings take turns between the hands, so a second blade alone only averages the two weapons;
+ * fighting with one in each hand makes every swing come quicker.
+ */
+export const DUAL_WIELD = { attackSpeed: 35 };
+
 /** Is this actor fighting with a melee weapon (players/mercs)? */
 export function wieldsMelee(actor: Actor): boolean {
   const wc = getEquippedWeapon(actor)?.weaponClass;

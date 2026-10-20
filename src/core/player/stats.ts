@@ -12,6 +12,7 @@ import type { Difficulty } from '../types';
 import type { Actor, PlayerEntity } from '../sim/entities';
 import type { Equipment, ItemInstance } from '../items/types';
 import {
+  DUAL_WIELD,
   MELEE_MASTERY,
   getEquippedWeapon,
   getOffHandWeapon,
@@ -72,10 +73,13 @@ export function gatherModifiers(p: PlayerEntity): Modifier[] {
 /** The built-in melee edge (see MELEE_MASTERY) while a melee weapon is equipped. */
 function meleeMasteryMods(p: PlayerEntity): Modifier[] {
   if (!wieldsMelee(p)) return [];
-  return [
+  const mods: Modifier[] = [
     { stat: 'enhancedDamage', op: 'flat', value: MELEE_MASTERY.enhancedDamage, source: 'melee' },
     { stat: 'damageReducedPct', op: 'flat', value: MELEE_MASTERY.damageReducedPct, source: 'melee' },
   ];
+  if (getOffHandWeapon(p))
+    mods.push({ stat: 'ias', op: 'flat', value: DUAL_WIELD.attackSpeed, source: 'dualWield' });
+  return mods;
 }
 
 export function statSourcesFor(p: PlayerEntity, difficulty: Difficulty): StatSources {
